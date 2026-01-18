@@ -8,10 +8,17 @@
 import SwiftUI
 
 @main
-struct topwayApp: App {
+struct TopwayApp: App {
+    @State private var appState = AppState()
+    
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("Topway", systemImage: "tram.fill") {
+            MainView()
+                .environment(appState)
+                .task {
+                    appState.initializeAutoRefresh()
+                }
         }
+        .menuBarExtraStyle(.window)
     }
 }
