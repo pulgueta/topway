@@ -48,12 +48,11 @@ struct InlineDeleteConfirmation: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(isCancelHovered ? Color.primary.opacity(0.1) : Color.primary.opacity(0.05))
                         )
+                        .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
                 .onHover { hovering in
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        isCancelHovered = hovering
-                    }
+                    isCancelHovered = hovering
                 }
                 
                 // Delete Button
@@ -69,12 +68,11 @@ struct InlineDeleteConfirmation: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(isDeleteHovered ? Color.red.opacity(0.8) : Color.red)
                         )
+                        .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
                 .onHover { hovering in
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        isDeleteHovered = hovering
-                    }
+                    isDeleteHovered = hovering
                 }
             }
         }
@@ -109,19 +107,14 @@ struct ServiceRow: View {
                     title: "Delete Service",
                     message: "Delete \"\(service.name)\"? This will remove all deployments and data.",
                     onConfirm: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showDeleteConfirmation = false
-                        }
+                        showDeleteConfirmation = false
                         onDelete()
                     },
                     onCancel: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showDeleteConfirmation = false
-                        }
+                        showDeleteConfirmation = false
                     }
                 )
                 .padding(.leading, 20)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             } else {
                 HStack(spacing: 4) {
                     Button {
@@ -154,9 +147,7 @@ struct ServiceRow: View {
                     }
                     .buttonStyle(.plain)
                     .onHover { hovering in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            isHovered = hovering
-                        }
+                        isHovered = hovering
                     }
                     .simultaneousGesture(
                         DragGesture(minimumDistance: 0)
@@ -166,9 +157,7 @@ struct ServiceRow: View {
                     
                     // Delete button (only visible on hover)
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showDeleteConfirmation = true
-                        }
+                        showDeleteConfirmation = true
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 10, weight: .medium))
@@ -182,17 +171,14 @@ struct ServiceRow: View {
                     }
                     .buttonStyle(.plain)
                     .onHover { hovering in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            isDeleteHovered = hovering
-                        }
+                        isDeleteHovered = hovering
                     }
                     .opacity(isHovered || isDeleteHovered ? 1 : 0)
-                    .help("Delete service")
                 }
                 .padding(.leading, 20)
-                .transition(.opacity)
             }
         }
+        .clipped()
     }
     
     private var backgroundColor: Color {
@@ -228,24 +214,19 @@ struct ProjectRow: View {
                     title: "Delete Project",
                     message: "Delete \"\(project.name)\"? This will permanently delete all services, deployments, and data.",
                     onConfirm: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showDeleteConfirmation = false
-                        }
+                        showDeleteConfirmation = false
                         onDeleteProject()
                     },
                     onCancel: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showDeleteConfirmation = false
-                        }
+                        showDeleteConfirmation = false
                     }
                 )
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             } else {
                 // Project Header
                 HStack(spacing: 0) {
                     // Expand/Collapse + Project Name
                     Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
                             isExpanded.toggle()
                         }
                     } label: {
@@ -275,9 +256,7 @@ struct ProjectRow: View {
                     }
                     .buttonStyle(.plain)
                     .onHover { hovering in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            isHeaderHovered = hovering
-                        }
+                        isHeaderHovered = hovering
                     }
                     
                     Spacer()
@@ -298,17 +277,12 @@ struct ProjectRow: View {
                     }
                     .buttonStyle(.plain)
                     .onHover { hovering in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            isAddHovered = hovering
-                        }
+                        isAddHovered = hovering
                     }
-                    .help("Add a new service")
                     
                     // Delete Project Button
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showDeleteConfirmation = true
-                        }
+                        showDeleteConfirmation = true
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 11, weight: .medium))
@@ -322,11 +296,8 @@ struct ProjectRow: View {
                     }
                     .buttonStyle(.plain)
                     .onHover { hovering in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            isDeleteHovered = hovering
-                        }
+                        isDeleteHovered = hovering
                     }
-                    .help("Delete project")
                 }
                 
                 // Services List
@@ -358,11 +329,11 @@ struct ProjectRow: View {
                             }
                         }
                     }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
         .padding(.vertical, 4)
+        .clipped()
     }
 }
 

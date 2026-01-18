@@ -260,6 +260,7 @@ struct MainView: View {
                     }
                     .padding(.vertical, 4)
                 }
+                .clipped()
             }
             
             // Error Banner
