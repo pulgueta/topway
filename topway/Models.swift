@@ -7,7 +7,7 @@ struct GraphQLResponse<T: Decodable>: Decodable {
     let errors: [GraphQLError]?
 }
 
-struct GraphQLError: Decodable {
+struct GraphQLError: Decodable, Hashable {
     let message: String
 }
 
@@ -31,7 +31,7 @@ struct ProjectEdge: Decodable {
 
 // MARK: - Project Model
 
-struct Project: Identifiable, Decodable {
+struct Project: Identifiable, Decodable, Hashable {
     let id: String
     let name: String
     let services: ServiceConnection
@@ -40,30 +40,30 @@ struct Project: Identifiable, Decodable {
 
 // MARK: - Service Models
 
-struct ServiceConnection: Decodable {
+struct ServiceConnection: Decodable, Hashable {
     let edges: [ServiceEdge]
 }
 
-struct ServiceEdge: Decodable {
+struct ServiceEdge: Decodable, Hashable {
     let node: Service
 }
 
-struct Service: Identifiable, Decodable {
+struct Service: Identifiable, Decodable, Hashable {
     let id: String
     let name: String
 }
 
 // MARK: - Environment Models
 
-struct EnvironmentConnection: Decodable {
+struct EnvironmentConnection: Decodable, Hashable {
     let edges: [EnvironmentEdge]
 }
 
-struct EnvironmentEdge: Decodable {
+struct EnvironmentEdge: Decodable, Hashable {
     let node: RailwayEnvironment
 }
 
-struct RailwayEnvironment: Identifiable, Decodable {
+struct RailwayEnvironment: Identifiable, Decodable, Hashable {
     let id: String
     let name: String
 }
@@ -122,7 +122,7 @@ struct DeploymentEdge: Decodable {
     let node: Deployment
 }
 
-struct Deployment: Identifiable, Decodable {
+struct Deployment: Identifiable, Decodable, Hashable {
     let id: String
     let status: String
     let staticUrl: String?
@@ -190,7 +190,7 @@ struct ServiceRedeployData: Decodable {
 
 // MARK: - Variable Model (for UI display)
 
-struct EnvironmentVariable: Identifiable {
+struct EnvironmentVariable: Identifiable, Hashable {
     let id: String
     let name: String
     let value: String

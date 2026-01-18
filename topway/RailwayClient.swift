@@ -26,7 +26,8 @@ enum RailwayError: LocalizedError {
     }
 }
 
-actor RailwayClient {
+@MainActor
+final class RailwayClient {
     private let baseURL = "https://backboard.railway.app/graphql/v2"
     private let session: URLSession
     
