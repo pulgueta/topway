@@ -5,6 +5,7 @@ import SwiftUI
 struct InlineDeleteConfirmation: View {
     let title: String
     let message: String
+    var isLoading: Bool = false
     let onConfirm: () -> Void
     let onCancel: () -> Void
     
@@ -24,6 +25,12 @@ struct InlineDeleteConfirmation: View {
                     .foregroundStyle(.primary)
                 
                 Spacer()
+                
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.8)
+                }
             }
             
             // Message
@@ -54,26 +61,35 @@ struct InlineDeleteConfirmation: View {
                 .onHover { hovering in
                     isCancelHovered = hovering
                 }
+                .disabled(isLoading)
                 
                 // Delete Button
                 Button {
                     onConfirm()
                 } label: {
-                    Text("Delete")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(isDeleteHovered ? Color.red.opacity(0.8) : Color.red)
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 6))
+                    HStack(spacing: 4) {
+                        if isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                                .scaleEffect(0.7)
+                        }
+                        Text(isLoading ? "Deleting..." : "Delete")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(isLoading ? Color.red.opacity(0.6) : (isDeleteHovered ? Color.red.opacity(0.8) : Color.red))
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
                 .onHover { hovering in
                     isDeleteHovered = hovering
                 }
+                .disabled(isLoading)
             }
         }
         .padding(12)
@@ -93,92 +109,49 @@ struct InlineDeleteConfirmation: View {
 struct ServiceRow: View {
     let service: Service
     let onTap: () -> Void
-    let onDelete: () -> Void
     
     @State private var isHovered = false
     @State private var isPressed = false
-    @State private var isDeleteHovered = false
-    @State private var showDeleteConfirmation = false
     
     var body: some View {
-        VStack(spacing: 4) {
-            if showDeleteConfirmation {
-                InlineDeleteConfirmation(
-                    title: "Delete Service",
-                    message: "Delete \"\(service.name)\"? This will remove all deployments and data.",
-                    onConfirm: {
-                        showDeleteConfirmation = false
-                        onDelete()
-                    },
-                    onCancel: {
-                        showDeleteConfirmation = false
-                    }
-                )
-                .padding(.leading, 20)
-            } else {
-                HStack(spacing: 4) {
-                    Button {
-                        onTap()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.blue)
-                            
-                            Text(service.name)
-                                .font(.system(size: 13))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(.tertiary)
-                                .opacity(isHovered ? 1 : 0.5)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(backgroundColor)
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        isHovered = hovering
-                    }
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in isPressed = true }
-                            .onEnded { _ in isPressed = false }
-                    )
-                    
-                    // Delete button (only visible on hover)
-                    Button {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(isDeleteHovered ? .red : .secondary)
-                            .frame(width: 20, height: 20)
-                            .background(
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(isDeleteHovered ? Color.red.opacity(0.1) : Color.clear)
-                            )
-                            .contentShape(RoundedRectangle(cornerRadius: 5))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        isDeleteHovered = hovering
-                    }
-                    .opacity(isHovered || isDeleteHovered ? 1 : 0)
-                }
-                .padding(.leading, 20)
+        Button {
+            onTap()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.blue)
+                
+                Text(service.name)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .opacity(isHovered ? 1 : 0.5)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(backgroundColor)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 6))
         }
-        .clipped()
+        .buttonStyle(.plain)
+        .padding(.leading, 20)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
     }
     
     private var backgroundColor: Color {
@@ -198,13 +171,13 @@ struct ProjectRow: View {
     let onAddService: () -> Void
     let onDeleteProject: () -> Void
     let onServiceTap: (Service) -> Void
-    let onDeleteService: (Service) -> Void
     
     @State private var isExpanded = true
     @State private var isHeaderHovered = false
     @State private var isAddHovered = false
     @State private var isDeleteHovered = false
     @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -213,8 +186,9 @@ struct ProjectRow: View {
                 InlineDeleteConfirmation(
                     title: "Delete Project",
                     message: "Delete \"\(project.name)\"? This will permanently delete all services, deployments, and data.",
+                    isLoading: isDeleting,
                     onConfirm: {
-                        showDeleteConfirmation = false
+                        isDeleting = true
                         onDeleteProject()
                     },
                     onCancel: {
@@ -321,9 +295,6 @@ struct ProjectRow: View {
                                     service: service,
                                     onTap: {
                                         onServiceTap(service)
-                                    },
-                                    onDelete: {
-                                        onDeleteService(service)
                                     }
                                 )
                             }
@@ -355,8 +326,7 @@ struct ProjectRow: View {
             project: mockProject,
             onAddService: {},
             onDeleteProject: {},
-            onServiceTap: { _ in },
-            onDeleteService: { _ in }
+            onServiceTap: { _ in }
         )
     }
     .padding()

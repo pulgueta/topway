@@ -20,5 +20,21 @@ struct TopwayApp: App {
                 }
         }
         .menuBarExtraStyle(.window)
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings...") {
+                    appState.showingSettings = true
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+            
+            CommandGroup(after: .appInfo) {
+                Button("Refresh Projects") {
+                    Task { await appState.loadProjects() }
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(!appState.isConfigured || appState.isLoading)
+            }
+        }
     }
 }

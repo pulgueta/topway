@@ -56,6 +56,12 @@ struct MainView: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentView = .main 
                         }
+                    },
+                    onDeleteService: {
+                        _ = await appState.deleteService(serviceId: service.id)
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentView = .main
+                        }
                     }
                 )
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -65,6 +71,26 @@ struct MainView: View {
         .task {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
+            }
+        }
+        // Escape to go back
+        .onExitCommand {
+            switch currentView {
+            case .main:
+                break // Do nothing on main view
+            case .settings, .addService, .variables:
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentView = .main
+                }
+            }
+        }
+        // Listen for settings toggle from menu command
+        .onChange(of: appState.showingSettings) { _, newValue in
+            if newValue && currentView == .main {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentView = .settings
+                }
+                appState.showingSettings = false
             }
         }
     }
@@ -248,11 +274,6 @@ struct MainView: View {
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         currentView = .variables(service: service, project: project)
                                     }
-                                },
-                                onDeleteService: { service in
-                                    Task {
-                                        await appState.deleteService(serviceId: service.id)
-                                    }
                                 }
                             )
                             .padding(.horizontal, 8)
@@ -271,22 +292,53 @@ struct MainView: View {
     }
     
     private var emptyProjectsView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Spacer()
             
-            Image(systemName: "folder")
-                .font(.system(size: 32))
+            Image(systemName: "folder.badge.questionmark")
+                .font(.system(size: 36))
                 .foregroundStyle(.tertiary)
             
-            Text("No projects found")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-            
-            Button("Create on Railway") {
-                openRailwayDashboard()
+            VStack(spacing: 4) {
+                Text("No Projects Found")
+                    .font(.system(size: 14, weight: .semibold))
+                
+                Text("Create a project on Railway or check your Workspace ID in settings.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
+            
+            HStack(spacing: 10) {
+                Button {
+                    openRailwayDashboard()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 10))
+                        Text("New Project")
+                            .font(.system(size: 12))
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        currentView = .settings
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 10))
+                        Text("Settings")
+                            .font(.system(size: 12))
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
             
             Spacer()
         }

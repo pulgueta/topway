@@ -13,6 +13,7 @@ struct EditVariableView: View {
     @State private var name: String = ""
     @State private var value: String = ""
     @State private var isSaving = false
+    @State private var isDeleting = false
     @State private var showDeleteConfirmation = false
     
     private var isEditing: Bool {
@@ -30,69 +31,19 @@ struct EditVariableView: View {
             
             Divider()
             
-            // Form
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Name Field
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Name")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                        
-                        TextField("VARIABLE_NAME", text: $name)
-                            .textFieldStyle(.plain)
-                            .font(.system(size: 13, design: .monospaced))
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.primary.opacity(0.05))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                            )
-                            .disabled(isEditing)
-                            .opacity(isEditing ? 0.7 : 1)
-                    }
-                    
-                    // Value Field
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Value")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                        
-                        TextEditor(text: $value)
-                            .font(.system(size: 13, design: .monospaced))
-                            .scrollContentBackground(.hidden)
-                            .frame(minHeight: 80, maxHeight: 120)
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.primary.opacity(0.05))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                            )
-                    }
-                    
-                    // Info Text
-                    HStack(spacing: 6) {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 11))
-                        Text(isEditing ? "Editing will update this variable across all deployments." : "Variable names should be uppercase with underscores.")
-                            .font(.system(size: 11))
-                    }
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(16)
+            // Content - either form or delete confirmation
+            if showDeleteConfirmation {
+                deleteConfirmationView
+            } else {
+                formView
             }
             
             Divider()
             
             // Footer
-            footerView
+            if !showDeleteConfirmation {
+                footerView
+            }
         }
         .onAppear {
             if let variable = existingVariable {
@@ -100,18 +51,141 @@ struct EditVariableView: View {
                 value = variable.value
             }
         }
-        .confirmationDialog(
-            "Delete Variable",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                Task { await deleteVariable() }
+    }
+    
+    // MARK: - Form View
+    
+    private var formView: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // Name Field
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Name")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    
+                    TextField("VARIABLE_NAME", text: $name)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13, design: .monospaced))
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.primary.opacity(0.05))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                        )
+                        .disabled(isEditing)
+                        .opacity(isEditing ? 0.7 : 1)
+                }
+                
+                // Value Field
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Value")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    
+                    TextEditor(text: $value)
+                        .font(.system(size: 13, design: .monospaced))
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 80, maxHeight: 120)
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.primary.opacity(0.05))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                        )
+                }
+                
+                // Info Text
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11))
+                    Text(isEditing ? "Editing will update this variable across all deployments." : "Variable names should be uppercase with underscores.")
+                        .font(.system(size: 11))
+                }
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Are you sure you want to delete \"\(name)\"? This action cannot be undone.")
+            .padding(16)
         }
+    }
+    
+    // MARK: - Delete Confirmation View
+    
+    private var deleteConfirmationView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            
+            // Warning icon
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(.red)
+            
+            // Title
+            Text("Delete Variable")
+                .font(.system(size: 16, weight: .semibold))
+            
+            // Variable name
+            Text("\"\(name)\"")
+                .font(.system(size: 14, design: .monospaced))
+                .foregroundStyle(.secondary)
+            
+            // Warning message
+            Text("This action cannot be undone.")
+                .font(.system(size: 12))
+                .foregroundStyle(.tertiary)
+            
+            Spacer()
+            
+            // Action buttons
+            HStack(spacing: 12) {
+                Button {
+                    showDeleteConfirmation = false
+                } label: {
+                    Text("Cancel")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.primary.opacity(0.05))
+                        )
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    Task { await deleteVariable() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isDeleting {
+                            ProgressView()
+                                .controlSize(.small)
+                                .scaleEffect(0.8)
+                        }
+                        Text("Delete")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.red)
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isDeleting)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - Header
@@ -200,7 +274,7 @@ struct EditVariableView: View {
     }
     
     private func deleteVariable() async {
-        isSaving = true
+        isDeleting = true
         
         let success = await appState.deleteVariable(
             projectId: projectId,
@@ -209,11 +283,14 @@ struct EditVariableView: View {
             name: name
         )
         
-        isSaving = false
+        isDeleting = false
         
         if success {
             onSave()
             onDismiss()
+        } else {
+            // Show error, stay on confirmation view
+            showDeleteConfirmation = false
         }
     }
 }

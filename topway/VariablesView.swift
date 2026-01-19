@@ -23,6 +23,7 @@ struct VariablesView: View {
     let service: Service
     let project: Project
     let onDismiss: () -> Void
+    let onDeleteService: () async -> Void
     
     @State private var variables: [EnvironmentVariable] = []
     @State private var isLoading = true
@@ -65,6 +66,9 @@ struct VariablesView: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
+                    },
+                    onDeleteService: {
+                        await onDeleteService()
                     }
                 )
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -197,16 +201,38 @@ struct VariablesView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if variables.isEmpty {
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 Spacer()
-                Image(systemName: "key")
-                    .font(.system(size: 32))
+                Image(systemName: "key.fill")
+                    .font(.system(size: 36))
                     .foregroundStyle(.tertiary)
-                Text("No Variables")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("This service has no environment variables.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                
+                VStack(spacing: 4) {
+                    Text("No Variables")
+                        .font(.system(size: 14, weight: .semibold))
+                    
+                    Text("Add environment variables to configure your service.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                }
+                
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        currentDestination = .edit(nil)
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 10))
+                        Text("Add Variable")
+                            .font(.system(size: 12))
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -527,7 +553,7 @@ struct IconButton: View {
         ])
     )
     
-    VariablesView(service: mockService, project: mockProject, onDismiss: {})
+    VariablesView(service: mockService, project: mockProject, onDismiss: {}, onDeleteService: { })
         .environment(AppState())
         .frame(width: 320, height: 400)
 }
