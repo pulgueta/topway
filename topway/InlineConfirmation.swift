@@ -6,6 +6,7 @@ import SwiftUI
 /// separate window and steal key focus — that causes the `MenuBarExtra(.window)`
 /// popover to dismiss itself out from under the dialog. Staying inline keeps
 /// everything inside the popover.
+@MainActor
 struct InlineConfirmation: View {
     let title: String
     let message: String

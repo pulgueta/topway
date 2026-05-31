@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 enum NavigationDestination: Equatable {
     case main
     case addService(projectId: String, projectName: String)
@@ -19,6 +20,7 @@ enum NavigationDestination: Equatable {
     }
 }
 
+@MainActor
 struct MainView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openURL) private var openURL
@@ -378,6 +380,7 @@ struct MainView: View {
 
 // MARK: - Toolbar Button
 
+@MainActor
 struct ToolbarButton: View {
     let icon: String?
     var isLoading: Bool = false
@@ -422,6 +425,7 @@ struct ToolbarButton: View {
 /// Opens the native Settings scene from the menu bar popover. Uses `SettingsLink`
 /// rather than the `openSettings` environment action, which silently fails when
 /// invoked from inside a `MenuBarExtra(.window)`.
+@MainActor
 struct SettingsButton: View {
     @State private var isHovered = false
 

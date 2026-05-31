@@ -8,6 +8,7 @@
 import SwiftUI
 
 @main
+@MainActor
 struct TopwayApp: App {
     @State private var appState = AppState()
 

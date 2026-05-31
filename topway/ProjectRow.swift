@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Service Row
 
+@MainActor
 struct ServiceRow: View {
     let service: Service
     let onTap: () -> Void
@@ -62,6 +63,7 @@ struct ServiceRow: View {
 
 // MARK: - Project Row
 
+@MainActor
 struct ProjectRow: View {
     let project: Project
     let onAddService: () -> Void

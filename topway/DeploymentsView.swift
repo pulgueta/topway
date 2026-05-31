@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct DeploymentsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openURL) private var openURL
@@ -254,6 +255,7 @@ struct DeploymentsView: View {
 
 // MARK: - Deployment Row
 
+@MainActor
 struct DeploymentRow: View {
     let deployment: Deployment
     let isRestarting: Bool
@@ -333,6 +335,7 @@ struct DeploymentRow: View {
 
 // MARK: - Delete Service Button
 
+@MainActor
 struct DeleteServiceButton: View {
     let action: () -> Void
 
@@ -363,6 +366,7 @@ struct DeleteServiceButton: View {
 
 // MARK: - Redeploy Button
 
+@MainActor
 struct RedeployButton: View {
     let isLoading: Bool
     let action: () -> Void
