@@ -230,7 +230,7 @@ struct VariablesView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
                 
                 Spacer()
@@ -299,13 +299,12 @@ struct VariablesView: View {
     }
     
     private func copyToClipboard(_ variable: EnvironmentVariable) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(variable.value, forType: .string)
-        
+        Self.writeConcealed(variable.value)
+
         withAnimation(.easeInOut(duration: 0.2)) {
             copiedVariable = variable.name
         }
-        
+
         Task {
             try? await Task.sleep(for: .seconds(2))
             withAnimation(.easeInOut(duration: 0.2)) {
@@ -315,14 +314,24 @@ struct VariablesView: View {
             }
         }
     }
-    
+
     private func copyAllToClipboard() {
         let content = variables
             .map { "\($0.name)=\($0.value)" }
             .joined(separator: "\n")
-        
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(content, forType: .string)
+
+        Self.writeConcealed(content)
+    }
+
+    /// Writes a secret to the pasteboard, marking it `org.nspasteboard.ConcealedType`
+    /// so clipboard-history managers skip persisting it, while still pasting as
+    /// plain text everywhere else.
+    private static func writeConcealed(_ string: String) {
+        let pasteboard = NSPasteboard.general
+        let concealed = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+        pasteboard.clearContents()
+        pasteboard.setString(string, forType: .string)
+        pasteboard.setString(string, forType: concealed)
     }
 }
 
@@ -351,6 +360,7 @@ struct BackButton: View {
                 isHovered = hovering
             }
         }
+        .accessibilityLabel("Back")
     }
 }
 
@@ -469,7 +479,7 @@ struct VariableRow: View {
             RoundedRectangle(cornerRadius: 6)
                 .fill(isHovered ? Color.primary.opacity(0.04) : Color.clear)
         )
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
@@ -539,6 +549,7 @@ struct IconButton: View {
             }
         }
         .help(help)
+        .accessibilityLabel(help)
     }
 }
 

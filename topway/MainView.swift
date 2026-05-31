@@ -2,13 +2,12 @@ import SwiftUI
 
 enum NavigationDestination: Equatable {
     case main
-    case settings
     case addService(projectId: String, projectName: String)
     case variables(service: Service, project: Project)
-    
+
     static func == (lhs: NavigationDestination, rhs: NavigationDestination) -> Bool {
         switch (lhs, rhs) {
-        case (.main, .main), (.settings, .settings):
+        case (.main, .main):
             return true
         case let (.addService(lhsId, lhsName), .addService(rhsId, rhsName)):
             return lhsId == rhsId && lhsName == rhsName
@@ -22,6 +21,7 @@ enum NavigationDestination: Equatable {
 
 struct MainView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
     @State private var currentView: NavigationDestination = .main
     
     var body: some View {
@@ -30,13 +30,6 @@ struct MainView: View {
             case .main:
                 mainContent
                     .transition(.opacity)
-            case .settings:
-                SettingsView(onDismiss: { 
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .main 
-                    }
-                })
-                .transition(.move(edge: .trailing).combined(with: .opacity))
             case .addService(let projectId, let projectName):
                 AddServiceView(
                     projectId: projectId,
@@ -58,9 +51,10 @@ struct MainView: View {
                         }
                     },
                     onDeleteService: {
-                        _ = await appState.deleteService(serviceId: service.id)
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main
+                        if await appState.deleteService(serviceId: service.id) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentView = .main
+                            }
                         }
                     }
                 )
@@ -78,19 +72,10 @@ struct MainView: View {
             switch currentView {
             case .main:
                 break // Do nothing on main view
-            case .settings, .addService, .variables:
+            case .addService, .variables:
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .main
                 }
-            }
-        }
-        // Listen for settings toggle from menu command
-        .onChange(of: appState.showingSettings) { _, newValue in
-            if newValue && currentView == .main {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
-                appState.showingSettings = false
             }
         }
     }
@@ -130,11 +115,7 @@ struct MainView: View {
             
             Spacer()
             
-            ToolbarButton(icon: "gearshape", help: "Settings") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
-            }
+            SettingsButton()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -161,12 +142,10 @@ struct MainView: View {
                     .padding(.horizontal, 24)
             }
             
-            Button("Open Settings") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
+            SettingsLink {
+                Text("Open Settings")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.regular)
             
             Spacer()
@@ -213,7 +192,7 @@ struct MainView: View {
             Button("Retry") {
                 Task { await appState.loadProjects() }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.regular)
             
             Spacer()
@@ -266,9 +245,7 @@ struct MainView: View {
                                     }
                                 },
                                 onDeleteProject: {
-                                    Task {
-                                        await appState.deleteProject(projectId: project.id)
-                                    }
+                                    _ = await appState.deleteProject(projectId: project.id)
                                 },
                                 onServiceTap: { service in
                                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -321,14 +298,10 @@ struct MainView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
                 
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .settings
-                    }
-                } label: {
+                SettingsLink {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
                             .font(.system(size: 10))
@@ -395,10 +368,10 @@ struct MainView: View {
     }
     
     // MARK: - Helpers
-    
+
     private func openRailwayDashboard() {
         if let url = URL(string: "https://railway.app/new") {
-            NSWorkspace.shared.open(url)
+            openURL(url)
         }
     }
 }
@@ -440,6 +413,38 @@ struct ToolbarButton: View {
             }
         }
         .help(help)
+        .accessibilityLabel(help)
+    }
+}
+
+// MARK: - Settings Button
+
+/// Opens the native Settings scene from the menu bar popover. Uses `SettingsLink`
+/// rather than the `openSettings` environment action, which silently fails when
+/// invoked from inside a `MenuBarExtra(.window)`.
+struct SettingsButton: View {
+    @State private var isHovered = false
+
+    var body: some View {
+        SettingsLink {
+            Image(systemName: "gearshape")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(isHovered ? .primary : .secondary)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isHovered ? Color.primary.opacity(0.1) : Color.clear)
+                )
+                .contentShape(.rect(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
+        .help("Settings")
+        .accessibilityLabel("Settings")
     }
 }
 

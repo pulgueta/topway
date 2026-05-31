@@ -2,37 +2,38 @@ import SwiftUI
 
 struct DeploymentsView: View {
     @Environment(AppState.self) private var appState
-    
+    @Environment(\.openURL) private var openURL
+
     let service: Service
     let project: Project
     let environmentId: String
     let onDismiss: () -> Void
     let onDeleteService: () async -> Void
-    
+
     @State private var deployments: [Deployment] = []
     @State private var isLoading = true
     @State private var isRedeploying = false
     @State private var isDeleting = false
     @State private var showDeleteConfirmation = false
     @State private var restartingDeploymentId: String?
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
             headerView
-            
+
             Divider()
-            
+
             // Service Info
             serviceInfoView
-            
+
             Divider()
-            
+
             // Content
             contentView
-            
+
             Divider()
-            
+
             // Footer
             footerView
         }
@@ -40,20 +41,20 @@ struct DeploymentsView: View {
             await loadDeployments()
         }
     }
-    
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         HStack {
             BackButton { onDismiss() }
-            
+
             Spacer()
-            
+
             Text("Deployments")
                 .font(.system(size: 14, weight: .semibold))
-            
+
             Spacer()
-            
+
             // Refresh button
             if isLoading {
                 ProgressView()
@@ -72,20 +73,20 @@ struct DeploymentsView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
-    
+
     // MARK: - Service Info
-    
+
     private var serviceInfoView: some View {
         HStack(spacing: 8) {
             Image(systemName: "gearshape.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(.blue)
-            
+
             Text(service.name)
                 .font(.system(size: 13, weight: .medium))
-            
+
             Spacer()
-            
+
             Text(project.name)
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
@@ -93,9 +94,9 @@ struct DeploymentsView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
-    
+
     // MARK: - Content
-    
+
     @ViewBuilder
     private var contentView: some View {
         if isLoading {
@@ -115,18 +116,18 @@ struct DeploymentsView: View {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 36))
                     .foregroundStyle(.tertiary)
-                
+
                 VStack(spacing: 4) {
                     Text("No Deployments")
                         .font(.system(size: 14, weight: .semibold))
-                    
+
                     Text("Deploy your service to see deployment history here.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                 }
-                
+
                 Button {
                     Task { await triggerRedeploy() }
                 } label: {
@@ -137,10 +138,10 @@ struct DeploymentsView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
                 .disabled(isRedeploying)
-                
+
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -157,7 +158,7 @@ struct DeploymentsView: View {
                             onOpenURL: {
                                 if let urlString = deployment.staticUrl,
                                    let url = URL(string: "https://\(urlString)") {
-                                    NSWorkspace.shared.open(url)
+                                    openURL(url)
                                 }
                             }
                         )
@@ -167,72 +168,30 @@ struct DeploymentsView: View {
             }
         }
     }
-    
+
     // MARK: - Footer
-    
+
     private var footerView: some View {
-        VStack(spacing: 0) {
+        Group {
             if showDeleteConfirmation {
-                // Inline delete confirmation
-                VStack(spacing: 10) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.red)
-                        
-                        Text("Delete \"\(service.name)\"?")
-                            .font(.system(size: 12, weight: .medium))
-                        
-                        Spacer()
-                    }
-                    
-                    HStack(spacing: 8) {
-                        Button {
-                            showDeleteConfirmation = false
-                        } label: {
-                            Text("Cancel")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 5)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 5)
-                                        .fill(Color.primary.opacity(0.05))
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        
-                        Button {
+                InlineConfirmation(
+                    title: "Delete Service",
+                    message: "Delete \"\(service.name)\"? This permanently deletes the service and all its deployments.",
+                    isLoading: isDeleting,
+                    onConfirm: {
+                        Task {
                             isDeleting = true
-                            Task {
-                                await onDeleteService()
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                if isDeleting {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .scaleEffect(0.6)
-                                }
-                                Text("Delete")
-                                    .font(.system(size: 11, weight: .medium))
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(Color.red)
-                            )
+                            await onDeleteService()
+                            // On success this view is torn down as MainView
+                            // navigates home; on failure, reset so the user
+                            // isn't stuck on "Deleting…".
+                            isDeleting = false
+                            showDeleteConfirmation = false
                         }
-                        .buttonStyle(.plain)
-                        .disabled(isDeleting)
+                    },
+                    onCancel: {
+                        showDeleteConfirmation = false
                     }
-                }
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.red.opacity(0.05))
                 )
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -241,14 +200,14 @@ struct DeploymentsView: View {
                     Text("\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")")
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
-                    
+
                     Spacer()
-                    
+
                     // Delete service button
                     DeleteServiceButton {
                         showDeleteConfirmation = true
                     }
-                    
+
                     // Redeploy button
                     RedeployButton(isLoading: isRedeploying) {
                         Task { await triggerRedeploy() }
@@ -260,9 +219,9 @@ struct DeploymentsView: View {
             }
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func loadDeployments() async {
         isLoading = true
         deployments = await appState.fetchDeployments(
@@ -272,7 +231,7 @@ struct DeploymentsView: View {
         )
         isLoading = false
     }
-    
+
     private func restartDeployment(_ deployment: Deployment) async {
         restartingDeploymentId = deployment.id
         _ = await appState.restartDeployment(deploymentId: deployment.id)
@@ -280,7 +239,7 @@ struct DeploymentsView: View {
         // Reload deployments to see updated status
         await loadDeployments()
     }
-    
+
     private func triggerRedeploy() async {
         isRedeploying = true
         _ = await appState.redeployService(
@@ -300,40 +259,40 @@ struct DeploymentRow: View {
     let isRestarting: Bool
     let onRestart: () -> Void
     let onOpenURL: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     private var statusColor: Color {
         switch deployment.statusColor {
-        case "green": return .green
-        case "yellow": return .yellow
-        case "red": return .red
-        case "purple": return .purple
-        default: return .gray
+        case "green": .green
+        case "yellow": .yellow
+        case "red": .red
+        case "purple": .purple
+        default: .gray
         }
     }
-    
+
     var body: some View {
         HStack(spacing: 10) {
             // Status indicator
             Circle()
                 .fill(statusColor)
                 .frame(width: 8, height: 8)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 // Status
                 Text(deployment.statusDisplay)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
-                
+
                 // Date
                 Text(deployment.formattedDate)
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
             }
-            
+
             Spacer()
-            
+
             // Actions
             HStack(spacing: 4) {
                 // Open URL (if available)
@@ -342,7 +301,7 @@ struct DeploymentRow: View {
                         onOpenURL()
                     }
                 }
-                
+
                 // Restart button
                 if isRestarting {
                     ProgressView()
@@ -363,7 +322,7 @@ struct DeploymentRow: View {
             RoundedRectangle(cornerRadius: 6)
                 .fill(isHovered ? Color.primary.opacity(0.04) : Color.clear)
         )
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
@@ -376,9 +335,9 @@ struct DeploymentRow: View {
 
 struct DeleteServiceButton: View {
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
@@ -407,9 +366,9 @@ struct DeleteServiceButton: View {
 struct RedeployButton: View {
     let isLoading: Bool
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
@@ -451,7 +410,7 @@ struct RedeployButton: View {
             EnvironmentEdge(node: RailwayEnvironment(id: "env1", name: "production"))
         ])
     )
-    
+
     DeploymentsView(
         service: mockService,
         project: mockProject,
