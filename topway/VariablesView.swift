@@ -30,6 +30,8 @@ struct VariablesView: View {
     @State private var selectedEnvironmentId: String?
     @State private var copiedVariable: String?
     @State private var currentDestination: VariablesViewDestination = .list
+    @State private var showDeleteServiceConfirmation = false
+    @State private var isDeletingService = false
     
     private var environments: [RailwayEnvironment] {
         project.environmentList
@@ -66,9 +68,6 @@ struct VariablesView: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
-                    },
-                    onDeleteService: {
-                        await onDeleteService()
                     }
                 )
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -115,6 +114,25 @@ struct VariablesView: View {
             // Footer
             footerView
         }
+        .destructiveConfirmation(
+            isPresented: showDeleteServiceConfirmation,
+            title: "Delete Service",
+            message: "Delete \"\(service.name)\"? This permanently deletes the service and all its deployments.",
+            isLoading: isDeletingService,
+            onConfirm: {
+                Task {
+                    isDeletingService = true
+                    await onDeleteService()
+                    // On success MainView navigates home and tears this view
+                    // down; on failure, reset so the user isn't stuck.
+                    isDeletingService = false
+                    showDeleteServiceConfirmation = false
+                }
+            },
+            onCancel: {
+                showDeleteServiceConfirmation = false
+            }
+        )
     }
     
     // MARK: - Header
@@ -122,14 +140,17 @@ struct VariablesView: View {
     private var headerView: some View {
         HStack {
             BackButton { onDismiss() }
-            
+
             Spacer()
-            
+
             Text("Variables")
                 .font(.system(size: 14, weight: .semibold))
-            
+
             Spacer()
-            
+
+            // Service actions (Deployments, Redeploy, Delete)
+            serviceMenu
+
             // Add variable button
             IconButton(icon: "plus", help: "Add variable") {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -139,6 +160,42 @@ struct VariablesView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+    }
+
+    // MARK: - Service Menu
+
+    private var serviceMenu: some View {
+        Menu {
+            Button("Deployments", systemImage: "arrow.triangle.2.circlepath") {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentDestination = .deployments
+                }
+            }
+
+            Button("Redeploy", systemImage: "arrow.counterclockwise") {
+                Task { await redeployService() }
+            }
+
+            Divider()
+
+            Button("Delete Service…", systemImage: "trash", role: .destructive) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showDeleteServiceConfirmation = true
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .contentShape(.rect(cornerRadius: 6))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Service actions")
+        .accessibilityLabel("Service actions")
     }
     
     // MARK: - Service Info
@@ -266,16 +323,9 @@ struct VariablesView: View {
             Text("\(variables.count) variable\(variables.count == 1 ? "" : "s")")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
-            
+
             Spacer()
-            
-            // Deployments button
-            DeploymentsButton {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentDestination = .deployments
-                }
-            }
-            
+
             if !variables.isEmpty {
                 CopyAllButton { copyAllToClipboard() }
             }
@@ -296,6 +346,18 @@ struct VariablesView: View {
             serviceId: service.id
         )
         isLoading = false
+    }
+
+    /// Triggers a redeploy, then jumps to the Deployments screen so the user
+    /// can see the new deployment appear.
+    private func redeployService() async {
+        guard let envId = selectedEnvironmentId else { return }
+        let didStart = await appState.redeployService(environmentId: envId, serviceId: service.id)
+        if didStart {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                currentDestination = .deployments
+            }
+        }
     }
     
     private func copyToClipboard(_ variable: EnvironmentVariable) {
@@ -480,38 +542,6 @@ struct VariableRow: View {
                 .fill(isHovered ? Color.primary.opacity(0.04) : Color.clear)
         )
         .contentShape(.rect)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-    }
-}
-
-// MARK: - Deployments Button
-
-struct DeploymentsButton: View {
-    let action: () -> Void
-    
-    @State private var isHovered = false
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 10))
-                Text("Deploys")
-                    .font(.system(size: 11))
-            }
-            .foregroundStyle(isHovered ? .primary : .secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color.primary.opacity(0.1) : Color.clear)
-            )
-        }
-        .buttonStyle(.plain)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering

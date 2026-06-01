@@ -24,13 +24,26 @@ enum NavigationDestination: Equatable {
 struct MainView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openURL) private var openURL
+    @Environment(\.openSettings) private var openSettings
     @State private var currentView: NavigationDestination = .main
+    @State private var projectPendingDeletion: Project?
+    @State private var isDeletingProject = false
     
     var body: some View {
         ZStack {
             switch currentView {
             case .main:
                 mainContent
+                    .destructiveConfirmation(
+                        isPresented: projectPendingDeletion != nil,
+                        title: "Delete Project",
+                        message: projectPendingDeletion.map {
+                            "Delete \"\($0.name)\"? This permanently deletes all services, deployments, and data."
+                        } ?? "",
+                        isLoading: isDeletingProject,
+                        onConfirm: { deletePendingProject() },
+                        onCancel: { projectPendingDeletion = nil }
+                    )
                     .transition(.opacity)
             case .addService(let projectId, let projectName):
                 AddServiceView(
@@ -144,8 +157,8 @@ struct MainView: View {
                     .padding(.horizontal, 24)
             }
             
-            SettingsLink {
-                Text("Open Settings")
+            Button("Open Settings") {
+                openAppSettings(fallback: openSettings)
             }
             .buttonStyle(.glassProminent)
             .controlSize(.regular)
@@ -246,8 +259,8 @@ struct MainView: View {
                                         currentView = .addService(projectId: project.id, projectName: project.name)
                                     }
                                 },
-                                onDeleteProject: {
-                                    _ = await appState.deleteProject(projectId: project.id)
+                                onRequestDelete: {
+                                    projectPendingDeletion = project
                                 },
                                 onServiceTap: { service in
                                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -303,7 +316,9 @@ struct MainView: View {
                 .buttonStyle(.glassProminent)
                 .controlSize(.small)
                 
-                SettingsLink {
+                Button {
+                    openAppSettings(fallback: openSettings)
+                } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
                             .font(.system(size: 10))
@@ -376,6 +391,18 @@ struct MainView: View {
             openURL(url)
         }
     }
+
+    private func deletePendingProject() {
+        guard let project = projectPendingDeletion else { return }
+        Task {
+            isDeletingProject = true
+            _ = await appState.deleteProject(projectId: project.id)
+            // On success the refreshed project list drops the row; either way,
+            // dismiss the dialog.
+            isDeletingProject = false
+            projectPendingDeletion = nil
+        }
+    }
 }
 
 // MARK: - Toolbar Button
@@ -417,38 +444,6 @@ struct ToolbarButton: View {
         }
         .help(help)
         .accessibilityLabel(help)
-    }
-}
-
-// MARK: - Settings Button
-
-/// Opens the native Settings scene from the menu bar popover. Uses `SettingsLink`
-/// rather than the `openSettings` environment action, which silently fails when
-/// invoked from inside a `MenuBarExtra(.window)`.
-@MainActor
-struct SettingsButton: View {
-    @State private var isHovered = false
-
-    var body: some View {
-        SettingsLink {
-            Image(systemName: "gearshape")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isHovered ? .primary : .secondary)
-                .frame(width: 24, height: 24)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isHovered ? Color.primary.opacity(0.1) : Color.clear)
-                )
-                .contentShape(.rect(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-        .help("Settings")
-        .accessibilityLabel("Settings")
     }
 }
 

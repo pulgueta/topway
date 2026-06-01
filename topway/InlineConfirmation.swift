@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// Inline destructive-action confirmation.
+/// A destructive-action confirmation presented as a floating Liquid Glass dialog
+/// over a dimmed backdrop, layered inside the current view.
 ///
 /// Used instead of the native `confirmationDialog`/`alert`, which present in a
-/// separate window and steal key focus — that causes the `MenuBarExtra(.window)`
-/// popover to dismiss itself out from under the dialog. Staying inline keeps
-/// everything inside the popover.
+/// separate window and steal key focus — that dismisses the `MenuBarExtra(.window)`
+/// popover out from under the dialog. Layering the dialog inside the popover keeps
+/// it open. Present it with the `destructiveConfirmation(...)` modifier, attached
+/// to a view that fills the popover so the backdrop covers the whole surface.
 @MainActor
-struct InlineConfirmation: View {
+struct GlassConfirmationDialog: View {
     let title: String
     let message: String
     var confirmLabel: String = "Delete"
@@ -16,14 +18,30 @@ struct InlineConfirmation: View {
     let onCancel: () -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
+        ZStack {
+            // Dimmed backdrop; tapping outside cancels (unless mid-action).
+            Rectangle()
+                .fill(.black.opacity(0.3))
+                .ignoresSafeArea()
+                .contentShape(.rect)
+                .onTapGesture {
+                    if !isLoading { onCancel() }
+                }
+
+            card
+                .padding(28)
+        }
+    }
+
+    private var card: some View {
+        VStack(spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 14))
+                    .font(.system(size: 15))
                     .foregroundStyle(.red)
 
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
 
                 Spacer()
             }
@@ -34,10 +52,10 @@ struct InlineConfirmation: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Button("Cancel", action: onCancel)
                     .buttonStyle(.bordered)
-                    .controlSize(.regular)
+                    .controlSize(.large)
                     .frame(maxWidth: .infinity)
                     .disabled(isLoading)
 
@@ -54,29 +72,57 @@ struct InlineConfirmation: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
-                .controlSize(.regular)
+                .controlSize(.large)
                 .disabled(isLoading)
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.red.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.red.opacity(0.25), lineWidth: 1)
+        .padding(18)
+        .frame(maxWidth: 264)
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+    }
+}
+
+extension View {
+    /// Presents a floating Liquid Glass destructive-confirmation dialog over this
+    /// view. Attach to a view that fills the popover so the dimmed backdrop covers
+    /// the whole surface.
+    func destructiveConfirmation(
+        isPresented: Bool,
+        title: String,
+        message: String,
+        confirmLabel: String = "Delete",
+        isLoading: Bool = false,
+        onConfirm: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) -> some View {
+        overlay {
+            if isPresented {
+                GlassConfirmationDialog(
+                    title: title,
+                    message: message,
+                    confirmLabel: confirmLabel,
+                    isLoading: isLoading,
+                    onConfirm: onConfirm,
+                    onCancel: onCancel
                 )
-        )
+                .transition(.scale(scale: 0.96).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isPresented)
     }
 }
 
 #Preview {
-    InlineConfirmation(
+    VStack {
+        Text("Background content")
+        Spacer()
+    }
+    .frame(width: 320, height: 400)
+    .destructiveConfirmation(
+        isPresented: true,
         title: "Delete Project",
         message: "Delete \"My Project\"? This permanently deletes all services, deployments, and data.",
         onConfirm: {},
         onCancel: {}
     )
-    .padding()
-    .frame(width: 320)
 }

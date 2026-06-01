@@ -9,13 +9,10 @@ struct DeploymentsView: View {
     let project: Project
     let environmentId: String
     let onDismiss: () -> Void
-    let onDeleteService: () async -> Void
 
     @State private var deployments: [Deployment] = []
     @State private var isLoading = true
     @State private var isRedeploying = false
-    @State private var isDeleting = false
-    @State private var showDeleteConfirmation = false
     @State private var restartingDeploymentId: String?
 
     var body: some View {
@@ -173,52 +170,21 @@ struct DeploymentsView: View {
     // MARK: - Footer
 
     private var footerView: some View {
-        Group {
-            if showDeleteConfirmation {
-                InlineConfirmation(
-                    title: "Delete Service",
-                    message: "Delete \"\(service.name)\"? This permanently deletes the service and all its deployments.",
-                    isLoading: isDeleting,
-                    onConfirm: {
-                        Task {
-                            isDeleting = true
-                            await onDeleteService()
-                            // On success this view is torn down as MainView
-                            // navigates home; on failure, reset so the user
-                            // isn't stuck on "Deleting…".
-                            isDeleting = false
-                            showDeleteConfirmation = false
-                        }
-                    },
-                    onCancel: {
-                        showDeleteConfirmation = false
-                    }
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            } else {
-                HStack {
-                    Text("\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
+        HStack {
+            Text("\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
 
-                    Spacer()
+            Spacer()
 
-                    // Delete service button
-                    DeleteServiceButton {
-                        showDeleteConfirmation = true
-                    }
-
-                    // Redeploy button
-                    RedeployButton(isLoading: isRedeploying) {
-                        Task { await triggerRedeploy() }
-                    }
-                    .disabled(isRedeploying)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+            // Redeploy button
+            RedeployButton(isLoading: isRedeploying) {
+                Task { await triggerRedeploy() }
             }
+            .disabled(isRedeploying)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Actions
@@ -333,37 +299,6 @@ struct DeploymentRow: View {
     }
 }
 
-// MARK: - Delete Service Button
-
-@MainActor
-struct DeleteServiceButton: View {
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "trash")
-                    .font(.system(size: 10))
-                Text("Delete")
-                    .font(.system(size: 11))
-            }
-            .foregroundStyle(isHovered ? .red : .secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color.red.opacity(0.1) : Color.clear)
-            )
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-    }
-}
-
 // MARK: - Redeploy Button
 
 @MainActor
@@ -419,8 +354,7 @@ struct RedeployButton: View {
         service: mockService,
         project: mockProject,
         environmentId: "env1",
-        onDismiss: {},
-        onDeleteService: { }
+        onDismiss: {}
     )
     .environment(AppState())
     .frame(width: 320, height: 400)

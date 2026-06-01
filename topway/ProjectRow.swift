@@ -67,44 +67,20 @@ struct ServiceRow: View {
 struct ProjectRow: View {
     let project: Project
     let onAddService: () -> Void
-    let onDeleteProject: () async -> Void
+    let onRequestDelete: () -> Void
     let onServiceTap: (Service) -> Void
 
     @State private var isExpanded = true
     @State private var isHeaderHovered = false
     @State private var isAddHovered = false
     @State private var isDeleteHovered = false
-    @State private var showDeleteConfirmation = false
-    @State private var isDeleting = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            if showDeleteConfirmation {
-                InlineConfirmation(
-                    title: "Delete Project",
-                    message: "Delete \"\(project.name)\"? This permanently deletes all services, deployments, and data.",
-                    isLoading: isDeleting,
-                    onConfirm: {
-                        Task {
-                            isDeleting = true
-                            await onDeleteProject()
-                            // If the delete failed the row is still here; reset so
-                            // the user isn't stuck on "Deleting…". On success this
-                            // row is removed by the refreshed project list.
-                            isDeleting = false
-                            showDeleteConfirmation = false
-                        }
-                    },
-                    onCancel: {
-                        showDeleteConfirmation = false
-                    }
-                )
-            } else {
-                projectHeader
+            projectHeader
 
-                if isExpanded {
-                    servicesList
-                }
+            if isExpanded {
+                servicesList
             }
         }
         .padding(.vertical, 4)
@@ -173,7 +149,7 @@ struct ProjectRow: View {
 
             // Delete Project Button
             Button {
-                showDeleteConfirmation = true
+                onRequestDelete()
             } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 11, weight: .medium))
@@ -241,7 +217,7 @@ struct ProjectRow: View {
         ProjectRow(
             project: mockProject,
             onAddService: {},
-            onDeleteProject: {},
+            onRequestDelete: {},
             onServiceTap: { _ in }
         )
     }

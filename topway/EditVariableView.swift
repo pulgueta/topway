@@ -31,30 +31,11 @@ struct EditVariableView: View {
 
             Divider()
 
-            if showDeleteConfirmation {
-                VStack(spacing: 0) {
-                    InlineConfirmation(
-                        title: "Delete Variable",
-                        message: "Delete \"\(name)\"? This action cannot be undone.",
-                        isLoading: isDeleting,
-                        onConfirm: {
-                            Task { await deleteVariable() }
-                        },
-                        onCancel: {
-                            showDeleteConfirmation = false
-                        }
-                    )
-                    .padding(16)
+            formView
 
-                    Spacer()
-                }
-            } else {
-                formView
+            Divider()
 
-                Divider()
-
-                footerView
-            }
+            footerView
         }
         .onAppear {
             if let variable = existingVariable {
@@ -62,6 +43,18 @@ struct EditVariableView: View {
                 value = variable.value
             }
         }
+        .destructiveConfirmation(
+            isPresented: showDeleteConfirmation,
+            title: "Delete Variable",
+            message: "Delete \"\(name)\"? This action cannot be undone.",
+            isLoading: isDeleting,
+            onConfirm: {
+                Task { await deleteVariable() }
+            },
+            onCancel: {
+                showDeleteConfirmation = false
+            }
+        )
     }
 
     // MARK: - Form View
