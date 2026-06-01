@@ -34,6 +34,10 @@ struct ProjectEdge: Decodable {
 struct Project: Identifiable, Decodable, Hashable {
     let id: String
     let name: String
+    /// Set when Railway has soft-deleted or scheduled the project for deletion
+    /// (it keeps returning the project for a while). Used to filter it out of
+    /// the UI. Undocumented field, confirmed present on the live schema.
+    var deletedAt: String? = nil
     let services: ServiceConnection
     let environments: EnvironmentConnection
 }
@@ -130,25 +134,28 @@ struct Deployment: Identifiable, Decodable, Hashable {
     
     var statusDisplay: String {
         switch status.lowercased() {
-        case "success": return "Running"
-        case "building": return "Building"
-        case "deploying": return "Deploying"
-        case "failed": return "Failed"
-        case "crashed": return "Crashed"
-        case "removed": return "Removed"
-        case "sleeping": return "Sleeping"
-        default: return status.capitalized
+        case "success": "Running"
+        case "building": "Building"
+        case "deploying": "Deploying"
+        case "failed": "Failed"
+        case "crashed": "Crashed"
+        case "removed": "Removed"
+        case "sleeping": "Sleeping"
+        case "queued": "Queued"
+        case "waiting": "Waiting"
+        case "skipped": "Skipped"
+        default: status.capitalized
         }
     }
     
     var statusColor: String {
         switch status.lowercased() {
-        case "success": return "green"
-        case "building", "deploying": return "yellow"
-        case "failed", "crashed": return "red"
-        case "removed": return "gray"
-        case "sleeping": return "purple"
-        default: return "gray"
+        case "success": "green"
+        case "building", "deploying", "queued", "waiting": "yellow"
+        case "failed", "crashed": "red"
+        case "removed", "skipped": "gray"
+        case "sleeping": "purple"
+        default: "gray"
         }
     }
     
@@ -215,7 +222,9 @@ extension Project {
 }
 
 extension Workspace {
+    /// Projects excluding any that Railway has flagged deleted or pending
+    /// deletion (`deletedAt` set) — those should not appear in the UI.
     var projectList: [Project] {
-        projects.edges.map { $0.node }
+        projects.edges.map(\.node).filter { $0.deletedAt == nil }
     }
 }

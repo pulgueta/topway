@@ -8,9 +8,10 @@
 import SwiftUI
 
 @main
+@MainActor
 struct TopwayApp: App {
     @State private var appState = AppState()
-    
+
     var body: some Scene {
         MenuBarExtra("Topway", systemImage: "tram.fill") {
             MainView()
@@ -21,13 +22,6 @@ struct TopwayApp: App {
         }
         .menuBarExtraStyle(.window)
         .commands {
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings...") {
-                    appState.showingSettings = true
-                }
-                .keyboardShortcut(",", modifiers: .command)
-            }
-            
             CommandGroup(after: .appInfo) {
                 Button("Refresh Projects") {
                     Task { await appState.loadProjects() }
@@ -35,6 +29,12 @@ struct TopwayApp: App {
                 .keyboardShortcut("r", modifiers: .command)
                 .disabled(!appState.isConfigured || appState.isLoading)
             }
+        }
+
+        // Native preferences window (⌘, is added automatically).
+        Settings {
+            SettingsView()
+                .environment(appState)
         }
     }
 }

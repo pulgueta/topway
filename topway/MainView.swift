@@ -1,14 +1,14 @@
 import SwiftUI
 
+@MainActor
 enum NavigationDestination: Equatable {
     case main
-    case settings
     case addService(projectId: String, projectName: String)
     case variables(service: Service, project: Project)
-    
+
     static func == (lhs: NavigationDestination, rhs: NavigationDestination) -> Bool {
         switch (lhs, rhs) {
-        case (.main, .main), (.settings, .settings):
+        case (.main, .main):
             return true
         case let (.addService(lhsId, lhsName), .addService(rhsId, rhsName)):
             return lhsId == rhsId && lhsName == rhsName
@@ -20,23 +20,31 @@ enum NavigationDestination: Equatable {
     }
 }
 
+@MainActor
 struct MainView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
+    @Environment(\.openSettings) private var openSettings
     @State private var currentView: NavigationDestination = .main
+    @State private var projectPendingDeletion: Project?
+    @State private var isDeletingProject = false
     
     var body: some View {
         ZStack {
             switch currentView {
             case .main:
                 mainContent
+                    .destructiveConfirmation(
+                        isPresented: projectPendingDeletion != nil,
+                        title: "Delete Project",
+                        message: projectPendingDeletion.map {
+                            "Delete \"\($0.name)\"? This permanently deletes all services, deployments, and data."
+                        } ?? "",
+                        isLoading: isDeletingProject,
+                        onConfirm: { deletePendingProject() },
+                        onCancel: { projectPendingDeletion = nil }
+                    )
                     .transition(.opacity)
-            case .settings:
-                SettingsView(onDismiss: { 
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .main 
-                    }
-                })
-                .transition(.move(edge: .trailing).combined(with: .opacity))
             case .addService(let projectId, let projectName):
                 AddServiceView(
                     projectId: projectId,
@@ -58,9 +66,10 @@ struct MainView: View {
                         }
                     },
                     onDeleteService: {
-                        _ = await appState.deleteService(serviceId: service.id)
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main
+                        if await appState.deleteService(serviceId: service.id) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentView = .main
+                            }
                         }
                     }
                 )
@@ -78,19 +87,10 @@ struct MainView: View {
             switch currentView {
             case .main:
                 break // Do nothing on main view
-            case .settings, .addService, .variables:
+            case .addService, .variables:
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .main
                 }
-            }
-        }
-        // Listen for settings toggle from menu command
-        .onChange(of: appState.showingSettings) { _, newValue in
-            if newValue && currentView == .main {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
-                appState.showingSettings = false
             }
         }
     }
@@ -130,11 +130,7 @@ struct MainView: View {
             
             Spacer()
             
-            ToolbarButton(icon: "gearshape", help: "Settings") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
-            }
+            SettingsButton()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -162,11 +158,9 @@ struct MainView: View {
             }
             
             Button("Open Settings") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
+                openAppSettings(fallback: openSettings)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.regular)
             
             Spacer()
@@ -213,7 +207,7 @@ struct MainView: View {
             Button("Retry") {
                 Task { await appState.loadProjects() }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.regular)
             
             Spacer()
@@ -265,10 +259,8 @@ struct MainView: View {
                                         currentView = .addService(projectId: project.id, projectName: project.name)
                                     }
                                 },
-                                onDeleteProject: {
-                                    Task {
-                                        await appState.deleteProject(projectId: project.id)
-                                    }
+                                onRequestDelete: {
+                                    projectPendingDeletion = project
                                 },
                                 onServiceTap: { service in
                                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -321,13 +313,11 @@ struct MainView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
                 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .settings
-                    }
+                    openAppSettings(fallback: openSettings)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
@@ -395,16 +385,29 @@ struct MainView: View {
     }
     
     // MARK: - Helpers
-    
+
     private func openRailwayDashboard() {
         if let url = URL(string: "https://railway.app/new") {
-            NSWorkspace.shared.open(url)
+            openURL(url)
+        }
+    }
+
+    private func deletePendingProject() {
+        guard let project = projectPendingDeletion else { return }
+        Task {
+            isDeletingProject = true
+            _ = await appState.deleteProject(projectId: project.id)
+            // On success the refreshed project list drops the row; either way,
+            // dismiss the dialog.
+            isDeletingProject = false
+            projectPendingDeletion = nil
         }
     }
 }
 
 // MARK: - Toolbar Button
 
+@MainActor
 struct ToolbarButton: View {
     let icon: String?
     var isLoading: Bool = false
@@ -440,6 +443,7 @@ struct ToolbarButton: View {
             }
         }
         .help(help)
+        .accessibilityLabel(help)
     }
 }
 

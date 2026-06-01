@@ -1,201 +1,87 @@
 import SwiftUI
 
+/// Preferences pane, presented in the native `Settings` scene (⌘,).
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
-    
-    let onDismiss: () -> Void
-    
-    @State private var token: String = ""
-    @State private var workspace: String = ""
-    @State private var autoRefreshEnabled: Bool = false
-    @State private var refreshIntervalIndex: Int = 1 // Default 30 seconds
-    
+
+    // Edited locally and applied on Save so we don't write the token to the
+    // Keychain on every keystroke.
+    @State private var token = ""
+    @State private var workspace = ""
+    @State private var hasLoaded = false
+    @State private var saveError: String?
+
     private let refreshIntervals: [(label: String, seconds: TimeInterval)] = [
         ("15 seconds", 15),
         ("30 seconds", 30),
         ("1 minute", 60),
-        ("5 minutes", 300)
+        ("5 minutes", 300),
     ]
-    
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                BackButton { onDismiss() }
-                
-                Spacer()
-                
-                Text("Settings")
-                    .font(.system(size: 14, weight: .semibold))
-                
-                Spacer()
-                
-                Color.clear.frame(width: 24, height: 24)
+        @Bindable var appState = appState
+
+        Form {
+            Section {
+                SecureField("Railway API token", text: $token)
+                TextField("Workspace ID", text: $workspace)
+            } header: {
+                Text("Credentials")
+            } footer: {
+                Label(
+                    "Find your Workspace ID by pressing ⌘K in Railway and selecting \u{201C}Copy Active Workspace ID\u{201D}.",
+                    systemImage: "info.circle"
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            
-            Divider()
-            
-            // Content
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Token Field
-                    FormField(
-                        label: "API Token",
-                        placeholder: "Enter your Railway API token",
-                        text: $token,
-                        isSecure: true
-                    )
-                    
-                    // Workspace ID Field
-                    FormField(
-                        label: "Workspace ID",
-                        placeholder: "Enter your Workspace ID",
-                        text: $workspace
-                    )
-                    
-                    // Help Text
-                    HStack(spacing: 6) {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 11))
-                        Text("Find your Workspace ID by pressing Cmd+K in Railway and selecting 'Copy Active Workspace ID'")
-                            .font(.system(size: 11))
-                    }
-                    .foregroundStyle(.secondary)
-                    .padding(10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.primary.opacity(0.03))
-                    )
-                    
-                    Divider()
-                        .padding(.vertical, 4)
-                    
-                    // Auto Refresh Section
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Auto Refresh")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                        
-                        HStack {
-                            Text("Enable auto-refresh")
-                                .font(.system(size: 13))
-                            
-                            Spacer()
-                            
-                            Toggle("", isOn: $autoRefreshEnabled)
-                                .toggleStyle(.switch)
-                                .controlSize(.small)
-                                .labelsHidden()
-                        }
-                        
-                        if autoRefreshEnabled {
-                            HStack {
-                                Text("Refresh every")
-                                    .font(.system(size: 13))
-                                
-                                Spacer()
-                                
-                                Picker("", selection: $refreshIntervalIndex) {
-                                    ForEach(0..<refreshIntervals.count, id: \.self) { index in
-                                        Text(refreshIntervals[index].label).tag(index)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                                .labelsHidden()
-                            }
+
+            Section("Auto Refresh") {
+                Toggle("Enable auto-refresh", isOn: $appState.autoRefreshEnabled)
+
+                if appState.autoRefreshEnabled {
+                    Picker("Refresh every", selection: $appState.autoRefreshInterval) {
+                        ForEach(refreshIntervals, id: \.seconds) { interval in
+                            Text(interval.label).tag(interval.seconds)
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(16)
             }
-            
-            Divider()
-            
-            // Footer with Save Button
-            VStack {
-                Button {
-                    saveSettings()
-                } label: {
-                    Text("Save")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity)
+
+            Section {
+                Button("Save") {
+                    appState.workspaceId = workspace
+                    if appState.updateToken(token) {
+                        saveError = nil
+                        Task { await appState.loadProjects() }
+                    } else {
+                        saveError = "Couldn't save the token to the Keychain. Please try again."
+                    }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.large)
                 .disabled(token.isEmpty || workspace.isEmpty)
-            }
-            .padding(16)
-        }
-        .onAppear {
-            token = appState.railwayToken
-            workspace = appState.workspaceId
-            autoRefreshEnabled = appState.autoRefreshEnabled
-            // Find the matching interval index
-            if let index = refreshIntervals.firstIndex(where: { $0.seconds == appState.autoRefreshInterval }) {
-                refreshIntervalIndex = index
-            }
-        }
-    }
-    
-    private func saveSettings() {
-        appState.railwayToken = token
-        appState.workspaceId = workspace
-        appState.autoRefreshInterval = refreshIntervals[refreshIntervalIndex].seconds
-        appState.autoRefreshEnabled = autoRefreshEnabled
-        onDismiss()
-        
-        Task {
-            await appState.loadProjects()
-        }
-    }
-}
 
-// MARK: - Form Field
-
-struct FormField: View {
-    let label: String
-    let placeholder: String
-    @Binding var text: String
-    var isSecure: Bool = false
-    
-    @FocusState private var isFocused: Bool
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
-            
-            Group {
-                if isSecure {
-                    SecureField(placeholder, text: $text)
-                } else {
-                    TextField(placeholder, text: $text)
+                if let saveError {
+                    Label(saveError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
                 }
             }
-            .textFieldStyle(.plain)
-            .font(.system(size: 13))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.primary.opacity(0.04))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isFocused ? Color.accentColor : Color.primary.opacity(0.1), lineWidth: 1)
-            )
-            .focused($isFocused)
+        }
+        .formStyle(.grouped)
+        .scenePadding()
+        .frame(width: 420, height: 360)
+        .task {
+            guard !hasLoaded else { return }
+            token = appState.railwayToken
+            workspace = appState.workspaceId
+            hasLoaded = true
         }
     }
 }
 
 #Preview {
-    SettingsView(onDismiss: {})
+    SettingsView()
         .environment(AppState())
-        .frame(width: 320, height: 400)
 }

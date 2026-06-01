@@ -1,118 +1,15 @@
 import SwiftUI
 
-// MARK: - Inline Delete Confirmation
-
-struct InlineDeleteConfirmation: View {
-    let title: String
-    let message: String
-    var isLoading: Bool = false
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-    
-    @State private var isDeleteHovered = false
-    @State private var isCancelHovered = false
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            // Warning Icon and Title
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.red)
-                
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.primary)
-                
-                Spacer()
-                
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.8)
-                }
-            }
-            
-            // Message
-            Text(message)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            // Buttons
-            HStack(spacing: 8) {
-                // Cancel Button
-                Button {
-                    onCancel()
-                } label: {
-                    Text("Cancel")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(isCancelHovered ? .primary : .secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(isCancelHovered ? Color.primary.opacity(0.1) : Color.primary.opacity(0.05))
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-                .onHover { hovering in
-                    isCancelHovered = hovering
-                }
-                .disabled(isLoading)
-                
-                // Delete Button
-                Button {
-                    onConfirm()
-                } label: {
-                    HStack(spacing: 4) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                                .scaleEffect(0.7)
-                        }
-                        Text(isLoading ? "Deleting..." : "Delete")
-                            .font(.system(size: 12, weight: .medium))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(isLoading ? Color.red.opacity(0.6) : (isDeleteHovered ? Color.red.opacity(0.8) : Color.red))
-                    )
-                    .contentShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-                .onHover { hovering in
-                    isDeleteHovered = hovering
-                }
-                .disabled(isLoading)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.red.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
-                )
-        )
-    }
-}
-
 // MARK: - Service Row
 
+@MainActor
 struct ServiceRow: View {
     let service: Service
     let onTap: () -> Void
-    
+
     @State private var isHovered = false
     @State private var isPressed = false
-    
+
     var body: some View {
         Button {
             onTap()
@@ -121,14 +18,14 @@ struct ServiceRow: View {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(.blue)
-                
+
                 Text(service.name)
                     .font(.system(size: 13))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.tertiary)
@@ -153,7 +50,7 @@ struct ServiceRow: View {
                 .onEnded { _ in isPressed = false }
         )
     }
-    
+
     private var backgroundColor: Color {
         if isPressed {
             return Color.accentColor.opacity(0.2)
@@ -166,145 +63,140 @@ struct ServiceRow: View {
 
 // MARK: - Project Row
 
+@MainActor
 struct ProjectRow: View {
     let project: Project
     let onAddService: () -> Void
-    let onDeleteProject: () -> Void
+    let onRequestDelete: () -> Void
     let onServiceTap: (Service) -> Void
-    
+
     @State private var isExpanded = true
     @State private var isHeaderHovered = false
     @State private var isAddHovered = false
     @State private var isDeleteHovered = false
-    @State private var showDeleteConfirmation = false
-    @State private var isDeleting = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            if showDeleteConfirmation {
-                // Inline Delete Confirmation
-                InlineDeleteConfirmation(
-                    title: "Delete Project",
-                    message: "Delete \"\(project.name)\"? This will permanently delete all services, deployments, and data.",
-                    isLoading: isDeleting,
-                    onConfirm: {
-                        isDeleting = true
-                        onDeleteProject()
-                    },
-                    onCancel: {
-                        showDeleteConfirmation = false
-                    }
-                )
-            } else {
-                // Project Header
-                HStack(spacing: 0) {
-                    // Expand/Collapse + Project Name
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isExpanded.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(.tertiary)
-                                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                                .frame(width: 12)
-                            
-                            Image(systemName: "folder.fill")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.orange)
-                            
-                            Text(project.name)
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(isHeaderHovered ? Color.primary.opacity(0.06) : Color.clear)
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        isHeaderHovered = hovering
-                    }
-                    
-                    Spacer()
-                    
-                    // Add Service Button
-                    Button {
-                        onAddService()
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(isAddHovered ? .primary : .secondary)
-                            .frame(width: 24, height: 24)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(isAddHovered ? Color.primary.opacity(0.1) : Color.clear)
-                            )
-                            .contentShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        isAddHovered = hovering
-                    }
-                    
-                    // Delete Project Button
-                    Button {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(isDeleteHovered ? .red : .secondary)
-                            .frame(width: 24, height: 24)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(isDeleteHovered ? Color.red.opacity(0.1) : Color.clear)
-                            )
-                            .contentShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        isDeleteHovered = hovering
-                    }
-                }
-                
-                // Services List
-                if isExpanded {
-                    VStack(alignment: .leading, spacing: 2) {
-                        if project.serviceList.isEmpty {
-                            HStack(spacing: 6) {
-                                Image(systemName: "info.circle")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.tertiary)
-                                
-                                Text("No services")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .padding(.leading, 28)
-                            .padding(.vertical, 4)
-                        } else {
-                            ForEach(project.serviceList) { service in
-                                ServiceRow(
-                                    service: service,
-                                    onTap: {
-                                        onServiceTap(service)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+            projectHeader
+
+            if isExpanded {
+                servicesList
             }
         }
         .padding(.vertical, 4)
         .clipped()
+    }
+
+    // MARK: - Header
+
+    private var projectHeader: some View {
+        HStack(spacing: 0) {
+            // Expand/Collapse + Project Name
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                        .frame(width: 12)
+
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.orange)
+
+                    Text(project.name)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isHeaderHovered ? Color.primary.opacity(0.06) : Color.clear)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isHeaderHovered = hovering
+            }
+
+            Spacer()
+
+            // Add Service Button
+            Button(action: onAddService) {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(isAddHovered ? .primary : .secondary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(isAddHovered ? Color.primary.opacity(0.1) : Color.clear)
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isAddHovered = hovering
+            }
+            .help("Add service")
+            .accessibilityLabel("Add service")
+
+            // Delete Project Button
+            Button {
+                onRequestDelete()
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(isDeleteHovered ? .red : .secondary)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(isDeleteHovered ? Color.red.opacity(0.1) : Color.clear)
+                    )
+                    .contentShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                isDeleteHovered = hovering
+            }
+            .help("Delete project")
+            .accessibilityLabel("Delete project")
+        }
+    }
+
+    // MARK: - Services
+
+    private var servicesList: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if project.serviceList.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+
+                    Text("No services")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.leading, 28)
+                .padding(.vertical, 4)
+            } else {
+                ForEach(project.serviceList) { service in
+                    ServiceRow(
+                        service: service,
+                        onTap: {
+                            onServiceTap(service)
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -320,12 +212,12 @@ struct ProjectRow: View {
         ]),
         environments: EnvironmentConnection(edges: [])
     )
-    
+
     VStack {
         ProjectRow(
             project: mockProject,
             onAddService: {},
-            onDeleteProject: {},
+            onRequestDelete: {},
             onServiceTap: { _ in }
         )
     }
