@@ -32,6 +32,7 @@ struct VariablesView: View {
     @State private var currentDestination: VariablesViewDestination = .list
     @State private var showDeleteServiceConfirmation = false
     @State private var isDeletingService = false
+    @State private var isRedeploying = false
     
     private var environments: [RailwayEnvironment] {
         project.environmentList
@@ -83,6 +84,22 @@ struct VariablesView: View {
                 selectedEnvironmentId = firstEnv.id
             }
             await loadVariables()
+        }
+        // Escape navigates back through the sub-stack before dismissing the view.
+        .onExitCommand {
+            if showDeleteServiceConfirmation {
+                if !isDeletingService {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showDeleteServiceConfirmation = false
+                    }
+                }
+            } else if currentDestination != .list {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentDestination = .list
+                }
+            } else {
+                onDismiss()
+            }
         }
     }
     
@@ -175,6 +192,7 @@ struct VariablesView: View {
             Button("Redeploy", systemImage: "arrow.counterclockwise") {
                 Task { await redeployService() }
             }
+            .disabled(isRedeploying)
 
             Divider()
 
@@ -351,7 +369,9 @@ struct VariablesView: View {
     /// Triggers a redeploy, then jumps to the Deployments screen so the user
     /// can see the new deployment appear.
     private func redeployService() async {
-        guard let envId = selectedEnvironmentId else { return }
+        guard let envId = selectedEnvironmentId, !isRedeploying else { return }
+        isRedeploying = true
+        defer { isRedeploying = false }
         let didStart = await appState.redeployService(environmentId: envId, serviceId: service.id)
         if didStart {
             withAnimation(.easeInOut(duration: 0.2)) {
