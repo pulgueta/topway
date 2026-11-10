@@ -315,10 +315,7 @@ public struct RailwayClient: Sendable {
         do {
             let (data, urlResponse) = try await session.data(for: request)
 
-            if let httpResponse = urlResponse as? HTTPURLResponse, httpResponse.statusCode == 401 {
-                throw RailwayError.unauthorized
-            }
-
+            try validate(urlResponse)
             response = try JSONDecoder().decode(GraphQLResponse<T>.self, from: data)
         } catch let error as RailwayError {
             throw error
@@ -337,5 +334,23 @@ public struct RailwayClient: Sendable {
         }
 
         return data
+    }
+
+    private func validate(_ response: URLResponse) throws {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw RailwayError.unknown
+        }
+
+        switch httpResponse.statusCode {
+        case 200..<300:
+            return
+        case 401:
+            throw RailwayError.unauthorized
+        case 429:
+            throw RailwayError.rateLimited(
+                retryAfter: httpResponse.value(forHTTPHeaderField: "Retry-After"))
+        default:
+            throw RailwayError.httpStatus(httpResponse.statusCode)
+        }
     }
 }

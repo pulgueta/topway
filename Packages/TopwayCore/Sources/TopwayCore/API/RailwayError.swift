@@ -6,22 +6,32 @@ public enum RailwayError: LocalizedError {
     case decodingError(Error)
     case graphQLError(String)
     case unauthorized
+    case rateLimited(retryAfter: String?)
+    case httpStatus(Int)
     case unknown
 
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid API URL"
+            return "The API URL is not valid."
         case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
+            return "Topway cannot connect to Railway. \(error.localizedDescription)"
         case .decodingError(let error):
-            return "Failed to parse response: \(error.localizedDescription)"
+            return "Topway cannot read the response from Railway. \(error.localizedDescription)"
         case .graphQLError(let message):
-            return "API error: \(message)"
+            return "Railway sent an error: \(message)"
         case .unauthorized:
-            return "Invalid API token"
+            return "Railway did not accept your token."
+        case .rateLimited(let retryAfter):
+            guard let seconds = retryAfter.flatMap({ Int($0) }) else {
+                return "Railway got too many requests. Try again later."
+            }
+            let unit = seconds == 1 ? "second" : "seconds"
+            return "Railway got too many requests. Try again in \(seconds) \(unit)."
+        case .httpStatus(let status):
+            return "Railway sent an error. Status code: \(status)."
         case .unknown:
-            return "An unknown error occurred"
+            return "An error occurred. Try again."
         }
     }
 }
