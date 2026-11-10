@@ -190,12 +190,13 @@ class AppState {
         }
     }
 
+    /// Returns `nil` when the fetch fails or is cancelled. An empty array means no variables.
     func fetchVariables(projectId: String, environmentId: String, serviceId: String) async
-        -> [EnvironmentVariable]
+        -> [EnvironmentVariable]?
     {
         guard isConfigured else {
             errorMessage = "Add your API token and Workspace ID in Settings."
-            return []
+            return nil
         }
 
         errorMessage = nil
@@ -211,10 +212,10 @@ class AppState {
                 .sorted { $0.name < $1.name }
         } catch let error as RailwayError {
             show(error)
-            return []
+            return nil
         } catch {
             errorMessage = error.localizedDescription
-            return []
+            return nil
         }
     }
 

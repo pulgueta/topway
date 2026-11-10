@@ -334,12 +334,13 @@ struct VariablesView: View {
 
         isLoading = true
         areVariablesKnown = false
-        variables = await appState.fetchVariables(
+        let fetched = await appState.fetchVariables(
             projectId: project.id,
             environmentId: envId,
             serviceId: service.id
         )
-        areVariablesKnown = appState.errorMessage == nil
+        variables = fetched ?? []
+        areVariablesKnown = fetched != nil
         isLoading = false
     }
 
