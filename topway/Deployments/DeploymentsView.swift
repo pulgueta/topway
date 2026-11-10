@@ -15,6 +15,7 @@ struct DeploymentsView: View {
     @State private var isLoading = true
     @State private var isRedeploying = false
     @State private var restartingDeploymentId: String?
+    @State private var latestLoadID = UUID()
 
     private var environmentName: String {
         project.environmentList.first { $0.id == environmentId }?.name ?? ""
@@ -228,12 +229,17 @@ struct DeploymentsView: View {
     }
 
     private func loadDeployments() async {
+        let loadID = UUID()
+        latestLoadID = loadID
         isLoading = true
-        deployments = await appState.fetchDeployments(
+        let fetched = await appState.fetchDeployments(
             projectId: project.id,
             environmentId: environmentId,
             serviceId: service.id
         )
+        // Only the latest call may update the screen.
+        guard loadID == latestLoadID else { return }
+        deployments = fetched
         isLoading = false
     }
 

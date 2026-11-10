@@ -75,6 +75,8 @@ class AppState {
 
     private let client = RailwayClient()
     private var refreshTask: Task<Void, Never>?
+    /// The message that the latest failed background refresh set.
+    private var refreshFailureMessage: String?
 
     // MARK: - Init
 
@@ -123,10 +125,19 @@ class AppState {
                 token: railwayToken
             )
             projects = fetchedProjects
+            if let refreshFailureMessage, errorMessage == refreshFailureMessage {
+                errorMessage = nil
+            }
+            refreshFailureMessage = nil
         } catch let error as RailwayError {
             show(error)
+            // A cancellation sets no message, so `errorMessage` can belong to a user action.
+            if error.errorDescription != nil {
+                refreshFailureMessage = keepingError ? errorMessage : nil
+            }
         } catch {
             errorMessage = error.localizedDescription
+            refreshFailureMessage = keepingError ? errorMessage : nil
         }
 
         isLoading = false
@@ -260,6 +271,7 @@ class AppState {
 
     func clearError() {
         errorMessage = nil
+        refreshFailureMessage = nil
     }
 
     // MARK: - Confirmation
