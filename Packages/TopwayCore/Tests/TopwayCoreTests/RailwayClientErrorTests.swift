@@ -45,22 +45,52 @@ struct RailwayClientErrorTests {
     }
 
     @Test(
-        "Other non-2xx responses give the status and do not decode the body",
+        "Other non-2xx responses give the status, and no message without a GraphQL error",
         arguments: [
-            (400, #"{"errors":[{"message":"bad"}]}"#),
             (403, "forbidden"),
             (404, "<html>"),
             (500, #"{"data":{"projectDelete":true}}"#),
+            (500, "Internal Server Error"),
             (503, ""),
+            (400, #"{"errors":[]}"#),
         ])
     func otherStatuses(status: Int, body: String) async throws {
         let error = try #require(await failingCall(StubReply(status: status, body: body)))
 
-        guard case .httpStatus(let code) = error else {
+        guard case .httpStatus(let code, let message) = error else {
             Issue.record("Unexpected error: \(error)")
             return
         }
         #expect(code == status)
+        #expect(message == nil)
+    }
+
+    @Test("A non-2xx response with GraphQL errors keeps the status and the first message")
+    func statusWithGraphQLMessage() async throws {
+        let body = #"{"errors":[{"message":"Name is not valid"},{"message":"Second"}]}"#
+        let error = try #require(await failingCall(StubReply(status: 400, body: body)))
+
+        guard case .httpStatus(let code, let message) = error else {
+            Issue.record("Unexpected error: \(error)")
+            return
+        }
+        #expect(code == 400)
+        #expect(message == "Name is not valid")
+    }
+
+    @Test(
+        "A 401 or 429 response stays the same when the body has a GraphQL error",
+        arguments: [401, 429])
+    func authAndRateLimitIgnoreBody(status: Int) async throws {
+        let body = #"{"errors":[{"message":"Details"}]}"#
+        let error = try #require(await failingCall(StubReply(status: status, body: body)))
+
+        switch (status, error) {
+        case (401, .unauthorized), (429, .rateLimited(retryAfter: nil)):
+            break
+        default:
+            Issue.record("Unexpected error: \(error)")
+        }
     }
 
     @Test("A GraphQL errors array is an error")
@@ -100,7 +130,10 @@ struct RailwayClientErrorTests {
             RailwayError.rateLimited(retryAfter: nil).errorDescription
                 == "Railway got too many requests. Try again later.")
         #expect(
-            RailwayError.httpStatus(500).errorDescription
+            RailwayError.httpStatus(500, message: nil).errorDescription
                 == "Railway sent an error. Status code: 500.")
+        #expect(
+            RailwayError.httpStatus(400, message: "Name is not valid").errorDescription
+                == "Railway sent an error. Status code: 400. Details: Name is not valid")
     }
 }

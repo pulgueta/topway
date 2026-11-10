@@ -315,7 +315,7 @@ public struct RailwayClient: Sendable {
         do {
             let (data, urlResponse) = try await session.data(for: request)
 
-            try validate(urlResponse)
+            try validate(urlResponse, body: data)
             response = try JSONDecoder().decode(GraphQLResponse<T>.self, from: data)
         } catch let error as RailwayError {
             throw error
@@ -336,7 +336,7 @@ public struct RailwayClient: Sendable {
         return data
     }
 
-    private func validate(_ response: URLResponse) throws {
+    private func validate(_ response: URLResponse, body: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw RailwayError.unknown
         }
@@ -350,7 +350,10 @@ public struct RailwayClient: Sendable {
             throw RailwayError.rateLimited(
                 retryAfter: httpResponse.value(forHTTPHeaderField: "Retry-After"))
         default:
-            throw RailwayError.httpStatus(httpResponse.statusCode)
+            // A failed response has no data to decode. Only its first error message is useful.
+            let errors = try? JSONDecoder().decode(GraphQLResponse<Never>.self, from: body).errors
+            throw RailwayError.httpStatus(
+                httpResponse.statusCode, message: errors?.first?.message)
         }
     }
 }

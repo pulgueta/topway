@@ -7,7 +7,7 @@ public enum RailwayError: LocalizedError {
     case graphQLError(String)
     case unauthorized
     case rateLimited(retryAfter: String?)
-    case httpStatus(Int)
+    case httpStatus(Int, message: String?)
     case unknown
 
     public var errorDescription: String? {
@@ -28,8 +28,9 @@ public enum RailwayError: LocalizedError {
             }
             let unit = seconds == 1 ? "second" : "seconds"
             return "Railway got too many requests. Try again in \(seconds) \(unit)."
-        case .httpStatus(let status):
-            return "Railway sent an error. Status code: \(status)."
+        case .httpStatus(let status, let message):
+            let text = "Railway sent an error. Status code: \(status)."
+            return message.map { "\(text) Details: \($0)" } ?? text
         case .unknown:
             return "An error occurred. Try again."
         }
