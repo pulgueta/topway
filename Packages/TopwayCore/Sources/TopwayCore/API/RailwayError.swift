@@ -8,7 +8,17 @@ public enum RailwayError: LocalizedError {
     case unauthorized
     case rateLimited(retryAfter: String?)
     case httpStatus(Int, message: String?)
+    case cancelled
     case unknown
+
+    /// Makes the error for a failed transfer. A cancelled request is not a failure to report.
+    public init(transportFailure error: any Error) {
+        if error is CancellationError || (error as? URLError)?.code == .cancelled {
+            self = .cancelled
+        } else {
+            self = .networkError(error)
+        }
+    }
 
     public var errorDescription: String? {
         switch self {
@@ -31,6 +41,8 @@ public enum RailwayError: LocalizedError {
         case .httpStatus(let status, let message):
             let text = "Railway sent an error. Status code: \(status)."
             return message.map { "\(text) Details: \($0)" } ?? text
+        case .cancelled:
+            return nil
         case .unknown:
             return "An error occurred. Try again."
         }

@@ -322,7 +322,7 @@ public struct RailwayClient: Sendable {
         } catch let error as DecodingError {
             throw RailwayError.decodingError(error)
         } catch {
-            throw RailwayError.networkError(error)
+            throw RailwayError(transportFailure: error)
         }
 
         if let errors = response.errors, !errors.isEmpty {

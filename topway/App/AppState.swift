@@ -87,7 +87,7 @@ class AppState {
             )
             projects = fetchedProjects
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -114,7 +114,7 @@ class AppState {
             await loadProjects()
             return true
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             isLoading = false
             return false
         } catch {
@@ -143,7 +143,7 @@ class AppState {
             await loadProjects()
             return true
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             isLoading = false
             return false
         } catch {
@@ -173,7 +173,7 @@ class AppState {
             return variables.map { EnvironmentVariable(name: $0.key, value: $0.value) }
                 .sorted { $0.name < $1.name }
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             return []
         } catch {
             errorMessage = error.localizedDescription
@@ -204,7 +204,7 @@ class AppState {
             }
             return success
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             isLoading = false
             return false
         } catch {
@@ -212,6 +212,11 @@ class AppState {
             isLoading = false
             return false
         }
+    }
+
+    private func show(_ error: RailwayError) {
+        if case .cancelled = error { return }
+        errorMessage = error.errorDescription
     }
 
     func clearError() {
@@ -283,7 +288,7 @@ class AppState {
             }
             return success
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             return false
         } catch {
             errorMessage = error.localizedDescription
@@ -314,7 +319,7 @@ class AppState {
             }
             return success
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             return false
         } catch {
             errorMessage = error.localizedDescription
@@ -346,7 +351,7 @@ class AppState {
             }
             return success
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             isLoading = false
             return false
         } catch {
@@ -377,7 +382,7 @@ class AppState {
             )
             return deployments
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             return []
         } catch {
             errorMessage = error.localizedDescription
@@ -403,7 +408,7 @@ class AppState {
             }
             return success
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             return false
         } catch {
             errorMessage = error.localizedDescription
@@ -430,7 +435,7 @@ class AppState {
             }
             return success
         } catch let error as RailwayError {
-            errorMessage = error.errorDescription
+            show(error)
             return false
         } catch {
             errorMessage = error.localizedDescription

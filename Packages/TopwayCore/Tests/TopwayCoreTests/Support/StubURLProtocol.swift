@@ -20,6 +20,11 @@ final class StubURLProtocol: URLProtocol {
             return
         }
 
+        if let failure = reply.failure {
+            client?.urlProtocol(self, didFailWithError: failure)
+            return
+        }
+
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Data(reply.body.utf8))
         client?.urlProtocolDidFinishLoading(self)
