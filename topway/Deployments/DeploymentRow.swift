@@ -9,6 +9,17 @@ struct DeploymentRow: View {
     let onOpenURL: () -> Void
 
     @State private var isHovered = false
+    @FocusState private var focusedAction: RowAction?
+    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
+
+    private enum RowAction: Hashable {
+        case openURL
+        case restart
+    }
+
+    private var areActionsVisible: Bool {
+        isHovered || isRestarting || focusedAction != nil || isVoiceOverEnabled
+    }
 
     private var statusColor: Color {
         switch deployment.statusColor {
@@ -48,6 +59,7 @@ struct DeploymentRow: View {
                     IconButton(icon: "link", help: "Open URL") {
                         onOpenURL()
                     }
+                    .focused($focusedAction, equals: .openURL)
                 }
 
                 // Restart button
@@ -60,9 +72,10 @@ struct DeploymentRow: View {
                     IconButton(icon: "arrow.clockwise", help: "Restart deployment") {
                         onRestart()
                     }
+                    .focused($focusedAction, equals: .restart)
                 }
             }
-            .opacity(isHovered || isRestarting ? 1 : 0)
+            .opacity(areActionsVisible ? 1 : 0)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
