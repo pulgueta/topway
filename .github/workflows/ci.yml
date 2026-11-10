@@ -1,0 +1,15 @@
+name: CI
+
+on: pull_request
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test TopwayCore
+        run: swift test --package-path Packages/TopwayCore
+      - name: Build the app
+        run: xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
+      - name: Check format
+        run: swift format lint --recursive --strict topway Packages
