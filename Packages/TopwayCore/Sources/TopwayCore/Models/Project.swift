@@ -23,4 +23,11 @@ public struct Project: Identifiable, Decodable, Hashable, Sendable {
     public var environmentList: [RailwayEnvironment] {
         environments.edges.map { $0.node }
     }
+
+    /// The name of the production environment, if the project has one.
+    public var productionEnvironmentName: String? {
+        environmentList.first {
+            ConfirmationRules.isProduction(environmentName: $0.name)
+        }?.name
+    }
 }
