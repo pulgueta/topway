@@ -9,6 +9,18 @@ struct VariableRow: View {
 
     @State private var isHovered = false
     @State private var isValueVisible = false
+    @FocusState private var focusedAction: RowAction?
+    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
+
+    private enum RowAction: Hashable {
+        case edit
+        case visibility
+        case copy
+    }
+
+    private var areActionsVisible: Bool {
+        isHovered || isCopied || focusedAction != nil || isVoiceOverEnabled
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -28,6 +40,7 @@ struct VariableRow: View {
                     ) {
                         onEdit()
                     }
+                    .focused($focusedAction, equals: .edit)
 
                     // Toggle Visibility
                     IconButton(
@@ -38,6 +51,7 @@ struct VariableRow: View {
                             isValueVisible.toggle()
                         }
                     }
+                    .focused($focusedAction, equals: .visibility)
 
                     // Copy Button
                     IconButton(
@@ -47,8 +61,9 @@ struct VariableRow: View {
                     ) {
                         onCopy()
                     }
+                    .focused($focusedAction, equals: .copy)
                 }
-                .opacity(isHovered || isCopied ? 1 : 0)
+                .opacity(areActionsVisible ? 1 : 0)
             }
 
             // Variable Value
@@ -57,7 +72,8 @@ struct VariableRow: View {
                     Text(variable.value)
                         .textSelection(.enabled)
                 } else {
-                    Text(String(repeating: "•", count: min(variable.value.count, 24)))
+                    // A fixed length does not show the length of the value.
+                    Text(String(repeating: "•", count: 12))
                 }
             }
             .font(.system(size: 11, design: .monospaced))
