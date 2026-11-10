@@ -121,7 +121,9 @@ struct EditVariableView: View {
 
     private var headerView: some View {
         HStack {
-            BackButton { onDismiss() }
+            BackButton {
+                cancelEditing()
+            }
 
             Spacer()
 
@@ -153,7 +155,7 @@ struct EditVariableView: View {
     private var footerView: some View {
         HStack {
             Button("Cancel") {
-                onDismiss()
+                cancelEditing()
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -181,6 +183,12 @@ struct EditVariableView: View {
     }
 
     // MARK: - Actions
+
+    // Only a user exit clears the error. A failed refresh must stay visible.
+    private func cancelEditing() {
+        appState.clearError()
+        onDismiss()
+    }
 
     private func confirmSave() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)

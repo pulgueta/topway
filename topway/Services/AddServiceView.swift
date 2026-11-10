@@ -24,7 +24,11 @@ struct AddServiceView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                BackButton { onDismiss() }
+                BackButton {
+                    // Only a user exit clears the error. A failed refresh must stay visible.
+                    appState.clearError()
+                    onDismiss()
+                }
 
                 Spacer()
 

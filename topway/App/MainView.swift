@@ -19,7 +19,6 @@ struct MainView: View {
                     projectId: projectId,
                     projectName: projectName,
                     onDismiss: {
-                        appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentView = .main
                         }

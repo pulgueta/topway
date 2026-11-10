@@ -41,7 +41,6 @@ struct VariablesView: View {
                     existingVariable: variable,
                     existingNames: areVariablesKnown ? Set(variables.map(\.name)) : nil,
                     onDismiss: {
-                        appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
