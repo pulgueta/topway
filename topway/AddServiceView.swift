@@ -7,44 +7,44 @@ enum ServiceSourceType: String, CaseIterable {
 
 struct AddServiceView: View {
     @Environment(AppState.self) private var appState
-    
+
     let projectId: String
     let projectName: String
     let onDismiss: () -> Void
-    
+
     @State private var sourceType: ServiceSourceType = .gitHub
     @State private var repoName: String = ""
     @State private var imageName: String = ""
     @State private var isCreating = false
-    
+
     private var sourceValue: String {
         sourceType == .gitHub ? repoName : imageName
     }
-    
+
     private var isInputValid: Bool {
         !sourceValue.trimmingCharacters(in: .whitespaces).isEmpty
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
                 BackButton { onDismiss() }
-                
+
                 Spacer()
-                
+
                 Text("Add Service")
                     .font(.system(size: 14, weight: .semibold))
-                
+
                 Spacer()
-                
+
                 Color.clear.frame(width: 24, height: 24)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            
+
             Divider()
-            
+
             // Content
             ScrollView {
                 VStack(spacing: 20) {
@@ -63,13 +63,13 @@ struct AddServiceView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.primary.opacity(0.03))
                     )
-                    
+
                     // Source Type Picker
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Source Type")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.secondary)
-                        
+
                         HStack(spacing: 8) {
                             SourceTypeButton(
                                 label: "GitHub",
@@ -80,7 +80,7 @@ struct AddServiceView: View {
                                     sourceType = .gitHub
                                 }
                             }
-                            
+
                             SourceTypeButton(
                                 label: "Docker",
                                 icon: "shippingbox.fill",
@@ -92,13 +92,13 @@ struct AddServiceView: View {
                             }
                         }
                     }
-                    
+
                     // Input Field based on source type
                     VStack(alignment: .leading, spacing: 6) {
                         Text(sourceType == .gitHub ? "GitHub Repository" : "Docker Image")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(.secondary)
-                        
+
                         TextField(
                             sourceType == .gitHub ? "owner/repository" : "image:tag",
                             text: sourceType == .gitHub ? $repoName : $imageName
@@ -115,14 +115,16 @@ struct AddServiceView: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                         )
-                        
-                        Text(sourceType == .gitHub
-                             ? "e.g., railwayapp-templates/django"
-                             : "e.g., nginx:latest")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
+
+                        Text(
+                            sourceType == .gitHub
+                                ? "e.g., railwayapp-templates/django"
+                                : "e.g., nginx:latest"
+                        )
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
                     }
-                    
+
                     // Error Message
                     if let error = appState.errorMessage {
                         HStack(spacing: 8) {
@@ -142,9 +144,9 @@ struct AddServiceView: View {
                 }
                 .padding(16)
             }
-            
+
             Divider()
-            
+
             // Footer with Create Button
             VStack {
                 Button {
@@ -167,11 +169,11 @@ struct AddServiceView: View {
             .padding(16)
         }
     }
-    
+
     private func createService() {
         isCreating = true
         appState.clearError()
-        
+
         Task {
             let success: Bool
             if sourceType == .gitHub {
@@ -185,9 +187,9 @@ struct AddServiceView: View {
                     image: imageName.trimmingCharacters(in: .whitespaces)
                 )
             }
-            
+
             isCreating = false
-            
+
             if success {
                 onDismiss()
             }
@@ -202,20 +204,20 @@ struct SourceTypeButton: View {
     let icon: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 14))
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary.opacity(0.5))
-                
+
                 Image(systemName: icon)
                     .font(.system(size: 12))
                     .foregroundStyle(isSelected ? .primary : .secondary)
-                
+
                 Text(label)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(isSelected ? .primary : .secondary)
@@ -224,7 +226,11 @@ struct SourceTypeButton: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.accentColor.opacity(0.1) : (isHovered ? Color.primary.opacity(0.06) : Color.primary.opacity(0.03)))
+                    .fill(
+                        isSelected
+                            ? Color.accentColor.opacity(0.1)
+                            : (isHovered
+                                ? Color.primary.opacity(0.06) : Color.primary.opacity(0.03)))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)

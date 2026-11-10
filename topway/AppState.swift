@@ -5,29 +5,29 @@ import SwiftUI
 @Observable
 class AppState {
     // MARK: - Published Properties
-    
+
     var projects: [Project] = []
     var isLoading = false
     var errorMessage: String?
     var showingSettings = false
     var showingAddService = false
     var selectedProjectId: String?
-    
+
     // MARK: - Persisted Properties (using UserDefaults directly for @Observable)
-    
+
     var railwayToken: String {
         get { UserDefaults.standard.string(forKey: "railwayToken") ?? "" }
         set { UserDefaults.standard.set(newValue, forKey: "railwayToken") }
     }
-    
+
     var workspaceId: String {
         get { UserDefaults.standard.string(forKey: "workspaceId") ?? "" }
         set { UserDefaults.standard.set(newValue, forKey: "workspaceId") }
     }
-    
+
     var autoRefreshEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: "autoRefreshEnabled") }
-        set { 
+        set {
             UserDefaults.standard.set(newValue, forKey: "autoRefreshEnabled")
             if newValue {
                 startAutoRefresh()
@@ -36,46 +36,46 @@ class AppState {
             }
         }
     }
-    
+
     var autoRefreshInterval: TimeInterval {
-        get { 
+        get {
             let interval = UserDefaults.standard.double(forKey: "autoRefreshInterval")
-            return interval > 0 ? interval : 30.0 // Default 30 seconds
+            return interval > 0 ? interval : 30.0  // Default 30 seconds
         }
-        set { 
+        set {
             UserDefaults.standard.set(newValue, forKey: "autoRefreshInterval")
             if autoRefreshEnabled {
                 restartAutoRefresh()
             }
         }
     }
-    
+
     // MARK: - Private Properties
-    
+
     private let client = RailwayClient()
     private var refreshTask: Task<Void, Never>?
-    
+
     // MARK: - Computed Properties
-    
+
     var isConfigured: Bool {
         !railwayToken.isEmpty && !workspaceId.isEmpty
     }
-    
+
     var hasError: Bool {
         errorMessage != nil
     }
-    
+
     // MARK: - Public Methods
-    
+
     func loadProjects() async {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let fetchedProjects = try await client.fetchProjects(
                 workspaceId: workspaceId,
@@ -87,19 +87,19 @@ class AppState {
         } catch {
             errorMessage = error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     func createService(projectId: String, repo: String) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         do {
             _ = try await client.createService(
                 projectId: projectId,
@@ -119,16 +119,16 @@ class AppState {
             return false
         }
     }
-    
+
     func createServiceWithImage(projectId: String, image: String) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         do {
             _ = try await client.createServiceWithImage(
                 projectId: projectId,
@@ -148,13 +148,15 @@ class AppState {
             return false
         }
     }
-    
-    func fetchVariables(projectId: String, environmentId: String, serviceId: String) async -> [EnvironmentVariable] {
+
+    func fetchVariables(projectId: String, environmentId: String, serviceId: String) async
+        -> [EnvironmentVariable]
+    {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return []
         }
-        
+
         do {
             let variables = try await client.fetchVariables(
                 projectId: projectId,
@@ -172,16 +174,16 @@ class AppState {
             return []
         }
     }
-    
+
     func deleteProject(projectId: String) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let success = try await client.deleteProject(
                 projectId: projectId,
@@ -202,37 +204,39 @@ class AppState {
             return false
         }
     }
-    
+
     func clearError() {
         errorMessage = nil
     }
-    
+
     func openSettings() {
         showingSettings = true
     }
-    
+
     func closeSettings() {
         showingSettings = false
     }
-    
+
     func openAddService(for projectId: String) {
         selectedProjectId = projectId
         showingAddService = true
     }
-    
+
     func closeAddService() {
         showingAddService = false
         selectedProjectId = nil
     }
-    
+
     // MARK: - Variable Management
-    
-    func upsertVariable(projectId: String, environmentId: String, serviceId: String, name: String, value: String) async -> Bool {
+
+    func upsertVariable(
+        projectId: String, environmentId: String, serviceId: String, name: String, value: String
+    ) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         do {
             let success = try await client.upsertVariable(
                 projectId: projectId,
@@ -251,13 +255,15 @@ class AppState {
             return false
         }
     }
-    
-    func deleteVariable(projectId: String, environmentId: String, serviceId: String, name: String) async -> Bool {
+
+    func deleteVariable(projectId: String, environmentId: String, serviceId: String, name: String)
+        async -> Bool
+    {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         do {
             let success = try await client.deleteVariable(
                 projectId: projectId,
@@ -275,18 +281,18 @@ class AppState {
             return false
         }
     }
-    
+
     // MARK: - Service Management
-    
+
     func deleteService(serviceId: String) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         do {
             let success = try await client.deleteService(
                 serviceId: serviceId,
@@ -306,15 +312,17 @@ class AppState {
             return false
         }
     }
-    
+
     // MARK: - Deployment Management
-    
-    func fetchDeployments(projectId: String, environmentId: String, serviceId: String) async -> [Deployment] {
+
+    func fetchDeployments(projectId: String, environmentId: String, serviceId: String) async
+        -> [Deployment]
+    {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return []
         }
-        
+
         do {
             let deployments = try await client.fetchDeployments(
                 projectId: projectId,
@@ -331,13 +339,13 @@ class AppState {
             return []
         }
     }
-    
+
     func restartDeployment(deploymentId: String) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         do {
             let success = try await client.restartDeployment(
                 deploymentId: deploymentId,
@@ -352,13 +360,13 @@ class AppState {
             return false
         }
     }
-    
+
     func redeployService(environmentId: String, serviceId: String) async -> Bool {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return false
         }
-        
+
         do {
             let success = try await client.redeployService(
                 environmentId: environmentId,
@@ -374,13 +382,13 @@ class AppState {
             return false
         }
     }
-    
+
     // MARK: - Auto Refresh
-    
+
     func startAutoRefresh() {
         stopAutoRefresh()
         guard autoRefreshEnabled && isConfigured else { return }
-        
+
         refreshTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(self?.autoRefreshInterval ?? 30))
@@ -389,17 +397,17 @@ class AppState {
             }
         }
     }
-    
+
     func stopAutoRefresh() {
         refreshTask?.cancel()
         refreshTask = nil
     }
-    
+
     func restartAutoRefresh() {
         stopAutoRefresh()
         startAutoRefresh()
     }
-    
+
     func initializeAutoRefresh() {
         if autoRefreshEnabled && isConfigured {
             startAutoRefresh()

@@ -127,7 +127,7 @@ struct Deployment: Identifiable, Decodable, Hashable {
     let status: String
     let staticUrl: String?
     let createdAt: String
-    
+
     var statusDisplay: String {
         switch status.lowercased() {
         case "success": return "Running"
@@ -140,7 +140,7 @@ struct Deployment: Identifiable, Decodable, Hashable {
         default: return status.capitalized
         }
     }
-    
+
     var statusColor: String {
         switch status.lowercased() {
         case "success": return "green"
@@ -151,18 +151,18 @@ struct Deployment: Identifiable, Decodable, Hashable {
         default: return "gray"
         }
     }
-    
+
     var formattedDate: String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
+
         if let date = formatter.date(from: createdAt) {
             let displayFormatter = DateFormatter()
             displayFormatter.dateStyle = .short
             displayFormatter.timeStyle = .short
             return displayFormatter.string(from: date)
         }
-        
+
         // Try without fractional seconds
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: createdAt) {
@@ -171,7 +171,7 @@ struct Deployment: Identifiable, Decodable, Hashable {
             displayFormatter.timeStyle = .short
             return displayFormatter.string(from: date)
         }
-        
+
         return createdAt
     }
 }
@@ -194,7 +194,7 @@ struct EnvironmentVariable: Identifiable, Hashable {
     let id: String
     let name: String
     let value: String
-    
+
     init(name: String, value: String) {
         self.id = name
         self.name = name
@@ -208,7 +208,7 @@ extension Project {
     var serviceList: [Service] {
         services.edges.map { $0.node }
     }
-    
+
     var environmentList: [RailwayEnvironment] {
         environments.edges.map { $0.node }
     }

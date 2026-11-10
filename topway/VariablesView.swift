@@ -4,12 +4,12 @@ enum VariablesViewDestination: Equatable {
     case list
     case edit(EnvironmentVariable?)
     case deployments
-    
+
     static func == (lhs: VariablesViewDestination, rhs: VariablesViewDestination) -> Bool {
         switch (lhs, rhs) {
         case (.list, .list), (.deployments, .deployments):
             return true
-        case let (.edit(lhsVar), .edit(rhsVar)):
+        case (.edit(let lhsVar), .edit(let rhsVar)):
             return lhsVar?.id == rhsVar?.id
         default:
             return false
@@ -19,22 +19,22 @@ enum VariablesViewDestination: Equatable {
 
 struct VariablesView: View {
     @Environment(AppState.self) private var appState
-    
+
     let service: Service
     let project: Project
     let onDismiss: () -> Void
     let onDeleteService: () async -> Void
-    
+
     @State private var variables: [EnvironmentVariable] = []
     @State private var isLoading = true
     @State private var selectedEnvironmentId: String?
     @State private var copiedVariable: String?
     @State private var currentDestination: VariablesViewDestination = .list
-    
+
     private var environments: [RailwayEnvironment] {
         project.environmentList
     }
-    
+
     var body: some View {
         ZStack {
             switch currentDestination {
@@ -86,50 +86,50 @@ struct VariablesView: View {
             await loadVariables()
         }
     }
-    
+
     // MARK: - Variables List View
-    
+
     private var variablesListView: some View {
         VStack(spacing: 0) {
             // Header
             headerView
-            
+
             Divider()
-            
+
             // Service Info
             serviceInfoView
-            
+
             Divider()
-            
+
             // Environment Picker (if multiple environments)
             if environments.count > 1 {
                 environmentPickerView
                 Divider()
             }
-            
+
             // Content
             contentView
-            
+
             Divider()
-            
+
             // Footer
             footerView
         }
     }
-    
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         HStack {
             BackButton { onDismiss() }
-            
+
             Spacer()
-            
+
             Text("Variables")
                 .font(.system(size: 14, weight: .semibold))
-            
+
             Spacer()
-            
+
             // Add variable button
             IconButton(icon: "plus", help: "Add variable") {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -140,20 +140,20 @@ struct VariablesView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
-    
+
     // MARK: - Service Info
-    
+
     private var serviceInfoView: some View {
         HStack(spacing: 8) {
             Image(systemName: "gearshape.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(.blue)
-            
+
             Text(service.name)
                 .font(.system(size: 13, weight: .medium))
-            
+
             Spacer()
-            
+
             Text(project.name)
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
@@ -161,17 +161,17 @@ struct VariablesView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
-    
+
     // MARK: - Environment Picker
-    
+
     private var environmentPickerView: some View {
         HStack {
             Text("Environment")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
-            
+
             Spacer()
-            
+
             Picker("", selection: $selectedEnvironmentId) {
                 ForEach(environments) { env in
                     Text(env.name).tag(Optional(env.id))
@@ -184,9 +184,9 @@ struct VariablesView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
-    
+
     // MARK: - Content
-    
+
     @ViewBuilder
     private var contentView: some View {
         if isLoading {
@@ -206,18 +206,18 @@ struct VariablesView: View {
                 Image(systemName: "key.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(.tertiary)
-                
+
                 VStack(spacing: 4) {
                     Text("No Variables")
                         .font(.system(size: 14, weight: .semibold))
-                    
+
                     Text("Add environment variables to configure your service.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                 }
-                
+
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         currentDestination = .edit(nil)
@@ -232,7 +232,7 @@ struct VariablesView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
-                
+
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -258,24 +258,24 @@ struct VariablesView: View {
             }
         }
     }
-    
+
     // MARK: - Footer
-    
+
     private var footerView: some View {
         HStack {
             Text("\(variables.count) variable\(variables.count == 1 ? "" : "s")")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
-            
+
             Spacer()
-            
+
             // Deployments button
             DeploymentsButton {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentDestination = .deployments
                 }
             }
-            
+
             if !variables.isEmpty {
                 CopyAllButton { copyAllToClipboard() }
             }
@@ -283,12 +283,12 @@ struct VariablesView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
-    
+
     // MARK: - Actions
-    
+
     private func loadVariables() async {
         guard let envId = selectedEnvironmentId else { return }
-        
+
         isLoading = true
         variables = await appState.fetchVariables(
             projectId: project.id,
@@ -297,15 +297,15 @@ struct VariablesView: View {
         )
         isLoading = false
     }
-    
+
     private func copyToClipboard(_ variable: EnvironmentVariable) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(variable.value, forType: .string)
-        
+
         withAnimation(.easeInOut(duration: 0.2)) {
             copiedVariable = variable.name
         }
-        
+
         Task {
             try? await Task.sleep(for: .seconds(2))
             withAnimation(.easeInOut(duration: 0.2)) {
@@ -315,12 +315,13 @@ struct VariablesView: View {
             }
         }
     }
-    
+
     private func copyAllToClipboard() {
-        let content = variables
+        let content =
+            variables
             .map { "\($0.name)=\($0.value)" }
             .joined(separator: "\n")
-        
+
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(content, forType: .string)
     }
@@ -330,9 +331,9 @@ struct VariablesView: View {
 
 struct BackButton: View {
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             Image(systemName: "chevron.left")
@@ -358,10 +359,10 @@ struct BackButton: View {
 
 struct CopyAllButton: View {
     let action: () -> Void
-    
+
     @State private var isHovered = false
     @State private var isCopied = false
-    
+
     var body: some View {
         Button {
             action()
@@ -405,10 +406,10 @@ struct VariableRow: View {
     let isCopied: Bool
     let onCopy: () -> Void
     let onEdit: () -> Void
-    
+
     @State private var isHovered = false
     @State private var isValueVisible = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             // Variable Name + Actions
@@ -416,9 +417,9 @@ struct VariableRow: View {
                 Text(variable.name)
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundStyle(.primary)
-                
+
                 Spacer()
-                
+
                 HStack(spacing: 4) {
                     // Edit Button
                     IconButton(
@@ -427,7 +428,7 @@ struct VariableRow: View {
                     ) {
                         onEdit()
                     }
-                    
+
                     // Toggle Visibility
                     IconButton(
                         icon: isValueVisible ? "eye.slash" : "eye",
@@ -437,7 +438,7 @@ struct VariableRow: View {
                             isValueVisible.toggle()
                         }
                     }
-                    
+
                     // Copy Button
                     IconButton(
                         icon: isCopied ? "checkmark" : "doc.on.doc",
@@ -449,7 +450,7 @@ struct VariableRow: View {
                 }
                 .opacity(isHovered || isCopied ? 1 : 0)
             }
-            
+
             // Variable Value
             Group {
                 if isValueVisible {
@@ -482,9 +483,9 @@ struct VariableRow: View {
 
 struct DeploymentsButton: View {
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
@@ -517,9 +518,9 @@ struct IconButton: View {
     var tint: Color? = nil
     let help: String
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
@@ -552,8 +553,8 @@ struct IconButton: View {
             EnvironmentEdge(node: RailwayEnvironment(id: "env1", name: "production"))
         ])
     )
-    
-    VariablesView(service: mockService, project: mockProject, onDismiss: {}, onDeleteService: { })
+
+    VariablesView(service: mockService, project: mockProject, onDismiss: {}, onDeleteService: {})
         .environment(AppState())
         .frame(width: 320, height: 400)
 }

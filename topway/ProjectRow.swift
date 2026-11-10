@@ -8,10 +8,10 @@ struct InlineDeleteConfirmation: View {
     var isLoading: Bool = false
     let onConfirm: () -> Void
     let onCancel: () -> Void
-    
+
     @State private var isDeleteHovered = false
     @State private var isCancelHovered = false
-    
+
     var body: some View {
         VStack(spacing: 12) {
             // Warning Icon and Title
@@ -19,27 +19,27 @@ struct InlineDeleteConfirmation: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 14))
                     .foregroundStyle(.red)
-                
+
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
-                
+
                 Spacer()
-                
+
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
                         .scaleEffect(0.8)
                 }
             }
-            
+
             // Message
             Text(message)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
-            
+
             // Buttons
             HStack(spacing: 8) {
                 // Cancel Button
@@ -53,7 +53,9 @@ struct InlineDeleteConfirmation: View {
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(isCancelHovered ? Color.primary.opacity(0.1) : Color.primary.opacity(0.05))
+                                .fill(
+                                    isCancelHovered
+                                        ? Color.primary.opacity(0.1) : Color.primary.opacity(0.05))
                         )
                         .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
@@ -62,7 +64,7 @@ struct InlineDeleteConfirmation: View {
                     isCancelHovered = hovering
                 }
                 .disabled(isLoading)
-                
+
                 // Delete Button
                 Button {
                     onConfirm()
@@ -81,7 +83,10 @@ struct InlineDeleteConfirmation: View {
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(isLoading ? Color.red.opacity(0.6) : (isDeleteHovered ? Color.red.opacity(0.8) : Color.red))
+                            .fill(
+                                isLoading
+                                    ? Color.red.opacity(0.6)
+                                    : (isDeleteHovered ? Color.red.opacity(0.8) : Color.red))
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 6))
                 }
@@ -109,10 +114,10 @@ struct InlineDeleteConfirmation: View {
 struct ServiceRow: View {
     let service: Service
     let onTap: () -> Void
-    
+
     @State private var isHovered = false
     @State private var isPressed = false
-    
+
     var body: some View {
         Button {
             onTap()
@@ -121,14 +126,14 @@ struct ServiceRow: View {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(.blue)
-                
+
                 Text(service.name)
                     .font(.system(size: 13))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.tertiary)
@@ -153,7 +158,7 @@ struct ServiceRow: View {
                 .onEnded { _ in isPressed = false }
         )
     }
-    
+
     private var backgroundColor: Color {
         if isPressed {
             return Color.accentColor.opacity(0.2)
@@ -171,21 +176,22 @@ struct ProjectRow: View {
     let onAddService: () -> Void
     let onDeleteProject: () -> Void
     let onServiceTap: (Service) -> Void
-    
+
     @State private var isExpanded = true
     @State private var isHeaderHovered = false
     @State private var isAddHovered = false
     @State private var isDeleteHovered = false
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             if showDeleteConfirmation {
                 // Inline Delete Confirmation
                 InlineDeleteConfirmation(
                     title: "Delete Project",
-                    message: "Delete \"\(project.name)\"? This will permanently delete all services, deployments, and data.",
+                    message:
+                        "Delete \"\(project.name)\"? This will permanently delete all services, deployments, and data.",
                     isLoading: isDeleting,
                     onConfirm: {
                         isDeleting = true
@@ -210,11 +216,11 @@ struct ProjectRow: View {
                                 .foregroundStyle(.tertiary)
                                 .rotationEffect(.degrees(isExpanded ? 90 : 0))
                                 .frame(width: 12)
-                            
+
                             Image(systemName: "folder.fill")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.orange)
-                            
+
                             Text(project.name)
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(.primary)
@@ -232,9 +238,9 @@ struct ProjectRow: View {
                     .onHover { hovering in
                         isHeaderHovered = hovering
                     }
-                    
+
                     Spacer()
-                    
+
                     // Add Service Button
                     Button {
                         onAddService()
@@ -253,7 +259,7 @@ struct ProjectRow: View {
                     .onHover { hovering in
                         isAddHovered = hovering
                     }
-                    
+
                     // Delete Project Button
                     Button {
                         showDeleteConfirmation = true
@@ -273,7 +279,7 @@ struct ProjectRow: View {
                         isDeleteHovered = hovering
                     }
                 }
-                
+
                 // Services List
                 if isExpanded {
                     VStack(alignment: .leading, spacing: 2) {
@@ -282,7 +288,7 @@ struct ProjectRow: View {
                                 Image(systemName: "info.circle")
                                     .font(.system(size: 10))
                                     .foregroundStyle(.tertiary)
-                                
+
                                 Text("No services")
                                     .font(.system(size: 12))
                                     .foregroundStyle(.tertiary)
@@ -316,11 +322,11 @@ struct ProjectRow: View {
         name: "My Project",
         services: ServiceConnection(edges: [
             ServiceEdge(node: mockService),
-            ServiceEdge(node: mockService2)
+            ServiceEdge(node: mockService2),
         ]),
         environments: EnvironmentConnection(edges: [])
     )
-    
+
     VStack {
         ProjectRow(
             project: mockProject,

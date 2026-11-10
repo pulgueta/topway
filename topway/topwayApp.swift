@@ -10,7 +10,7 @@ import SwiftUI
 @main
 struct TopwayApp: App {
     @State private var appState = AppState()
-    
+
     var body: some Scene {
         MenuBarExtra("Topway", systemImage: "tram.fill") {
             MainView()
@@ -27,7 +27,7 @@ struct TopwayApp: App {
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
-            
+
             CommandGroup(after: .appInfo) {
                 Button("Refresh Projects") {
                     Task { await appState.loadProjects() }

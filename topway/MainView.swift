@@ -5,14 +5,16 @@ enum NavigationDestination: Equatable {
     case settings
     case addService(projectId: String, projectName: String)
     case variables(service: Service, project: Project)
-    
+
     static func == (lhs: NavigationDestination, rhs: NavigationDestination) -> Bool {
         switch (lhs, rhs) {
         case (.main, .main), (.settings, .settings):
             return true
-        case let (.addService(lhsId, lhsName), .addService(rhsId, rhsName)):
+        case (.addService(let lhsId, let lhsName), .addService(let rhsId, let rhsName)):
             return lhsId == rhsId && lhsName == rhsName
-        case let (.variables(lhsService, lhsProject), .variables(rhsService, rhsProject)):
+        case (
+            .variables(let lhsService, let lhsProject), .variables(let rhsService, let rhsProject)
+        ):
             return lhsService.id == rhsService.id && lhsProject.id == rhsProject.id
         default:
             return false
@@ -23,7 +25,7 @@ enum NavigationDestination: Equatable {
 struct MainView: View {
     @Environment(AppState.self) private var appState
     @State private var currentView: NavigationDestination = .main
-    
+
     var body: some View {
         ZStack {
             switch currentView {
@@ -31,9 +33,9 @@ struct MainView: View {
                 mainContent
                     .transition(.opacity)
             case .settings:
-                SettingsView(onDismiss: { 
+                SettingsView(onDismiss: {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .main 
+                        currentView = .main
                     }
                 })
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -41,9 +43,9 @@ struct MainView: View {
                 AddServiceView(
                     projectId: projectId,
                     projectName: projectName,
-                    onDismiss: { 
+                    onDismiss: {
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main 
+                            currentView = .main
                         }
                     }
                 )
@@ -52,9 +54,9 @@ struct MainView: View {
                 VariablesView(
                     service: service,
                     project: project,
-                    onDismiss: { 
+                    onDismiss: {
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main 
+                            currentView = .main
                         }
                     },
                     onDeleteService: {
@@ -77,7 +79,7 @@ struct MainView: View {
         .onExitCommand {
             switch currentView {
             case .main:
-                break // Do nothing on main view
+                break  // Do nothing on main view
             case .settings, .addService, .variables:
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .main
@@ -94,14 +96,14 @@ struct MainView: View {
             }
         }
     }
-    
+
     // MARK: - Main Content
-    
+
     private var mainContent: some View {
         VStack(spacing: 0) {
             headerView
             Divider()
-            
+
             if !appState.isConfigured {
                 unconfiguredView
             } else if appState.isLoading && appState.projects.isEmpty {
@@ -111,25 +113,25 @@ struct MainView: View {
             } else {
                 projectsListView
             }
-            
+
             Divider()
             footerView
         }
     }
-    
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         HStack(spacing: 8) {
             Image(systemName: "tram.fill")
                 .font(.system(size: 14))
                 .foregroundStyle(.purple)
-            
+
             Text("Topway")
                 .font(.system(size: 14, weight: .semibold))
-            
+
             Spacer()
-            
+
             ToolbarButton(icon: "gearshape", help: "Settings") {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .settings
@@ -139,28 +141,28 @@ struct MainView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
-    
+
     // MARK: - Unconfigured View
-    
+
     private var unconfiguredView: some View {
         VStack(spacing: 16) {
             Spacer()
-            
+
             Image(systemName: "key.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.tertiary)
-            
+
             VStack(spacing: 4) {
                 Text("Not Configured")
                     .font(.system(size: 14, weight: .semibold))
-                
+
                 Text("Add your Railway API token and Workspace ID to get started.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
-            
+
             Button("Open Settings") {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .settings
@@ -168,14 +170,14 @@ struct MainView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     // MARK: - Loading View
-    
+
     private var loadingView: some View {
         VStack(spacing: 12) {
             Spacer()
@@ -188,41 +190,41 @@ struct MainView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     // MARK: - Error View
-    
+
     private func errorView(_ message: String) -> some View {
         VStack(spacing: 16) {
             Spacer()
-            
+
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.orange)
-            
+
             VStack(spacing: 4) {
                 Text("Error")
                     .font(.system(size: 14, weight: .semibold))
-                
+
                 Text(message)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
-            
+
             Button("Retry") {
                 Task { await appState.loadProjects() }
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     // MARK: - Projects List View
-    
+
     private var projectsListView: some View {
         VStack(spacing: 0) {
             // Section Header
@@ -231,13 +233,13 @@ struct MainView: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
-                
+
                 Spacer()
-                
+
                 ToolbarButton(icon: "plus", help: "Create project on Railway") {
                     openRailwayDashboard()
                 }
-                
+
                 ToolbarButton(
                     icon: appState.isLoading ? nil : "arrow.clockwise",
                     isLoading: appState.isLoading,
@@ -249,9 +251,9 @@ struct MainView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            
+
             Divider()
-            
+
             if appState.projects.isEmpty {
                 emptyProjectsView
             } else {
@@ -262,7 +264,8 @@ struct MainView: View {
                                 project: project,
                                 onAddService: {
                                     withAnimation(.easeInOut(duration: 0.2)) {
-                                        currentView = .addService(projectId: project.id, projectName: project.name)
+                                        currentView = .addService(
+                                            projectId: project.id, projectName: project.name)
                                     }
                                 },
                                 onDeleteProject: {
@@ -283,33 +286,33 @@ struct MainView: View {
                 }
                 .clipped()
             }
-            
+
             // Error Banner
             if let error = appState.errorMessage, !appState.projects.isEmpty {
                 errorBanner(error)
             }
         }
     }
-    
+
     private var emptyProjectsView: some View {
         VStack(spacing: 16) {
             Spacer()
-            
+
             Image(systemName: "folder.badge.questionmark")
                 .font(.system(size: 36))
                 .foregroundStyle(.tertiary)
-            
+
             VStack(spacing: 4) {
                 Text("No Projects Found")
                     .font(.system(size: 14, weight: .semibold))
-                
+
                 Text("Create a project on Railway or check your Workspace ID in settings.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
             }
-            
+
             HStack(spacing: 10) {
                 Button {
                     openRailwayDashboard()
@@ -323,7 +326,7 @@ struct MainView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
-                
+
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         currentView = .settings
@@ -339,24 +342,24 @@ struct MainView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
             }
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     private func errorBanner(_ message: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 11))
                 .foregroundStyle(.orange)
-            
+
             Text(message)
                 .font(.system(size: 11))
                 .lineLimit(1)
-            
+
             Spacer()
-            
+
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     appState.clearError()
@@ -372,17 +375,17 @@ struct MainView: View {
         .padding(.vertical, 8)
         .background(Color.orange.opacity(0.1))
     }
-    
+
     // MARK: - Footer
-    
+
     private var footerView: some View {
         HStack {
             Text("\(appState.projects.count) project\(appState.projects.count == 1 ? "" : "s")")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
-            
+
             Spacer()
-            
+
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
@@ -393,9 +396,9 @@ struct MainView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
-    
+
     // MARK: - Helpers
-    
+
     private func openRailwayDashboard() {
         if let url = URL(string: "https://railway.app/new") {
             NSWorkspace.shared.open(url)
@@ -410,9 +413,9 @@ struct ToolbarButton: View {
     var isLoading: Bool = false
     let help: String
     let action: () -> Void
-    
+
     @State private var isHovered = false
-    
+
     var body: some View {
         Button(action: action) {
             Group {
