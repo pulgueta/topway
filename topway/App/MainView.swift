@@ -1,27 +1,5 @@
 import SwiftUI
 
-enum NavigationDestination: Equatable {
-    case main
-    case settings
-    case addService(projectId: String, projectName: String)
-    case variables(service: Service, project: Project)
-
-    static func == (lhs: NavigationDestination, rhs: NavigationDestination) -> Bool {
-        switch (lhs, rhs) {
-        case (.main, .main), (.settings, .settings):
-            return true
-        case (.addService(let lhsId, let lhsName), .addService(let rhsId, let rhsName)):
-            return lhsId == rhsId && lhsName == rhsName
-        case (
-            .variables(let lhsService, let lhsProject), .variables(let rhsService, let rhsProject)
-        ):
-            return lhsService.id == rhsService.id && lhsProject.id == rhsProject.id
-        default:
-            return false
-        }
-    }
-}
-
 struct MainView: View {
     @Environment(AppState.self) private var appState
     @State private var currentView: NavigationDestination = .main
@@ -403,46 +381,6 @@ struct MainView: View {
         if let url = URL(string: "https://railway.app/new") {
             NSWorkspace.shared.open(url)
         }
-    }
-}
-
-// MARK: - Toolbar Button
-
-struct ToolbarButton: View {
-    let icon: String?
-    var isLoading: Bool = false
-    let help: String
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.7)
-                } else if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 12, weight: .medium))
-                }
-            }
-            .frame(width: 24, height: 24)
-            .foregroundStyle(isHovered ? .primary : .secondary)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color.primary.opacity(0.1) : Color.clear)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
-        .help(help)
     }
 }
 
