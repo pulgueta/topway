@@ -119,25 +119,12 @@ struct AddServiceView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
                     }
-
-                    // Error Message
-                    if let error = appState.errorMessage {
-                        HStack(spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 11))
-                            Text(error)
-                                .font(.system(size: 12))
-                        }
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.red.opacity(0.1))
-                        )
-                    }
                 }
                 .padding(16)
+            }
+
+            if let error = appState.errorMessage {
+                ErrorBanner(message: error) { appState.clearError() }
             }
 
             Divider()
