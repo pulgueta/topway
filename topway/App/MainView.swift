@@ -379,7 +379,7 @@ struct MainView: View {
     // MARK: - Helpers
 
     private func openRailwayDashboard() {
-        if let url = URL(string: "https://railway.app/new") {
+        if let url = URL(string: "https://railway.com/new") {
             NSWorkspace.shared.open(url)
         }
     }
