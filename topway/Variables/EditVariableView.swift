@@ -110,8 +110,8 @@ struct EditVariableView: View {
                         .font(.system(size: 11))
                     Text(
                         isEditing
-                            ? "Editing will update this variable across all deployments."
-                            : "Variable names should be uppercase with underscores."
+                            ? "This change applies to this service in this environment after the next deploy."
+                            : "Use uppercase letters and underscores in the name."
                     )
                     .font(.system(size: 11))
                 }

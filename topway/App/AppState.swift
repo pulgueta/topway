@@ -71,7 +71,7 @@ class AppState {
 
     func loadProjects(keepingError: Bool = false) async {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return
         }
 
@@ -97,7 +97,7 @@ class AppState {
 
     func createService(projectId: String, repo: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -126,7 +126,7 @@ class AppState {
 
     func createServiceWithImage(projectId: String, image: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -157,7 +157,7 @@ class AppState {
         -> [EnvironmentVariable]
     {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return []
         }
 
@@ -183,7 +183,7 @@ class AppState {
 
     func deleteProject(projectId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -268,7 +268,7 @@ class AppState {
         projectId: String, environmentId: String, serviceId: String, name: String, value: String
     ) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -300,7 +300,7 @@ class AppState {
         async -> Bool
     {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -331,7 +331,7 @@ class AppState {
 
     func deleteService(serviceId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -367,7 +367,7 @@ class AppState {
         -> [Deployment]
     {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return []
         }
 
@@ -392,7 +392,7 @@ class AppState {
 
     func restartDeployment(deploymentId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 
@@ -418,7 +418,7 @@ class AppState {
 
     func redeployService(environmentId: String, serviceId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Please configure your API token and Workspace ID in settings."
+            errorMessage = "Add your API token and Workspace ID in Settings."
             return false
         }
 

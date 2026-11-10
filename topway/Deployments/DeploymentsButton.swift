@@ -10,7 +10,7 @@ struct DeploymentsButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 10))
-                Text("Deploys")
+                Text("Deployments")
                     .font(.system(size: 11))
             }
             .foregroundStyle(isHovered ? .primary : .secondary)

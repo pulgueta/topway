@@ -10,7 +10,7 @@ struct DeleteServiceButton: View {
             HStack(spacing: 4) {
                 Image(systemName: "trash")
                     .font(.system(size: 10))
-                Text("Delete")
+                Text("Delete service")
                     .font(.system(size: 11))
             }
             .foregroundStyle(isHovered ? .red : .secondary)

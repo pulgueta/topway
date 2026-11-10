@@ -292,7 +292,7 @@ struct MainView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "plus")
                             .font(.system(size: 10))
-                        Text("New Project")
+                        Text("Create project")
                             .font(.system(size: 12))
                     }
                 }
