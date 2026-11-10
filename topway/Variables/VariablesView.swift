@@ -12,6 +12,7 @@ struct VariablesView: View {
     @State private var variables: [EnvironmentVariable] = []
     @State private var isLoading = true
     @State private var areVariablesKnown = false
+    @State private var latestLoadID = UUID()
     @State private var selectedEnvironmentId: String?
     @State private var copiedVariable: String?
     @State private var currentDestination: VariablesViewDestination = .list
@@ -332,6 +333,8 @@ struct VariablesView: View {
     private func loadVariables() async {
         guard let envId = selectedEnvironmentId else { return }
 
+        let loadID = UUID()
+        latestLoadID = loadID
         isLoading = true
         areVariablesKnown = false
         let fetched = await appState.fetchVariables(
@@ -339,6 +342,8 @@ struct VariablesView: View {
             environmentId: envId,
             serviceId: service.id
         )
+        // Only the latest call may update the screen.
+        guard loadID == latestLoadID else { return }
         variables = fetched ?? []
         areVariablesKnown = fetched != nil
         isLoading = false
