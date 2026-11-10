@@ -10,6 +10,8 @@ struct EditVariableView: View {
     let serviceName: String
     let environmentName: String
     let existingVariable: EnvironmentVariable?
+    /// The names of the variables in this environment. `nil` means the names are not known.
+    let existingNames: Set<String>?
     let onDismiss: () -> Void
     let onSave: () -> Void
 
@@ -189,10 +191,11 @@ struct EditVariableView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         appState.confirm(
             ConfirmationRequest(
-                harm: isEditing ? .medium : .low,
+                harm: ConfirmationRules.variableSaveHarm(
+                    name: trimmedName, isEditing: isEditing, existingNames: existingNames),
                 title: "Update \(trimmedName)?",
                 message:
-                    "This changes the value for \(serviceName) in \(environmentName). "
+                    "This sets the value for \(serviceName) in \(environmentName). "
                     + "The service uses the new value after the next deploy.",
                 actionTitle: "Update variable",
                 environmentName: environmentName,
@@ -263,6 +266,7 @@ struct EditVariableView: View {
         serviceName: "web-app",
         environmentName: "production",
         existingVariable: nil,
+        existingNames: [],
         onDismiss: {},
         onSave: {}
     )

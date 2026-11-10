@@ -50,8 +50,8 @@ Each action that changes data has a `HarmLevel`.
 
 | Level | Result | Actions |
 |---|---|---|
-| Low | No dialog. | Create a variable. |
-| Medium | A dialog names the service and the environment. | Restart, redeploy, edit a variable, delete a variable. |
+| Low | No dialog. | Create a variable with a new name. |
+| Medium | A dialog names the service and the environment. | Restart, redeploy, edit a variable, save a variable with a name that exists, delete a variable. |
 | High | The user must type the exact name. | Delete a service, delete a project. |
 
 A production environment shows a red label in the dialog.

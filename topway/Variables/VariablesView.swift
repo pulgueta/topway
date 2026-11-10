@@ -11,6 +11,7 @@ struct VariablesView: View {
 
     @State private var variables: [EnvironmentVariable] = []
     @State private var isLoading = true
+    @State private var areVariablesKnown = false
     @State private var selectedEnvironmentId: String?
     @State private var copiedVariable: String?
     @State private var currentDestination: VariablesViewDestination = .list
@@ -37,6 +38,7 @@ struct VariablesView: View {
                     serviceName: service.name,
                     environmentName: selectedEnvironmentName,
                     existingVariable: variable,
+                    existingNames: areVariablesKnown ? Set(variables.map(\.name)) : nil,
                     onDismiss: {
                         appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -290,11 +292,13 @@ struct VariablesView: View {
         guard let envId = selectedEnvironmentId else { return }
 
         isLoading = true
+        areVariablesKnown = false
         variables = await appState.fetchVariables(
             projectId: project.id,
             environmentId: envId,
             serviceId: service.id
         )
+        areVariablesKnown = appState.errorMessage == nil
         isLoading = false
     }
 
