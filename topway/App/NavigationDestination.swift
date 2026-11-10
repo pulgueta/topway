@@ -1,3 +1,5 @@
+import TopwayCore
+
 enum NavigationDestination: Equatable {
     case main
     case settings

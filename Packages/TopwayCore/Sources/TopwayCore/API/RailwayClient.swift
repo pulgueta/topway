@@ -1,43 +1,16 @@
 import Foundation
 
-enum RailwayError: LocalizedError {
-    case invalidURL
-    case networkError(Error)
-    case decodingError(Error)
-    case graphQLError(String)
-    case unauthorized
-    case unknown
-
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            return "Invalid API URL"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .decodingError(let error):
-            return "Failed to parse response: \(error.localizedDescription)"
-        case .graphQLError(let message):
-            return "API error: \(message)"
-        case .unauthorized:
-            return "Invalid API token"
-        case .unknown:
-            return "An unknown error occurred"
-        }
-    }
-}
-
-@MainActor
-final class RailwayClient {
+public struct RailwayClient: Sendable {
     private let baseURL = "https://backboard.railway.app/graphql/v2"
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    public init(session: URLSession = .shared) {
         self.session = session
     }
 
     // MARK: - Fetch Projects
 
-    func fetchProjects(workspaceId: String, token: String) async throws -> [Project] {
+    public func fetchProjects(workspaceId: String, token: String) async throws -> [Project] {
         let query = """
             query Projects {
               workspace(workspaceId: "\(workspaceId)") {
@@ -85,7 +58,8 @@ final class RailwayClient {
 
     // MARK: - Create Service with GitHub Repo
 
-    func createService(projectId: String, repo: String, token: String) async throws -> String {
+    public func createService(projectId: String, repo: String, token: String) async throws -> String
+    {
         let mutation = """
             mutation serviceCreate {
               serviceCreate(
@@ -115,7 +89,7 @@ final class RailwayClient {
 
     // MARK: - Create Service with Docker Image
 
-    func createServiceWithImage(projectId: String, image: String, token: String) async throws
+    public func createServiceWithImage(projectId: String, image: String, token: String) async throws
         -> String
     {
         let mutation = """
@@ -147,7 +121,9 @@ final class RailwayClient {
 
     // MARK: - Fetch Variables for a Service
 
-    func fetchVariables(projectId: String, environmentId: String, serviceId: String, token: String)
+    public func fetchVariables(
+        projectId: String, environmentId: String, serviceId: String, token: String
+    )
         async throws -> [String: String]
     {
         let query = """
@@ -176,7 +152,7 @@ final class RailwayClient {
 
     // MARK: - Delete Project
 
-    func deleteProject(projectId: String, token: String) async throws -> Bool {
+    public func deleteProject(projectId: String, token: String) async throws -> Bool {
         let mutation = """
             mutation projectDelete {
               projectDelete(id: "\(projectId)")
@@ -199,7 +175,7 @@ final class RailwayClient {
 
     // MARK: - Upsert Variable
 
-    func upsertVariable(
+    public func upsertVariable(
         projectId: String, environmentId: String, serviceId: String, name: String, value: String,
         token: String
     ) async throws -> Bool {
@@ -229,7 +205,7 @@ final class RailwayClient {
 
     // MARK: - Delete Variable
 
-    func deleteVariable(
+    public func deleteVariable(
         projectId: String, environmentId: String, serviceId: String, name: String, token: String
     ) async throws -> Bool {
         let mutation = """
@@ -257,7 +233,7 @@ final class RailwayClient {
 
     // MARK: - Delete Service
 
-    func deleteService(serviceId: String, token: String) async throws -> Bool {
+    public func deleteService(serviceId: String, token: String) async throws -> Bool {
         let mutation = """
             mutation serviceDelete {
               serviceDelete(id: "\(serviceId)")
@@ -276,7 +252,7 @@ final class RailwayClient {
 
     // MARK: - Fetch Deployments
 
-    func fetchDeployments(
+    public func fetchDeployments(
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [Deployment] {
         let query = """
@@ -317,7 +293,7 @@ final class RailwayClient {
 
     // MARK: - Restart Deployment
 
-    func restartDeployment(deploymentId: String, token: String) async throws -> Bool {
+    public func restartDeployment(deploymentId: String, token: String) async throws -> Bool {
         let mutation = """
             mutation deploymentRestart {
               deploymentRestart(id: "\(deploymentId)")
@@ -336,7 +312,8 @@ final class RailwayClient {
 
     // MARK: - Redeploy Service (trigger new deployment)
 
-    func redeployService(environmentId: String, serviceId: String, token: String) async throws
+    public func redeployService(environmentId: String, serviceId: String, token: String)
+        async throws
         -> Bool
     {
         let mutation = """

@@ -1,4 +1,5 @@
 import SwiftUI
+import TopwayCore
 
 struct EditVariableView: View {
     @Environment(AppState.self) private var appState

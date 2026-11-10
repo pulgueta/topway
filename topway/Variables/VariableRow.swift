@@ -1,4 +1,5 @@
 import SwiftUI
+import TopwayCore
 
 struct VariableRow: View {
     let variable: EnvironmentVariable

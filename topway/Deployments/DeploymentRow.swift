@@ -1,4 +1,5 @@
 import SwiftUI
+import TopwayCore
 
 struct DeploymentRow: View {
     let deployment: Deployment

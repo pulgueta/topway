@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2F2455422F18BCDD0081322D /* TopwayCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2F2455412F18BCDD0081322D /* TopwayCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		2F2455312F18BCDC0081322D /* topway.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = topway.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2F2455422F18BCDD0081322D /* TopwayCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = topway;
 			packageProductDependencies = (
+				2F2455412F18BCDD0081322D /* TopwayCore */,
 			);
 			productName = topway;
 			productReference = 2F2455312F18BCDC0081322D /* topway.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 2F2455282F18BCDC0081322D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2F2455402F18BCDD0081322D /* XCLocalSwiftPackageReference "Packages/TopwayCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2F2455322F18BCDC0081322D /* Products */;
 			projectDirPath = "";
@@ -343,6 +352,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		2F2455402F18BCDD0081322D /* XCLocalSwiftPackageReference "Packages/TopwayCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TopwayCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2F2455412F18BCDD0081322D /* TopwayCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TopwayCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2F2455292F18BCDC0081322D /* Project object */;
 }

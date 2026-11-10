@@ -1,4 +1,5 @@
 import SwiftUI
+import TopwayCore
 
 struct ServiceRow: View {
     let service: Service
