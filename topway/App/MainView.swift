@@ -51,6 +51,8 @@ struct MainView: View {
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
+        // The screen behind an open dialog must not take input.
+        .disabled(appState.pendingConfirmation != nil)
         .frame(width: 320, height: 400)
         .overlay {
             if let request = appState.pendingConfirmation {

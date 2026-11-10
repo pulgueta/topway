@@ -189,6 +189,7 @@ struct EditVariableView: View {
 
     private func confirmSave() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let confirmedValue = value
         appState.confirm(
             ConfirmationRequest(
                 harm: ConfirmationRules.variableSaveHarm(
@@ -199,35 +200,34 @@ struct EditVariableView: View {
                     + "The service uses the new value after the next deploy.",
                 actionTitle: "Update variable",
                 environmentName: environmentName,
-                perform: { await saveVariable() }
+                perform: { await saveVariable(name: trimmedName, value: confirmedValue) }
             ))
     }
 
     private func confirmDelete() {
+        let confirmedName = name
         appState.confirm(
             ConfirmationRequest(
                 harm: .medium,
-                title: "Delete \(name)?",
+                title: "Delete \(confirmedName)?",
                 message:
                     "This removes the variable from \(serviceName) in \(environmentName). "
                     + "You cannot undo this.",
                 actionTitle: "Delete variable",
                 isDestructive: true,
                 environmentName: environmentName,
-                perform: { await deleteVariable() }
+                perform: { await deleteVariable(name: confirmedName) }
             ))
     }
 
-    private func saveVariable() async {
+    private func saveVariable(name: String, value: String) async {
         isSaving = true
-
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
 
         let success = await appState.upsertVariable(
             projectId: projectId,
             environmentId: environmentId,
             serviceId: serviceId,
-            name: trimmedName,
+            name: name,
             value: value
         )
 
@@ -239,7 +239,7 @@ struct EditVariableView: View {
         }
     }
 
-    private func deleteVariable() async {
+    private func deleteVariable(name: String) async {
         isDeleting = true
 
         let success = await appState.deleteVariable(
