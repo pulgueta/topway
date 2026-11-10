@@ -1,6 +1,7 @@
 import SwiftUI
 import TopwayCore
 
+@MainActor
 struct EditVariableView: View {
     @Environment(AppState.self) private var appState
 
@@ -74,9 +75,6 @@ struct EditVariableView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.primary.opacity(0.05))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                         )
                         .disabled(isEditing)
@@ -97,9 +95,6 @@ struct EditVariableView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.primary.opacity(0.05))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                         )
                 }
@@ -177,7 +172,7 @@ struct EditVariableView: View {
                     Text(isEditing ? "Update" : "Create")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.regular)
             .disabled(!isFormValid || isSaving || isDeleting)
         }

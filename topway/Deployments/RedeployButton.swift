@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct RedeployButton: View {
     let isLoading: Bool
     let action: () -> Void

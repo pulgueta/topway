@@ -19,6 +19,7 @@ public struct RailwayClient: Sendable {
                     node {
                       id
                       name
+                      deletedAt
                       services {
                         edges {
                           node {
@@ -55,7 +56,7 @@ public struct RailwayClient: Sendable {
     public func createService(projectId: String, repo: String, token: String) async throws -> String
     {
         let mutation = """
-            mutation serviceCreate($projectId: String!, $repo: String!) {
+            mutation ServiceCreate($projectId: String!, $repo: String!) {
               serviceCreate(input: { projectId: $projectId, source: { repo: $repo } }) {
                 id
               }
@@ -76,7 +77,7 @@ public struct RailwayClient: Sendable {
         -> String
     {
         let mutation = """
-            mutation serviceCreate($projectId: String!, $image: String!) {
+            mutation ServiceCreate($projectId: String!, $image: String!) {
               serviceCreate(input: { projectId: $projectId, source: { image: $image } }) {
                 id
               }
@@ -97,7 +98,7 @@ public struct RailwayClient: Sendable {
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [String: String] {
         let query = """
-            query variables($projectId: String!, $environmentId: String!, $serviceId: String!) {
+            query Variables($projectId: String!, $environmentId: String!, $serviceId: String!) {
               variables(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId)
             }
             """
@@ -118,7 +119,7 @@ public struct RailwayClient: Sendable {
 
     public func deleteProject(projectId: String, token: String) async throws -> Bool {
         let mutation = """
-            mutation projectDelete($id: String!) {
+            mutation ProjectDelete($id: String!) {
               projectDelete(id: $id)
             }
             """
@@ -138,7 +139,7 @@ public struct RailwayClient: Sendable {
         token: String
     ) async throws -> Bool {
         let mutation = """
-            mutation variableUpsert(
+            mutation VariableUpsert(
               $projectId: String!
               $environmentId: String!
               $serviceId: String!
@@ -177,7 +178,7 @@ public struct RailwayClient: Sendable {
         projectId: String, environmentId: String, serviceId: String, name: String, token: String
     ) async throws -> Bool {
         let mutation = """
-            mutation variableDelete(
+            mutation VariableDelete(
               $projectId: String!
               $environmentId: String!
               $serviceId: String!
@@ -211,7 +212,7 @@ public struct RailwayClient: Sendable {
 
     public func deleteService(serviceId: String, token: String) async throws -> Bool {
         let mutation = """
-            mutation serviceDelete($id: String!) {
+            mutation ServiceDelete($id: String!) {
               serviceDelete(id: $id)
             }
             """
@@ -230,7 +231,7 @@ public struct RailwayClient: Sendable {
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [Deployment] {
         let query = """
-            query deployments($projectId: String!, $environmentId: String!, $serviceId: String!) {
+            query Deployments($projectId: String!, $environmentId: String!, $serviceId: String!) {
               deployments(
                 first: 10
                 input: { projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId }
@@ -263,7 +264,7 @@ public struct RailwayClient: Sendable {
 
     public func restartDeployment(deploymentId: String, token: String) async throws -> Bool {
         let mutation = """
-            mutation deploymentRestart($id: String!) {
+            mutation DeploymentRestart($id: String!) {
               deploymentRestart(id: $id)
             }
             """
@@ -282,7 +283,7 @@ public struct RailwayClient: Sendable {
         async throws -> Bool
     {
         let mutation = """
-            mutation serviceInstanceRedeploy($environmentId: String!, $serviceId: String!) {
+            mutation ServiceInstanceRedeploy($environmentId: String!, $serviceId: String!) {
               serviceInstanceRedeploy(environmentId: $environmentId, serviceId: $serviceId)
             }
             """

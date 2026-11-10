@@ -19,6 +19,7 @@ The app imports the core. The core does not import the app.
 | `API/Responses` | Types that decode Railway responses. These types are internal. |
 | `Models` | `Project`, `Service`, `Deployment` and other types that the app uses. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
+| `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
 ### App folders
 
@@ -28,11 +29,11 @@ Each folder has the name of a feature.
 |---|---|
 | `App` | App entry point, `AppState`, `MainView` and navigation. |
 | `Projects` | Project list rows. |
-| `Services` | Service rows, add service and delete service. |
+| `Services` | Service rows and add service. |
 | `Deployments` | Deployment list, restart and redeploy. |
-| `Variables` | Variable list and variable editor. |
-| `Settings` | Settings screen. |
-| `Shared` | Buttons, error views and the confirmation dialog. |
+| `Variables` | Variable list, variable editor and the service actions menu. |
+| `Settings` | The native Settings window. |
+| `Shared` | Buttons, error views, the confirmation dialog and `openAppSettings`. |
 
 ## Data flow
 
@@ -56,7 +57,7 @@ Each action that changes data has a `HarmLevel`.
 
 A production environment shows a red label in the dialog.
 
-To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows the dialog above all screens.
+To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows `GlassConfirmationDialog` above all screens with `destructiveConfirmation(...)`. Do not use `alert` or `confirmationDialog`, because they close the menu bar window.
 
 ## Add a feature
 

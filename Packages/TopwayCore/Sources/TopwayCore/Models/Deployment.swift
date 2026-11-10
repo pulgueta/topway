@@ -8,25 +8,28 @@ public struct Deployment: Identifiable, Decodable, Hashable, Sendable {
 
     public var statusDisplay: String {
         switch status.lowercased() {
-        case "success": return "Running"
-        case "building": return "Building"
-        case "deploying": return "Deploying"
-        case "failed": return "Failed"
-        case "crashed": return "Crashed"
-        case "removed": return "Removed"
-        case "sleeping": return "Sleeping"
-        default: return status.capitalized
+        case "success": "Running"
+        case "building": "Building"
+        case "deploying": "Deploying"
+        case "failed": "Failed"
+        case "crashed": "Crashed"
+        case "removed": "Removed"
+        case "sleeping": "Sleeping"
+        case "queued": "Queued"
+        case "waiting": "Waiting"
+        case "skipped": "Skipped"
+        default: status.capitalized
         }
     }
 
     public var statusColor: String {
         switch status.lowercased() {
-        case "success": return "green"
-        case "building", "deploying": return "yellow"
-        case "failed", "crashed": return "red"
-        case "removed": return "gray"
-        case "sleeping": return "purple"
-        default: return "gray"
+        case "success": "green"
+        case "building", "deploying", "queued", "waiting": "yellow"
+        case "failed", "crashed": "red"
+        case "removed", "skipped": "gray"
+        case "sleeping": "purple"
+        default: "gray"
         }
     }
 

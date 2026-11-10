@@ -1,8 +1,11 @@
 import SwiftUI
 import TopwayCore
 
+@MainActor
 struct MainView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
+    @Environment(\.openSettings) private var openSettings
     @State private var currentView: NavigationDestination = .main
 
     var body: some View {
@@ -11,13 +14,6 @@ struct MainView: View {
             case .main:
                 mainContent
                     .transition(.opacity)
-            case .settings:
-                SettingsView(onDismiss: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .main
-                    }
-                })
-                .transition(.move(edge: .trailing).combined(with: .opacity))
             case .addService(let projectId, let projectName):
                 AddServiceView(
                     projectId: projectId,
@@ -51,19 +47,13 @@ struct MainView: View {
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        // The screen behind an open dialog must not take input.
-        .disabled(appState.pendingConfirmation != nil)
         .frame(width: 320, height: 400)
-        .overlay {
-            if let request = appState.pendingConfirmation {
-                ConfirmationOverlay(
-                    request: request,
-                    onCancel: { appState.cancelConfirmation() },
-                    onConfirm: { appState.runPendingConfirmation() }
-                )
-                .id(request.id)
-            }
-        }
+        .destructiveConfirmation(
+            request: appState.pendingConfirmation,
+            isLoading: appState.isRunningConfirmation,
+            onConfirm: { appState.runPendingConfirmation() },
+            onCancel: { appState.cancelConfirmation() }
+        )
         .task {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
@@ -79,20 +69,11 @@ struct MainView: View {
             switch currentView {
             case .main:
                 break  // Do nothing on main view
-            case .settings, .addService, .variables:
+            case .addService, .variables:
                 appState.clearError()
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .main
                 }
-            }
-        }
-        // Listen for settings toggle from menu command
-        .onChange(of: appState.showingSettings) { _, newValue in
-            if newValue && currentView == .main {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
-                appState.showingSettings = false
             }
         }
     }
@@ -134,11 +115,7 @@ struct MainView: View {
 
             Spacer()
 
-            ToolbarButton(icon: "gearshape", help: "Settings") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
-            }
+            SettingsButton()
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -166,11 +143,9 @@ struct MainView: View {
             }
 
             Button("Open Settings") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentView = .settings
-                }
+                openAppSettings(fallback: openSettings)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.regular)
 
             Spacer()
@@ -238,7 +213,7 @@ struct MainView: View {
                                             projectId: project.id, projectName: project.name)
                                     }
                                 },
-                                onDeleteProject: {
+                                onRequestDelete: {
                                     confirmDelete(of: project)
                                 },
                                 onServiceTap: { service in
@@ -296,13 +271,11 @@ struct MainView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentView = .settings
-                    }
+                    openAppSettings(fallback: openSettings)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "gearshape")
@@ -361,7 +334,7 @@ struct MainView: View {
 
     private func openRailwayDashboard() {
         if let url = URL(string: "https://railway.com/new") {
-            NSWorkspace.shared.open(url)
+            openURL(url)
         }
     }
 }

@@ -13,7 +13,10 @@ struct DeploymentTests {
             ("CRASHED", "Crashed", "red"),
             ("REMOVED", "Removed", "gray"),
             ("SLEEPING", "Sleeping", "purple"),
-            ("QUEUED", "Queued", "gray"),
+            ("QUEUED", "Queued", "yellow"),
+            ("WAITING", "Waiting", "yellow"),
+            ("SKIPPED", "Skipped", "gray"),
+            ("UNKNOWN_STATE", "Unknown_State", "gray"),
         ])
     func statusMapping(status: String, display: String, color: String) throws {
         let deployment = try makeDeployment(status: status, createdAt: "2026-01-15T10:00:00Z")

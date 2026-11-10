@@ -23,5 +23,6 @@ struct BackButton: View {
                 isHovered = hovering
             }
         }
+        .accessibilityLabel("Back")
     }
 }

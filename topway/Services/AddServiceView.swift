@@ -105,9 +105,6 @@ struct AddServiceView: View {
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.primary.opacity(0.04))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                         )
 
@@ -144,7 +141,7 @@ struct AddServiceView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.large)
                 .disabled(!isInputValid || isCreating)
             }

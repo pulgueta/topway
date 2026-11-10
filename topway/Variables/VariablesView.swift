@@ -15,6 +15,7 @@ struct VariablesView: View {
     @State private var selectedEnvironmentId: String?
     @State private var copiedVariable: String?
     @State private var currentDestination: VariablesViewDestination = .list
+    @State private var isRedeploying = false
 
     private var environments: [RailwayEnvironment] {
         project.environmentList
@@ -60,9 +61,6 @@ struct VariablesView: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
-                    },
-                    onDeleteService: {
-                        await onDeleteService()
                     }
                 )
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -78,6 +76,19 @@ struct VariablesView: View {
                 selectedEnvironmentId = firstEnv.id
             }
             await loadVariables()
+        }
+        // Escape navigates back through the sub-stack before dismissing the view.
+        .onExitCommand {
+            if appState.pendingConfirmation != nil {
+                appState.cancelConfirmation()
+            } else if currentDestination != .list {
+                appState.clearError()
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentDestination = .list
+                }
+            } else {
+                onDismiss()
+            }
         }
     }
 
@@ -128,6 +139,9 @@ struct VariablesView: View {
 
             Spacer()
 
+            // Service actions (Deployments, Redeploy, Delete)
+            serviceMenu
+
             // Add variable button
             IconButton(icon: "plus", help: "Add variable") {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -137,6 +151,41 @@ struct VariablesView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+    }
+
+    // MARK: - Service Menu
+
+    private var serviceMenu: some View {
+        Menu {
+            Button("Deployments", systemImage: "arrow.triangle.2.circlepath") {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentDestination = .deployments
+                }
+            }
+
+            Button("Redeploy", systemImage: "arrow.counterclockwise") {
+                confirmRedeploy()
+            }
+            .disabled(isRedeploying)
+
+            Divider()
+
+            Button("Delete service…", systemImage: "trash", role: .destructive) {
+                confirmDeleteService()
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, height: 24)
+                .contentShape(.rect(cornerRadius: 6))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Service actions")
+        .accessibilityLabel("Service actions")
     }
 
     // MARK: - Service Info
@@ -232,7 +281,7 @@ struct VariablesView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
 
                 Spacer()
@@ -271,13 +320,6 @@ struct VariablesView: View {
 
             Spacer()
 
-            // Deployments button
-            DeploymentsButton {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentDestination = .deployments
-                }
-            }
-
             if !variables.isEmpty {
                 CopyAllButton { copyAllToClipboard() }
             }
@@ -302,9 +344,50 @@ struct VariablesView: View {
         isLoading = false
     }
 
+    private func confirmRedeploy() {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .medium,
+                title: "Redeploy \(service.name) in \(selectedEnvironmentName)?",
+                message: "Railway builds and starts a new deployment of this service.",
+                actionTitle: "Redeploy",
+                environmentName: selectedEnvironmentName,
+                perform: { await redeployService() }
+            ))
+    }
+
+    private func confirmDeleteService() {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .high,
+                title: "Delete \(service.name)?",
+                message:
+                    "This removes the service and its deployments from all environments. "
+                    + "You cannot undo this.",
+                actionTitle: "Delete service",
+                isDestructive: true,
+                targetName: service.name,
+                environmentName: project.productionEnvironmentName,
+                perform: { await onDeleteService() }
+            ))
+    }
+
+    /// Triggers a redeploy, then jumps to the Deployments screen so the user
+    /// can see the new deployment appear.
+    private func redeployService() async {
+        guard let envId = selectedEnvironmentId, !isRedeploying else { return }
+        isRedeploying = true
+        defer { isRedeploying = false }
+        let didStart = await appState.redeployService(environmentId: envId, serviceId: service.id)
+        if didStart {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                currentDestination = .deployments
+            }
+        }
+    }
+
     private func copyToClipboard(_ variable: EnvironmentVariable) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(variable.value, forType: .string)
+        Self.writeConcealed(variable.value)
 
         withAnimation(.easeInOut(duration: 0.2)) {
             copiedVariable = variable.name
@@ -326,8 +409,18 @@ struct VariablesView: View {
             .map { "\($0.name)=\($0.value)" }
             .joined(separator: "\n")
 
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(content, forType: .string)
+        Self.writeConcealed(content)
+    }
+
+    /// Writes a secret to the pasteboard, marking it `org.nspasteboard.ConcealedType`
+    /// so clipboard-history managers skip persisting it, while still pasting as
+    /// plain text everywhere else.
+    private static func writeConcealed(_ string: String) {
+        let pasteboard = NSPasteboard.general
+        let concealed = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+        pasteboard.clearContents()
+        pasteboard.setString(string, forType: .string)
+        pasteboard.setString(string, forType: concealed)
     }
 }
 

@@ -24,7 +24,7 @@ struct ErrorStateView: View {
             }
 
             Button("Retry", action: onRetry)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.regular)
 
             Spacer()

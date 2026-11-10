@@ -1,6 +1,7 @@
 import SwiftUI
 import TopwayCore
 
+@MainActor
 struct ServiceRow: View {
     let service: Service
     let onTap: () -> Void

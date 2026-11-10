@@ -1,19 +1,19 @@
 import SwiftUI
 import TopwayCore
 
+@MainActor
 struct DeploymentsView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
 
     let service: Service
     let project: Project
     let environmentId: String
     let onDismiss: () -> Void
-    let onDeleteService: () async -> Void
 
     @State private var deployments: [Deployment] = []
     @State private var isLoading = true
     @State private var isRedeploying = false
-    @State private var isDeleting = false
     @State private var restartingDeploymentId: String?
 
     private var environmentName: String {
@@ -149,7 +149,7 @@ struct DeploymentsView: View {
                             .font(.system(size: 12))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .controlSize(.small)
                 .disabled(isRedeploying)
 
@@ -170,7 +170,7 @@ struct DeploymentsView: View {
                                 if let urlString = deployment.staticUrl,
                                     let url = URL(string: "https://\(urlString)")
                                 {
-                                    NSWorkspace.shared.open(url)
+                                    openURL(url)
                                 }
                             }
                         )
@@ -190,12 +190,6 @@ struct DeploymentsView: View {
                 .foregroundStyle(.tertiary)
 
             Spacer()
-
-            // Delete service button
-            DeleteServiceButton {
-                confirmDeleteService()
-            }
-            .disabled(isDeleting)
 
             // Redeploy button
             RedeployButton(isLoading: isRedeploying) {
@@ -230,26 +224,6 @@ struct DeploymentsView: View {
                 actionTitle: "Redeploy",
                 environmentName: environmentName,
                 perform: { await triggerRedeploy() }
-            ))
-    }
-
-    private func confirmDeleteService() {
-        appState.confirm(
-            ConfirmationRequest(
-                harm: .high,
-                title: "Delete \(service.name)?",
-                message:
-                    "This removes the service and its deployments from all environments. "
-                    + "You cannot undo this.",
-                actionTitle: "Delete service",
-                isDestructive: true,
-                targetName: service.name,
-                environmentName: project.productionEnvironmentName,
-                perform: {
-                    isDeleting = true
-                    await onDeleteService()
-                    isDeleting = false
-                }
             ))
     }
 
@@ -302,8 +276,7 @@ struct DeploymentsView: View {
         service: mockService,
         project: mockProject,
         environmentId: "env1",
-        onDismiss: {},
-        onDeleteService: {}
+        onDismiss: {}
     )
     .environment(AppState())
     .frame(width: 320, height: 400)

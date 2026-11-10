@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TopwayCore",
-    platforms: [.macOS("15.6")],
+    platforms: [.macOS("26.2")],
     products: [
         .library(name: "TopwayCore", targets: ["TopwayCore"])
     ],

@@ -16,6 +16,27 @@ struct RailwayClientRequestTests {
         #expect(request.authorization == "Bearer secret")
     }
 
+    @Test("Projects that Railway marked as deleted do not appear")
+    func deletedProjectsAreFiltered() async throws {
+        let server = StubServer(
+            StubReply(
+                body: """
+                    {"data":{"workspace":{"projects":{"edges":[
+                      {"node":{"id":"p1","name":"Live","deletedAt":null,
+                       "services":{"edges":[]},"environments":{"edges":[]}}},
+                      {"node":{"id":"p2","name":"Gone","deletedAt":"2026-06-01T00:00:00Z",
+                       "services":{"edges":[]},"environments":{"edges":[]}}}
+                    ]}}}}
+                    """))
+
+        let projects = try await RailwayClient(session: server.session)
+            .fetchProjects(workspaceId: "w1", token: "secret")
+
+        #expect(projects.map(\.name) == ["Live"])
+        let request = try #require(server.requests.first)
+        #expect(request.query.contains("deletedAt"))
+    }
+
     @Test(
         "User input reaches the request JSON unchanged, and only through variables",
         arguments: ClientCall.all,

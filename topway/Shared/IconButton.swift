@@ -27,5 +27,6 @@ struct IconButton: View {
             }
         }
         .help(help)
+        .accessibilityLabel(help)
     }
 }

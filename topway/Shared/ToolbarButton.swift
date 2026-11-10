@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct ToolbarButton: View {
     let icon: String?
     var isLoading: Bool = false
@@ -35,5 +36,6 @@ struct ToolbarButton: View {
             }
         }
         .help(help)
+        .accessibilityLabel(help)
     }
 }

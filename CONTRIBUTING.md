@@ -1,11 +1,11 @@
 # Contributing
 
-Read `ARCHITECTURE.md` first. It tells you where the code goes.
+Read `ARCHITECTURE.md` first. `AGENTS.md` lists the facts for automated tools. It tells you where the code goes.
 
 ## Requirements
 
-- Xcode 26 or later.
-- A Mac with macOS 15.6 or later.
+- Xcode 26.2 or later.
+- A Mac with macOS 26.2 or later.
 
 ## Build
 

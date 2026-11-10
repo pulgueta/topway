@@ -70,7 +70,7 @@ struct VariableRow: View {
             RoundedRectangle(cornerRadius: 6)
                 .fill(isHovered ? Color.primary.opacity(0.04) : Color.clear)
         )
-        .contentShape(Rectangle())
+        .contentShape(.rect)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
