@@ -6,9 +6,18 @@ final class StubURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
+        guard let reply = StubRegistry.record(request) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        if let failure = reply.failure {
+            client?.urlProtocol(self, didFailWithError: failure)
+            return
+        }
+
         guard
             let url = request.url,
-            let reply = StubRegistry.record(request),
             let response = HTTPURLResponse(
                 url: url,
                 statusCode: reply.status,
@@ -17,11 +26,6 @@ final class StubURLProtocol: URLProtocol {
             )
         else {
             client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
-        }
-
-        if let failure = reply.failure {
-            client?.urlProtocol(self, didFailWithError: failure)
             return
         }
 

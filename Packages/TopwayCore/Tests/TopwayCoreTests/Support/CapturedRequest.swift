@@ -4,8 +4,10 @@ struct CapturedRequest: Sendable {
     let url: URL?
     let method: String?
     let authorization: String?
-    let query: String
-    let variables: [String: String]
+    /// `nil` when the body is missing or is not valid JSON with this field.
+    let query: String?
+    /// `nil` when the body is missing or is not valid JSON with this field.
+    let variables: [String: String]?
 
     init(_ request: URLRequest) {
         url = request.url
@@ -15,8 +17,8 @@ struct CapturedRequest: Sendable {
         let json = Self.readBody(of: request).flatMap {
             try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
         }
-        query = json?["query"] as? String ?? ""
-        variables = json?["variables"] as? [String: String] ?? [:]
+        query = json?["query"] as? String
+        variables = json?["variables"] as? [String: String]
     }
 
     // URLSession moves the body of a request into a stream before URLProtocol reads it.

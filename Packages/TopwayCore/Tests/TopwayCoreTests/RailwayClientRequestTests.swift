@@ -34,7 +34,8 @@ struct RailwayClientRequestTests {
 
         #expect(projects.map(\.name) == ["Live"])
         let request = try #require(server.requests.first)
-        #expect(request.query.contains("deletedAt"))
+        let query = try #require(request.query)
+        #expect(query.contains("deletedAt"))
     }
 
     @Test(
@@ -54,8 +55,10 @@ struct RailwayClientRequestTests {
 
         let request = try #require(server.requests.first)
         let expected = Dictionary(uniqueKeysWithValues: call.variableNames.map { ($0, input) })
-        #expect(request.variables == expected)
-        #expect(!request.query.contains(input))
-        #expect(!request.query.contains("\""))
+        let variables = try #require(request.variables)
+        let query = try #require(request.query)
+        #expect(variables == expected)
+        #expect(!query.contains(input))
+        #expect(!query.contains("\""))
     }
 }
