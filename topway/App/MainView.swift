@@ -52,6 +52,16 @@ struct MainView: View {
             }
         }
         .frame(width: 320, height: 400)
+        .overlay {
+            if let request = appState.pendingConfirmation {
+                ConfirmationOverlay(
+                    request: request,
+                    onCancel: { appState.cancelConfirmation() },
+                    onConfirm: { appState.runPendingConfirmation() }
+                )
+                .id(request.id)
+            }
+        }
         .task {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
@@ -59,6 +69,11 @@ struct MainView: View {
         }
         // Escape to go back
         .onExitCommand {
+            if appState.pendingConfirmation != nil {
+                appState.cancelConfirmation()
+                return
+            }
+
             switch currentView {
             case .main:
                 break  // Do nothing on main view
@@ -222,7 +237,7 @@ struct MainView: View {
                                     }
                                 },
                                 onDeleteProject: {
-                                    _ = await appState.deleteProject(projectId: project.id)
+                                    confirmDelete(of: project)
                                 },
                                 onServiceTap: { service in
                                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -325,6 +340,22 @@ struct MainView: View {
     }
 
     // MARK: - Helpers
+
+    private func confirmDelete(of project: Project) {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .high,
+                title: "Delete \(project.name)?",
+                message:
+                    "This removes all services, deployments and data in the project. "
+                    + "You cannot undo this.",
+                actionTitle: "Delete project",
+                isDestructive: true,
+                targetName: project.name,
+                environmentName: project.productionEnvironmentName,
+                perform: { _ = await appState.deleteProject(projectId: project.id) }
+            ))
+    }
 
     private func openRailwayDashboard() {
         if let url = URL(string: "https://railway.com/new") {

@@ -19,6 +19,10 @@ struct VariablesView: View {
         project.environmentList
     }
 
+    private var selectedEnvironmentName: String {
+        environments.first { $0.id == selectedEnvironmentId }?.name ?? ""
+    }
+
     var body: some View {
         ZStack {
             switch currentDestination {
@@ -30,6 +34,8 @@ struct VariablesView: View {
                     projectId: project.id,
                     environmentId: selectedEnvironmentId ?? "",
                     serviceId: service.id,
+                    serviceName: service.name,
+                    environmentName: selectedEnvironmentName,
                     existingVariable: variable,
                     onDismiss: {
                         appState.clearError()

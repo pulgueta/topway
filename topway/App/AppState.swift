@@ -13,6 +13,7 @@ class AppState {
     var showingSettings = false
     var showingAddService = false
     var selectedProjectId: String?
+    var pendingConfirmation: ConfirmationRequest?
 
     // MARK: - Persisted Properties (using UserDefaults directly for @Observable)
 
@@ -233,6 +234,27 @@ class AppState {
     func closeAddService() {
         showingAddService = false
         selectedProjectId = nil
+    }
+
+    // MARK: - Confirmation
+
+    /// Runs the action at once for low harm. Other levels wait for the user in the dialog.
+    func confirm(_ request: ConfirmationRequest) {
+        guard request.harm.needsDialog else {
+            Task { await request.perform() }
+            return
+        }
+        pendingConfirmation = request
+    }
+
+    func cancelConfirmation() {
+        pendingConfirmation = nil
+    }
+
+    func runPendingConfirmation() {
+        guard let request = pendingConfirmation else { return }
+        pendingConfirmation = nil
+        Task { await request.perform() }
     }
 
     // MARK: - Variable Management

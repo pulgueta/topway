@@ -7,6 +7,8 @@ struct EditVariableView: View {
     let projectId: String
     let environmentId: String
     let serviceId: String
+    let serviceName: String
+    let environmentName: String
     let existingVariable: EnvironmentVariable?
     let onDismiss: () -> Void
     let onSave: () -> Void
@@ -15,7 +17,6 @@ struct EditVariableView: View {
     @State private var value: String = ""
     @State private var isSaving = false
     @State private var isDeleting = false
-    @State private var showDeleteConfirmation = false
 
     private var isEditing: Bool {
         existingVariable != nil
@@ -32,12 +33,8 @@ struct EditVariableView: View {
 
             Divider()
 
-            // Content - either form or delete confirmation
-            if showDeleteConfirmation {
-                deleteConfirmationView
-            } else {
-                formView
-            }
+            // Content
+            formView
 
             if let error = appState.errorMessage {
                 ErrorBanner(message: error) { appState.clearError() }
@@ -46,9 +43,7 @@ struct EditVariableView: View {
             Divider()
 
             // Footer
-            if !showDeleteConfirmation {
-                footerView
-            }
+            footerView
         }
         .onAppear {
             appState.clearError()
@@ -125,79 +120,6 @@ struct EditVariableView: View {
         }
     }
 
-    // MARK: - Delete Confirmation View
-
-    private var deleteConfirmationView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-
-            // Warning icon
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.red)
-
-            // Title
-            Text("Delete Variable")
-                .font(.system(size: 16, weight: .semibold))
-
-            // Variable name
-            Text("\"\(name)\"")
-                .font(.system(size: 14, design: .monospaced))
-                .foregroundStyle(.secondary)
-
-            // Warning message
-            Text("This action cannot be undone.")
-                .font(.system(size: 12))
-                .foregroundStyle(.tertiary)
-
-            Spacer()
-
-            // Action buttons
-            HStack(spacing: 12) {
-                Button {
-                    showDeleteConfirmation = false
-                } label: {
-                    Text("Cancel")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.primary.opacity(0.05))
-                        )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    Task { await deleteVariable() }
-                } label: {
-                    HStack(spacing: 6) {
-                        if isDeleting {
-                            ProgressView()
-                                .controlSize(.small)
-                                .scaleEffect(0.8)
-                        }
-                        Text("Delete")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.red)
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(isDeleting)
-            }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: - Header
 
     private var headerView: some View {
@@ -218,8 +140,9 @@ struct EditVariableView: View {
                     tint: .red,
                     help: "Delete variable"
                 ) {
-                    showDeleteConfirmation = true
+                    confirmDelete()
                 }
+                .disabled(isDeleting)
             } else {
                 Color.clear.frame(width: 24, height: 24)
             }
@@ -241,7 +164,7 @@ struct EditVariableView: View {
             Spacer()
 
             Button {
-                Task { await saveVariable() }
+                confirmSave()
             } label: {
                 HStack(spacing: 6) {
                     if isSaving {
@@ -254,13 +177,43 @@ struct EditVariableView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
-            .disabled(!isFormValid || isSaving)
+            .disabled(!isFormValid || isSaving || isDeleting)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
 
     // MARK: - Actions
+
+    private func confirmSave() {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        appState.confirm(
+            ConfirmationRequest(
+                harm: isEditing ? .medium : .low,
+                title: "Update \(trimmedName)?",
+                message:
+                    "This changes the value for \(serviceName) in \(environmentName). "
+                    + "The service uses the new value after the next deploy.",
+                actionTitle: "Update variable",
+                environmentName: environmentName,
+                perform: { await saveVariable() }
+            ))
+    }
+
+    private func confirmDelete() {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .medium,
+                title: "Delete \(name)?",
+                message:
+                    "This removes the variable from \(serviceName) in \(environmentName). "
+                    + "You cannot undo this.",
+                actionTitle: "Delete variable",
+                isDestructive: true,
+                environmentName: environmentName,
+                perform: { await deleteVariable() }
+            ))
+    }
 
     private func saveVariable() async {
         isSaving = true
@@ -298,9 +251,6 @@ struct EditVariableView: View {
         if success {
             onSave()
             onDismiss()
-        } else {
-            // Show error, stay on confirmation view
-            showDeleteConfirmation = false
         }
     }
 }
@@ -310,6 +260,8 @@ struct EditVariableView: View {
         projectId: "proj1",
         environmentId: "env1",
         serviceId: "svc1",
+        serviceName: "web-app",
+        environmentName: "production",
         existingVariable: nil,
         onDismiss: {},
         onSave: {}

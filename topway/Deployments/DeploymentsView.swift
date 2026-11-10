@@ -14,8 +14,11 @@ struct DeploymentsView: View {
     @State private var isLoading = true
     @State private var isRedeploying = false
     @State private var isDeleting = false
-    @State private var showDeleteConfirmation = false
     @State private var restartingDeploymentId: String?
+
+    private var environmentName: String {
+        project.environmentList.first { $0.id == environmentId }?.name ?? ""
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -137,7 +140,7 @@ struct DeploymentsView: View {
                 }
 
                 Button {
-                    Task { await triggerRedeploy() }
+                    confirmRedeploy()
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.counterclockwise")
@@ -161,7 +164,7 @@ struct DeploymentsView: View {
                             deployment: deployment,
                             isRestarting: restartingDeploymentId == deployment.id,
                             onRestart: {
-                                Task { await restartDeployment(deployment) }
+                                confirmRestart(deployment)
                             },
                             onOpenURL: {
                                 if let urlString = deployment.staticUrl,
@@ -181,99 +184,74 @@ struct DeploymentsView: View {
     // MARK: - Footer
 
     private var footerView: some View {
-        VStack(spacing: 0) {
-            if showDeleteConfirmation {
-                // Inline delete confirmation
-                VStack(spacing: 10) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.red)
+        HStack {
+            Text("\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
 
-                        Text("Delete \"\(service.name)\"?")
-                            .font(.system(size: 12, weight: .medium))
+            Spacer()
 
-                        Spacer()
-                    }
-
-                    HStack(spacing: 8) {
-                        Button {
-                            showDeleteConfirmation = false
-                        } label: {
-                            Text("Cancel")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 5)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 5)
-                                        .fill(Color.primary.opacity(0.05))
-                                )
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            isDeleting = true
-                            Task {
-                                await onDeleteService()
-                                isDeleting = false
-                                showDeleteConfirmation = false
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                if isDeleting {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                        .scaleEffect(0.6)
-                                }
-                                Text("Delete")
-                                    .font(.system(size: 11, weight: .medium))
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 5)
-                            .background(
-                                RoundedRectangle(cornerRadius: 5)
-                                    .fill(Color.red)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isDeleting)
-                    }
-                }
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.red.opacity(0.05))
-                )
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-            } else {
-                HStack {
-                    Text("\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-
-                    Spacer()
-
-                    // Delete service button
-                    DeleteServiceButton {
-                        showDeleteConfirmation = true
-                    }
-
-                    // Redeploy button
-                    RedeployButton(isLoading: isRedeploying) {
-                        Task { await triggerRedeploy() }
-                    }
-                    .disabled(isRedeploying)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+            // Delete service button
+            DeleteServiceButton {
+                confirmDeleteService()
             }
+            .disabled(isDeleting)
+
+            // Redeploy button
+            RedeployButton(isLoading: isRedeploying) {
+                confirmRedeploy()
+            }
+            .disabled(isRedeploying)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Actions
+
+    private func confirmRestart(_ deployment: Deployment) {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .medium,
+                title: "Restart \(service.name) in \(environmentName)?",
+                message: "The service stops for a short time.",
+                actionTitle: "Restart",
+                environmentName: environmentName,
+                perform: { await restartDeployment(deployment) }
+            ))
+    }
+
+    private func confirmRedeploy() {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .medium,
+                title: "Redeploy \(service.name) in \(environmentName)?",
+                message: "Railway builds and starts a new deployment of this service.",
+                actionTitle: "Redeploy",
+                environmentName: environmentName,
+                perform: { await triggerRedeploy() }
+            ))
+    }
+
+    private func confirmDeleteService() {
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .high,
+                title: "Delete \(service.name)?",
+                message:
+                    "This removes the service and its deployments from all environments. "
+                    + "You cannot undo this.",
+                actionTitle: "Delete service",
+                isDestructive: true,
+                targetName: service.name,
+                environmentName: project.productionEnvironmentName,
+                perform: {
+                    isDeleting = true
+                    await onDeleteService()
+                    isDeleting = false
+                }
+            ))
+    }
 
     private func loadDeployments() async {
         isLoading = true
