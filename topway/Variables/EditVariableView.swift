@@ -39,6 +39,10 @@ struct EditVariableView: View {
                 formView
             }
 
+            if let error = appState.errorMessage {
+                ErrorBanner(message: error) { appState.clearError() }
+            }
+
             Divider()
 
             // Footer
@@ -47,6 +51,7 @@ struct EditVariableView: View {
             }
         }
         .onAppear {
+            appState.clearError()
             if let variable = existingVariable {
                 name = variable.name
                 value = variable.value

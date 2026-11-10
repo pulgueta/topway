@@ -23,6 +23,7 @@ struct MainView: View {
                     projectId: projectId,
                     projectName: projectName,
                     onDismiss: {
+                        appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentView = .main
                         }
@@ -34,14 +35,16 @@ struct MainView: View {
                     service: service,
                     project: project,
                     onDismiss: {
+                        appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentView = .main
                         }
                     },
                     onDeleteService: {
-                        _ = await appState.deleteService(serviceId: service.id)
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main
+                        if await appState.deleteService(serviceId: service.id) {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentView = .main
+                            }
                         }
                     }
                 )
@@ -60,6 +63,7 @@ struct MainView: View {
             case .main:
                 break  // Do nothing on main view
             case .settings, .addService, .variables:
+                appState.clearError()
                 withAnimation(.easeInOut(duration: 0.2)) {
                     currentView = .main
                 }
@@ -88,7 +92,9 @@ struct MainView: View {
             } else if appState.isLoading && appState.projects.isEmpty {
                 loadingView
             } else if let error = appState.errorMessage, appState.projects.isEmpty {
-                errorView(error)
+                ErrorStateView(message: error) {
+                    Task { await appState.loadProjects() }
+                }
             } else {
                 projectsListView
             }
@@ -170,38 +176,6 @@ struct MainView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Error View
-
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 16) {
-            Spacer()
-
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.orange)
-
-            VStack(spacing: 4) {
-                Text("Error")
-                    .font(.system(size: 14, weight: .semibold))
-
-                Text(message)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-            }
-
-            Button("Retry") {
-                Task { await appState.loadProjects() }
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: - Projects List View
 
     private var projectsListView: some View {
@@ -248,9 +222,7 @@ struct MainView: View {
                                     }
                                 },
                                 onDeleteProject: {
-                                    Task {
-                                        await appState.deleteProject(projectId: project.id)
-                                    }
+                                    _ = await appState.deleteProject(projectId: project.id)
                                 },
                                 onServiceTap: { service in
                                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -268,7 +240,11 @@ struct MainView: View {
 
             // Error Banner
             if let error = appState.errorMessage, !appState.projects.isEmpty {
-                errorBanner(error)
+                ErrorBanner(message: error) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        appState.clearError()
+                    }
+                }
             }
         }
     }
@@ -325,34 +301,6 @@ struct MainView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func errorBanner(_ message: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(.orange)
-
-            Text(message)
-                .font(.system(size: 11))
-                .lineLimit(1)
-
-            Spacer()
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    appState.clearError()
-                }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.orange.opacity(0.1))
     }
 
     // MARK: - Footer

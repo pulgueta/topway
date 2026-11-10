@@ -32,6 +32,10 @@ struct DeploymentsView: View {
             // Content
             contentView
 
+            if let error = appState.errorMessage, !isLoading, !deployments.isEmpty {
+                ErrorBanner(message: error) { appState.clearError() }
+            }
+
             Divider()
 
             // Footer
@@ -110,6 +114,10 @@ struct DeploymentsView: View {
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error = appState.errorMessage, deployments.isEmpty {
+            ErrorStateView(message: error) {
+                Task { await loadDeployments() }
+            }
         } else if deployments.isEmpty {
             VStack(spacing: 16) {
                 Spacer()
@@ -208,6 +216,8 @@ struct DeploymentsView: View {
                             isDeleting = true
                             Task {
                                 await onDeleteService()
+                                isDeleting = false
+                                showDeleteConfirmation = false
                             }
                         } label: {
                             HStack(spacing: 4) {
@@ -277,21 +287,25 @@ struct DeploymentsView: View {
 
     private func restartDeployment(_ deployment: Deployment) async {
         restartingDeploymentId = deployment.id
-        _ = await appState.restartDeployment(deploymentId: deployment.id)
+        let success = await appState.restartDeployment(deploymentId: deployment.id)
         restartingDeploymentId = nil
         // Reload deployments to see updated status
-        await loadDeployments()
+        if success {
+            await loadDeployments()
+        }
     }
 
     private func triggerRedeploy() async {
         isRedeploying = true
-        _ = await appState.redeployService(
+        let success = await appState.redeployService(
             environmentId: environmentId,
             serviceId: service.id
         )
         isRedeploying = false
         // Reload deployments to see the new one
-        await loadDeployments()
+        if success {
+            await loadDeployments()
+        }
     }
 }
 

@@ -32,6 +32,7 @@ struct VariablesView: View {
                     serviceId: service.id,
                     existingVariable: variable,
                     onDismiss: {
+                        appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
@@ -47,6 +48,7 @@ struct VariablesView: View {
                     project: project,
                     environmentId: selectedEnvironmentId ?? "",
                     onDismiss: {
+                        appState.clearError()
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
@@ -93,6 +95,10 @@ struct VariablesView: View {
 
             // Content
             contentView
+
+            if let error = appState.errorMessage, !isLoading, !variables.isEmpty {
+                ErrorBanner(message: error) { appState.clearError() }
+            }
 
             Divider()
 
@@ -184,6 +190,10 @@ struct VariablesView: View {
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error = appState.errorMessage, variables.isEmpty {
+            ErrorStateView(message: error) {
+                Task { await loadVariables() }
+            }
         } else if variables.isEmpty {
             VStack(spacing: 16) {
                 Spacer()

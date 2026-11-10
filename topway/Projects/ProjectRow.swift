@@ -6,7 +6,7 @@ import TopwayCore
 struct ProjectRow: View {
     let project: Project
     let onAddService: () -> Void
-    let onDeleteProject: () -> Void
+    let onDeleteProject: () async -> Void
     let onServiceTap: (Service) -> Void
 
     @State private var isExpanded = true
@@ -27,7 +27,11 @@ struct ProjectRow: View {
                     isLoading: isDeleting,
                     onConfirm: {
                         isDeleting = true
-                        onDeleteProject()
+                        Task {
+                            await onDeleteProject()
+                            isDeleting = false
+                            showDeleteConfirmation = false
+                        }
                     },
                     onCancel: {
                         showDeleteConfirmation = false

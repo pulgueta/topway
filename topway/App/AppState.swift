@@ -68,14 +68,16 @@ class AppState {
 
     // MARK: - Public Methods
 
-    func loadProjects() async {
+    func loadProjects(keepingError: Bool = false) async {
         guard isConfigured else {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return
         }
 
         isLoading = true
-        errorMessage = nil
+        if !keepingError {
+            errorMessage = nil
+        }
 
         do {
             let fetchedProjects = try await client.fetchProjects(
@@ -158,6 +160,8 @@ class AppState {
             return []
         }
 
+        errorMessage = nil
+
         do {
             let variables = try await client.fetchVariables(
                 projectId: projectId,
@@ -193,6 +197,9 @@ class AppState {
             if success {
                 // Refresh projects to reflect deletion
                 await loadProjects()
+            } else {
+                errorMessage = "Railway did not delete the project. Try again."
+                isLoading = false
             }
             return success
         } catch let error as RailwayError {
@@ -238,6 +245,8 @@ class AppState {
             return false
         }
 
+        errorMessage = nil
+
         do {
             let success = try await client.upsertVariable(
                 projectId: projectId,
@@ -247,6 +256,9 @@ class AppState {
                 value: value,
                 token: railwayToken
             )
+            if !success {
+                errorMessage = "Railway did not save the variable. Try again."
+            }
             return success
         } catch let error as RailwayError {
             errorMessage = error.errorDescription
@@ -265,6 +277,8 @@ class AppState {
             return false
         }
 
+        errorMessage = nil
+
         do {
             let success = try await client.deleteVariable(
                 projectId: projectId,
@@ -273,6 +287,9 @@ class AppState {
                 name: name,
                 token: railwayToken
             )
+            if !success {
+                errorMessage = "Railway did not delete the variable. Try again."
+            }
             return success
         } catch let error as RailwayError {
             errorMessage = error.errorDescription
@@ -301,6 +318,9 @@ class AppState {
             )
             if success {
                 await loadProjects()
+            } else {
+                errorMessage = "Railway did not delete the service. Try again."
+                isLoading = false
             }
             return success
         } catch let error as RailwayError {
@@ -323,6 +343,8 @@ class AppState {
             errorMessage = "Please configure your API token and Workspace ID in settings."
             return []
         }
+
+        errorMessage = nil
 
         do {
             let deployments = try await client.fetchDeployments(
@@ -347,11 +369,16 @@ class AppState {
             return false
         }
 
+        errorMessage = nil
+
         do {
             let success = try await client.restartDeployment(
                 deploymentId: deploymentId,
                 token: railwayToken
             )
+            if !success {
+                errorMessage = "Railway did not restart the deployment. Try again."
+            }
             return success
         } catch let error as RailwayError {
             errorMessage = error.errorDescription
@@ -368,12 +395,17 @@ class AppState {
             return false
         }
 
+        errorMessage = nil
+
         do {
             let success = try await client.redeployService(
                 environmentId: environmentId,
                 serviceId: serviceId,
                 token: railwayToken
             )
+            if !success {
+                errorMessage = "Railway did not start the redeploy. Try again."
+            }
             return success
         } catch let error as RailwayError {
             errorMessage = error.errorDescription
@@ -394,7 +426,8 @@ class AppState {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(self?.autoRefreshInterval ?? 30))
                 guard !Task.isCancelled else { break }
-                await self?.loadProjects()
+                // A background refresh must not remove the error of a failed action.
+                await self?.loadProjects(keepingError: true)
             }
         }
     }
