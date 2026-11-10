@@ -7,7 +7,7 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 ### Project & Service Monitoring
 - View all your Railway projects in a clean, compact list.
 - See services associated with each project.
-- **Add Services**: Create new services directly from a GitHub repository.
+- **Add Services**: Create new services from a GitHub repository or a Docker image.
 - **Delete Projects/Services**: Manage your resources (with confirmation).
 
 ### Environment Variables
@@ -26,7 +26,7 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 ## Limitations
 
 - **Project Creation**: Creating new projects is not currently supported via the Public API endpoints available to this application. The app provides a shortcut to the Railway Dashboard for this action.
-- **Service Creation**: Currently limited to creating services from **GitHub repositories**. Other sources (like Docker images or databases) are not yet implemented.
+- **Service Creation**: You can create services from **GitHub repositories** and **Docker images**. Other sources (like databases) are not implemented.
 - **Authentication**: Requires a valid Railway API Token and Workspace ID to function.
 
 ## Getting Started
