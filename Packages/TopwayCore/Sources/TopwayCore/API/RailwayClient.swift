@@ -1,7 +1,7 @@
 import Foundation
 
 public struct RailwayClient: Sendable {
-    private let baseURL = "https://backboard.railway.app/graphql/v2"
+    private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
 
     public init(session: URLSession = .shared) {
@@ -12,8 +12,8 @@ public struct RailwayClient: Sendable {
 
     public func fetchProjects(workspaceId: String, token: String) async throws -> [Project] {
         let query = """
-            query Projects {
-              workspace(workspaceId: "\(workspaceId)") {
+            query Projects($workspaceId: String!) {
+              workspace(workspaceId: $workspaceId) {
                 projects {
                   edges {
                     node {
@@ -42,17 +42,11 @@ public struct RailwayClient: Sendable {
             }
             """
 
-        let response: GraphQLResponse<WorkspaceData> = try await executeQuery(
-            query: query, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        guard let data = response.data else {
-            throw RailwayError.unknown
-        }
-
+        let data: WorkspaceData = try await execute(
+            query: query,
+            variables: ["workspaceId": workspaceId],
+            token: token
+        )
         return data.workspace.projectList
     }
 
@@ -61,29 +55,18 @@ public struct RailwayClient: Sendable {
     public func createService(projectId: String, repo: String, token: String) async throws -> String
     {
         let mutation = """
-            mutation serviceCreate {
-              serviceCreate(
-                input: {
-                  projectId: "\(projectId)"
-                  source: { repo: "\(repo)" }
-                }
-              ) {
+            mutation serviceCreate($projectId: String!, $repo: String!) {
+              serviceCreate(input: { projectId: $projectId, source: { repo: $repo } }) {
                 id
               }
             }
             """
 
-        let response: GraphQLResponse<ServiceCreateData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        guard let data = response.data else {
-            throw RailwayError.unknown
-        }
-
+        let data: ServiceCreateData = try await execute(
+            query: mutation,
+            variables: ["projectId": projectId, "repo": repo],
+            token: token
+        )
         return data.serviceCreate.id
     }
 
@@ -93,29 +76,18 @@ public struct RailwayClient: Sendable {
         -> String
     {
         let mutation = """
-            mutation serviceCreate {
-              serviceCreate(
-                input: {
-                  projectId: "\(projectId)"
-                  source: { image: "\(image)" }
-                }
-              ) {
+            mutation serviceCreate($projectId: String!, $image: String!) {
+              serviceCreate(input: { projectId: $projectId, source: { image: $image } }) {
                 id
               }
             }
             """
 
-        let response: GraphQLResponse<ServiceCreateData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        guard let data = response.data else {
-            throw RailwayError.unknown
-        }
-
+        let data: ServiceCreateData = try await execute(
+            query: mutation,
+            variables: ["projectId": projectId, "image": image],
+            token: token
+        )
         return data.serviceCreate.id
     }
 
@@ -123,30 +95,22 @@ public struct RailwayClient: Sendable {
 
     public func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
-    )
-        async throws -> [String: String]
-    {
+    ) async throws -> [String: String] {
         let query = """
-            query variables {
-              variables(
-                projectId: "\(projectId)"
-                environmentId: "\(environmentId)"
-                serviceId: "\(serviceId)"
-              )
+            query variables($projectId: String!, $environmentId: String!, $serviceId: String!) {
+              variables(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId)
             }
             """
 
-        let response: GraphQLResponse<VariablesData> = try await executeQuery(
-            query: query, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        guard let data = response.data else {
-            throw RailwayError.unknown
-        }
-
+        let data: VariablesData = try await execute(
+            query: query,
+            variables: [
+                "projectId": projectId,
+                "environmentId": environmentId,
+                "serviceId": serviceId,
+            ],
+            token: token
+        )
         return data.variables
     }
 
@@ -154,22 +118,16 @@ public struct RailwayClient: Sendable {
 
     public func deleteProject(projectId: String, token: String) async throws -> Bool {
         let mutation = """
-            mutation projectDelete {
-              projectDelete(id: "\(projectId)")
+            mutation projectDelete($id: String!) {
+              projectDelete(id: $id)
             }
             """
 
-        let response: GraphQLResponse<ProjectDeleteData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        guard let data = response.data else {
-            throw RailwayError.unknown
-        }
-
+        let data: ProjectDeleteData = try await execute(
+            query: mutation,
+            variables: ["id": projectId],
+            token: token
+        )
         return data.projectDelete
     }
 
@@ -180,27 +138,37 @@ public struct RailwayClient: Sendable {
         token: String
     ) async throws -> Bool {
         let mutation = """
-            mutation variableUpsert {
+            mutation variableUpsert(
+              $projectId: String!
+              $environmentId: String!
+              $serviceId: String!
+              $name: String!
+              $value: String!
+            ) {
               variableUpsert(
                 input: {
-                  projectId: "\(projectId)"
-                  environmentId: "\(environmentId)"
-                  serviceId: "\(serviceId)"
-                  name: "\(name)"
-                  value: "\(value.replacingOccurrences(of: "\"", with: "\\\"").replacingOccurrences(of: "\n", with: "\\n"))"
+                  projectId: $projectId
+                  environmentId: $environmentId
+                  serviceId: $serviceId
+                  name: $name
+                  value: $value
                 }
               )
             }
             """
 
-        let response: GraphQLResponse<VariableUpsertData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        return response.data?.variableUpsert ?? false
+        let data: VariableUpsertData = try await execute(
+            query: mutation,
+            variables: [
+                "projectId": projectId,
+                "environmentId": environmentId,
+                "serviceId": serviceId,
+                "name": name,
+                "value": value,
+            ],
+            token: token
+        )
+        return data.variableUpsert
     }
 
     // MARK: - Delete Variable
@@ -209,45 +177,51 @@ public struct RailwayClient: Sendable {
         projectId: String, environmentId: String, serviceId: String, name: String, token: String
     ) async throws -> Bool {
         let mutation = """
-            mutation variableDelete {
+            mutation variableDelete(
+              $projectId: String!
+              $environmentId: String!
+              $serviceId: String!
+              $name: String!
+            ) {
               variableDelete(
                 input: {
-                  projectId: "\(projectId)"
-                  environmentId: "\(environmentId)"
-                  serviceId: "\(serviceId)"
-                  name: "\(name)"
+                  projectId: $projectId
+                  environmentId: $environmentId
+                  serviceId: $serviceId
+                  name: $name
                 }
               )
             }
             """
 
-        let response: GraphQLResponse<VariableDeleteData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        return response.data?.variableDelete ?? false
+        let data: VariableDeleteData = try await execute(
+            query: mutation,
+            variables: [
+                "projectId": projectId,
+                "environmentId": environmentId,
+                "serviceId": serviceId,
+                "name": name,
+            ],
+            token: token
+        )
+        return data.variableDelete
     }
 
     // MARK: - Delete Service
 
     public func deleteService(serviceId: String, token: String) async throws -> Bool {
         let mutation = """
-            mutation serviceDelete {
-              serviceDelete(id: "\(serviceId)")
+            mutation serviceDelete($id: String!) {
+              serviceDelete(id: $id)
             }
             """
 
-        let response: GraphQLResponse<ServiceDeleteData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        return response.data?.serviceDelete ?? false
+        let data: ServiceDeleteData = try await execute(
+            query: mutation,
+            variables: ["id": serviceId],
+            token: token
+        )
+        return data.serviceDelete
     }
 
     // MARK: - Fetch Deployments
@@ -256,14 +230,10 @@ public struct RailwayClient: Sendable {
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [Deployment] {
         let query = """
-            query deployments {
+            query deployments($projectId: String!, $environmentId: String!, $serviceId: String!) {
               deployments(
                 first: 10
-                input: {
-                  projectId: "\(projectId)"
-                  environmentId: "\(environmentId)"
-                  serviceId: "\(serviceId)"
-                }
+                input: { projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId }
               ) {
                 edges {
                   node {
@@ -277,8 +247,86 @@ public struct RailwayClient: Sendable {
             }
             """
 
-        let response: GraphQLResponse<DeploymentsData> = try await executeQuery(
-            query: query, token: token)
+        let data: DeploymentsData = try await execute(
+            query: query,
+            variables: [
+                "projectId": projectId,
+                "environmentId": environmentId,
+                "serviceId": serviceId,
+            ],
+            token: token
+        )
+        return data.deployments.edges.map { $0.node }
+    }
+
+    // MARK: - Restart Deployment
+
+    public func restartDeployment(deploymentId: String, token: String) async throws -> Bool {
+        let mutation = """
+            mutation deploymentRestart($id: String!) {
+              deploymentRestart(id: $id)
+            }
+            """
+
+        let data: DeploymentRestartData = try await execute(
+            query: mutation,
+            variables: ["id": deploymentId],
+            token: token
+        )
+        return data.deploymentRestart
+    }
+
+    // MARK: - Redeploy Service (trigger new deployment)
+
+    public func redeployService(environmentId: String, serviceId: String, token: String)
+        async throws -> Bool
+    {
+        let mutation = """
+            mutation serviceInstanceRedeploy($environmentId: String!, $serviceId: String!) {
+              serviceInstanceRedeploy(environmentId: $environmentId, serviceId: $serviceId)
+            }
+            """
+
+        let data: ServiceRedeployData = try await execute(
+            query: mutation,
+            variables: ["environmentId": environmentId, "serviceId": serviceId],
+            token: token
+        )
+        return data.serviceInstanceRedeploy
+    }
+
+    // MARK: - Private Methods
+
+    private func execute<T: Decodable>(
+        query: String, variables: [String: String], token: String
+    ) async throws -> T {
+        guard let url = URL(string: baseURL) else {
+            throw RailwayError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONEncoder().encode(
+            GraphQLRequest(query: query, variables: variables))
+
+        let response: GraphQLResponse<T>
+        do {
+            let (data, urlResponse) = try await session.data(for: request)
+
+            if let httpResponse = urlResponse as? HTTPURLResponse, httpResponse.statusCode == 401 {
+                throw RailwayError.unauthorized
+            }
+
+            response = try JSONDecoder().decode(GraphQLResponse<T>.self, from: data)
+        } catch let error as RailwayError {
+            throw error
+        } catch let error as DecodingError {
+            throw RailwayError.decodingError(error)
+        } catch {
+            throw RailwayError.networkError(error)
+        }
 
         if let errors = response.errors, !errors.isEmpty {
             throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
@@ -288,87 +336,6 @@ public struct RailwayClient: Sendable {
             throw RailwayError.unknown
         }
 
-        return data.deployments.edges.map { $0.node }
-    }
-
-    // MARK: - Restart Deployment
-
-    public func restartDeployment(deploymentId: String, token: String) async throws -> Bool {
-        let mutation = """
-            mutation deploymentRestart {
-              deploymentRestart(id: "\(deploymentId)")
-            }
-            """
-
-        let response: GraphQLResponse<DeploymentRestartData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        return response.data?.deploymentRestart ?? false
-    }
-
-    // MARK: - Redeploy Service (trigger new deployment)
-
-    public func redeployService(environmentId: String, serviceId: String, token: String)
-        async throws
-        -> Bool
-    {
-        let mutation = """
-            mutation serviceInstanceRedeploy {
-              serviceInstanceRedeploy(
-                environmentId: "\(environmentId)"
-                serviceId: "\(serviceId)"
-              )
-            }
-            """
-
-        let response: GraphQLResponse<ServiceRedeployData> = try await executeQuery(
-            query: mutation, token: token)
-
-        if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
-        }
-
-        return response.data?.serviceInstanceRedeploy ?? false
-    }
-
-    // MARK: - Private Methods
-
-    private func executeQuery<T: Decodable>(query: String, token: String) async throws
-        -> GraphQLResponse<T>
-    {
-        guard let url = URL(string: baseURL) else {
-            throw RailwayError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-
-        let body: [String: Any] = ["query": query]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        do {
-            let (data, response) = try await session.data(for: request)
-
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 401 {
-                    throw RailwayError.unauthorized
-                }
-            }
-
-            let decoder = JSONDecoder()
-            return try decoder.decode(GraphQLResponse<T>.self, from: data)
-        } catch let error as RailwayError {
-            throw error
-        } catch let error as DecodingError {
-            throw RailwayError.decodingError(error)
-        } catch {
-            throw RailwayError.networkError(error)
-        }
+        return data
     }
 }
