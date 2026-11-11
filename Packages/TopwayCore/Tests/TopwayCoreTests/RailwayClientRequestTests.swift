@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-import TopwayCore
+
+@testable import TopwayCore
 
 struct RailwayClientRequestTests {
     @Test("Each request goes to the railway.com endpoint with a bearer token")
@@ -36,6 +37,39 @@ struct RailwayClientRequestTests {
         let request = try #require(server.requests.first)
         let query = try #require(request.query)
         #expect(query.contains("deletedAt"))
+    }
+
+    @Test("Projects give the latest deployment status of each service in each environment")
+    func latestDeploymentStatuses() async throws {
+        let server = StubServer(
+            StubReply(
+                body: """
+                    {"data":{"workspace":{"projects":{"edges":[
+                      {"node":{"id":"p1","name":"shop","deletedAt":null,
+                       "services":{"edges":[{"node":{"id":"s1","name":"web",
+                         "serviceInstances":{"edges":[
+                           {"node":{"environmentId":"e1","latestDeployment":{"id":"d1",
+                             "status":"CRASHED","staticUrl":null,
+                             "createdAt":"2026-11-10T10:00:00Z"}}},
+                           {"node":{"environmentId":"e2","latestDeployment":null}}
+                         ]}}}]},
+                       "environments":{"edges":[{"node":{"id":"e1","name":"production"}},
+                         {"node":{"id":"e2","name":"staging"}}]}}}
+                    ]}}}}
+                    """))
+
+        let projects = try await RailwayClient(session: server.session)
+            .fetchProjects(workspaceId: "w1", token: "secret")
+
+        #expect(
+            projects.flatMap(\.serviceStatuses) == [
+                ServiceStatus(
+                    projectId: "p1", projectName: "shop", environmentId: "e1",
+                    environmentName: "production", serviceId: "s1", serviceName: "web",
+                    status: "CRASHED")
+            ])
+        let query = try #require(server.requests.first?.query)
+        #expect(query.contains("latestDeployment"))
     }
 
     @Test(

@@ -25,6 +25,19 @@ public struct RailwayClient: RailwayDataSource {
                           node {
                             id
                             name
+                            serviceInstances {
+                              edges {
+                                node {
+                                  environmentId
+                                  latestDeployment {
+                                    id
+                                    status
+                                    staticUrl
+                                    createdAt
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }

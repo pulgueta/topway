@@ -28,6 +28,24 @@ public struct Project: Identifiable, Decodable, Hashable, Sendable {
         environments.edges.map { $0.node }
     }
 
+    /// The latest deployment status of each service in each environment.
+    /// A service with no deployment in an environment gives no status there.
+    public var serviceStatuses: [ServiceStatus] {
+        let environmentNames = Dictionary(
+            environmentList.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+        return serviceList.flatMap { service in
+            service.instanceList.compactMap { instance in
+                guard let deployment = instance.latestDeployment,
+                    let environmentName = environmentNames[instance.environmentId]
+                else { return nil }
+                return ServiceStatus(
+                    projectId: id, projectName: name, environmentId: instance.environmentId,
+                    environmentName: environmentName, serviceId: service.id,
+                    serviceName: service.name, status: deployment.status)
+            }
+        }
+    }
+
     /// The name of the production environment, if the project has one.
     public var productionEnvironmentName: String? {
         environmentList.first {
