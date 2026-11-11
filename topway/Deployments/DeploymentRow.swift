@@ -7,12 +7,14 @@ struct DeploymentRow: View {
     let isRestarting: Bool
     let onRestart: () -> Void
     let onOpenURL: () -> Void
+    let onViewLogs: () -> Void
 
     @State private var isHovered = false
     @FocusState private var focusedAction: RowAction?
     @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
 
     private enum RowAction: Hashable {
+        case viewLogs
         case openURL
         case restart
     }
@@ -54,6 +56,11 @@ struct DeploymentRow: View {
 
             // Actions
             HStack(spacing: 4) {
+                IconButton(icon: "text.alignleft", help: "View logs") {
+                    onViewLogs()
+                }
+                .focused($focusedAction, equals: .viewLogs)
+
                 // Open URL (if available)
                 if deployment.staticUrl != nil {
                     IconButton(icon: "link", help: "Open URL") {

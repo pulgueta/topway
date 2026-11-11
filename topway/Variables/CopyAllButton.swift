@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CopyAllButton: View {
+    var title = "Copy All"
     let action: () -> Void
 
     @State private var isHovered = false
@@ -22,7 +23,7 @@ struct CopyAllButton: View {
             HStack(spacing: 4) {
                 Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 10))
-                Text(isCopied ? "Copied!" : "Copy All")
+                Text(isCopied ? "Copied!" : title)
                     .font(.system(size: 11))
             }
             .foregroundStyle(isCopied ? .green : (isHovered ? .primary : .secondary))
