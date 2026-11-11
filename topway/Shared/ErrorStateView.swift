@@ -22,7 +22,7 @@ struct ErrorStateView: View {
         } description: {
             Text(
                 appState.isTokenRejected
-                    ? "The token is expired or not correct. Add a new token in Settings, or use sample data."
+                    ? "The token is expired or not correct, or it has no access to this workspace. Check the token and the Workspace ID in Settings, or use sample data."
                     : message
             )
         } actions: {
