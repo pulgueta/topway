@@ -23,6 +23,13 @@ Topway is a native macOS menu bar application for monitoring and managing your R
   - Trigger a full redeploy of a service.
   - Open the live deployment URL in your browser.
 
+### Health and Alerts
+- **Menu bar health**: The menu bar icon shows the health of all services. The tram shows when all services are healthy. Arrows show when a build or a deploy is in progress. A warning triangle shows when a service failed or crashed.
+- **Background refresh**: When auto-refresh is on, Topway refreshes from launch, also when the menu bar window is closed. Turn it on in **Settings > Auto Refresh**. Topway checks for alerts at each refresh.
+- **Alerts**: Turn on **Settings > Alerts > Send alerts** to get a notification when a deployment fails, a service crashes or a service recovers. Alerts are off by default. Topway asks for notification permission when you turn them on. If you denied the permission, select **Open System Settings**.
+- **Mute**: When alerts are on, each project row has a bell. Select it to mute the alerts of that project.
+- **Launch at login**: Turn on **Settings > General > Launch at login**. If macOS asks for approval, select **Open Login Items**.
+
 ## Limitations
 
 - **Project Creation**: Creating new projects is not currently supported via the Public API endpoints available to this application. The app provides a shortcut to the Railway Dashboard for this action.
@@ -45,4 +52,5 @@ You can use Topway with no Railway token. On the start screen, select **Try with
 - Topway shows sample projects, services, deployments and variables. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
+- Sample mode can send alerts. Each sample notification shows **Sample data**.
 - To go back to the start screen, select **Exit sample data**. If you save a token in Settings, Topway also exits sample mode.

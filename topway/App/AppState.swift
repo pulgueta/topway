@@ -47,7 +47,27 @@ class AppState {
     /// wouldn't update when it changed. `didSet` does not fire for the default
     /// value during `init`, so no side effects run at startup.
     var workspaceId: String = UserDefaults.standard.string(forKey: "workspaceId") ?? "" {
-        didSet { UserDefaults.standard.set(workspaceId, forKey: "workspaceId") }
+        didSet {
+            UserDefaults.standard.set(workspaceId, forKey: "workspaceId")
+            // The projects of a different workspace must not cause false alerts.
+            if workspaceId != oldValue {
+                alertSnapshot = nil
+            }
+        }
+    }
+
+    /// Off by default. Turning it on asks for notification permission.
+    var alertsEnabled: Bool = UserDefaults.standard.bool(forKey: "alertsEnabled") {
+        didSet { UserDefaults.standard.set(alertsEnabled, forKey: "alertsEnabled") }
+    }
+
+    /// The projects that send no alerts.
+    private(set) var mutedProjectIds = Set(
+        UserDefaults.standard.stringArray(forKey: "mutedProjectIds") ?? [])
+    {
+        didSet {
+            UserDefaults.standard.set(mutedProjectIds.sorted(), forKey: "mutedProjectIds")
+        }
     }
 
     var autoRefreshEnabled: Bool = UserDefaults.standard.bool(forKey: "autoRefreshEnabled") {
@@ -83,6 +103,9 @@ class AppState {
     /// Only the latest project load may change the screen. A data source switch also
     /// increases it, so a load from the earlier source is dropped.
     private var latestProjectLoad = 0
+    /// The last settled state of each service. It is `nil` before the first load of a data
+    /// source or a workspace, so that load gives no alerts.
+    private var alertSnapshot: AlertSnapshot?
 
     // MARK: - Init
 
@@ -112,6 +135,10 @@ class AppState {
         errorMessage != nil
     }
 
+    var health: HealthSummary {
+        HealthSummary(projects: projects)
+    }
+
     // MARK: - Public Methods
 
     func loadProjects(keepingError: Bool = false) async {
@@ -134,6 +161,7 @@ class AppState {
             )
             guard load == latestProjectLoad else { return }
             projects = fetchedProjects
+            sendAlerts(for: fetchedProjects)
             if let refreshFailureMessage, errorMessage == refreshFailureMessage {
                 errorMessage = nil
             }
@@ -300,12 +328,44 @@ class AppState {
     private func switchDataSource(to source: any RailwayDataSource, isSampleMode: Bool) {
         dataSource = source
         latestProjectLoad += 1
+        alertSnapshot = nil
         self.isSampleMode = isSampleMode
         projects = []
         isLoading = false
         pendingConfirmation = nil
         clearError()
         restartAutoRefresh()
+    }
+
+    // MARK: - Alerts
+
+    func toggleMute(projectId: String) {
+        if mutedProjectIds.contains(projectId) {
+            mutedProjectIds.remove(projectId)
+        } else {
+            mutedProjectIds.insert(projectId)
+        }
+    }
+
+    /// Compares the new statuses with the earlier load and sends the alerts.
+    /// The snapshot changes also when alerts are off, so turning them on gives no old alerts.
+    private func sendAlerts(for projects: [Project]) {
+        let statuses = projects.flatMap(\.serviceStatuses)
+        guard var snapshot = alertSnapshot else {
+            alertSnapshot = AlertSnapshot(statuses: statuses)
+            return
+        }
+        let alerts = snapshot.update(with: statuses, mutedProjectIds: mutedProjectIds)
+        alertSnapshot = snapshot
+        guard alertsEnabled, !alerts.isEmpty else { return }
+        let isSampleMode = isSampleMode
+        Task {
+            do {
+                try await AlertNotifier.send(alerts, isSampleMode: isSampleMode)
+            } catch {
+                errorMessage = "Topway cannot show an alert. \(error.localizedDescription)"
+            }
+        }
     }
 
     // MARK: - Confirmation
@@ -542,9 +602,10 @@ class AppState {
         startAutoRefresh()
     }
 
-    func initializeAutoRefresh() {
-        if autoRefreshEnabled && isConfigured {
-            startAutoRefresh()
-        }
+    /// Runs at app launch. Loads the projects once, so the menu bar shows the health at once.
+    func initializeAutoRefresh() async {
+        guard isConfigured else { return }
+        startAutoRefresh()
+        await loadProjects()
     }
 }

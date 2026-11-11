@@ -48,6 +48,12 @@ struct SettingsView: View {
                 }
             }
 
+            AlertsSettingsSection()
+
+            Section("General") {
+                LaunchAtLoginToggle()
+            }
+
             Section {
                 Button("Save") {
                     appState.workspaceId = workspace
@@ -74,7 +80,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .scenePadding()
-        .frame(width: 420, height: 360)
+        .frame(width: 420, height: 580)
         .task {
             guard !hasLoaded else { return }
             token = appState.railwayToken

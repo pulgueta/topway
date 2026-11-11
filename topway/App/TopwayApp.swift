@@ -6,18 +6,28 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 @main
 @MainActor
 struct TopwayApp: App {
     @State private var appState = AppState()
+    /// The notification center keeps a weak reference, so the app keeps this one.
+    private let notificationPresenter = NotificationPresenter()
+
+    init() {
+        UNUserNotificationCenter.current().delegate = notificationPresenter
+    }
 
     var body: some Scene {
-        MenuBarExtra("Topway", systemImage: "tram.fill") {
+        MenuBarExtra {
             MainView()
                 .environment(appState)
+        } label: {
+            // The label shows at launch, so the refresh does not wait for the popover.
+            MenuBarLabel(health: appState.health)
                 .task {
-                    appState.initializeAutoRefresh()
+                    await appState.initializeAutoRefresh()
                 }
         }
         .menuBarExtraStyle(.window)

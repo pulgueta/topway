@@ -19,6 +19,7 @@ The app imports the core. The core does not import the app.
 | `API/Responses` | Types that decode Railway responses. These types are internal. |
 | `Models` | `Project`, `Service`, `Deployment` and other types that the app uses. |
 | `Sample` | `SampleDataSource` and its start data. |
+| `Health` | `HealthSummary`, `Health`, `AlertSnapshot`, `HealthAlert` and `AlertKind`. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
@@ -29,11 +30,12 @@ Each folder has the name of a feature.
 | Folder | Contents |
 |---|---|
 | `App` | App entry point, `AppState`, `MainView`, navigation and `SampleDataBanner`. |
-| `Projects` | Project list rows. |
+| `Health` | `MenuBarLabel`, `AlertNotifier` and `NotificationPresenter`. |
+| `Projects` | Project list rows, with the mute button. |
 | `Services` | Service rows and add service. |
 | `Deployments` | Deployment list, restart and redeploy. |
 | `Variables` | Variable list, variable editor and the service actions menu. |
-| `Settings` | The native Settings window. |
+| `Settings` | The native Settings window, the Alerts section and the launch at login toggle. |
 | `Shared` | Buttons, error views, the confirmation dialog and `openAppSettings`. |
 
 ## Data flow
@@ -62,6 +64,34 @@ Sample mode lets the app run with no token, for example for App Review.
 - Sample mode does not read or write the Keychain token. It is not saved, so it ends when the app quits.
 - Actions change the sample data, and a later read shows the change. Redeploy adds a deployment with the current date.
 - `SampleDataSource` gets the date from its `now` parameter, so tests can set a fixed date.
+
+## Health and alerts
+
+The projects query gets the latest deployment of each service in each environment (`environments.serviceInstances.latestDeployment`). Do not use `Service.serviceInstances`: Railway marks it as deprecated. `Project.serviceStatuses` gives one `ServiceStatus` for each service and environment that has a deployment. It leaves out environments and service instances that have `deletedAt` set.
+
+`HealthSummary` gives one health for all projects:
+
+| Health | Latest statuses |
+|---|---|
+| Failing | One or more `FAILED` or `CRASHED`. |
+| In progress | No failing status, and one or more `BUILDING`, `DEPLOYING`, `INITIALIZING`, `NEEDS_APPROVAL`, `QUEUED`, `REMOVING` or `WAITING`. |
+| Healthy | All other statuses, for example `SUCCESS`, `REMOVED`, `SKIPPED`, `SLEEPING` or an unknown status. No services also gives healthy. |
+
+`MenuBarLabel` shows the health in the menu bar, with an accessibility label such as "Topway, 2 services failing".
+
+`AlertSnapshot` keeps the last settled state (deployment ID and status) of each service in each environment. A status is settled when it is not in progress. An in-progress status does not replace the settled state, so a fix that builds first still gives a recovery alert. After each project load, `AppState` updates the snapshot:
+
+| Change in the settled state | Alert |
+|---|---|
+| To `FAILED`, or a new `FAILED` deployment | Deployment failed |
+| To `CRASHED`, or a new `CRASHED` deployment | Service crashed |
+| From `FAILED` or `CRASHED` to `SUCCESS` | Service recovered |
+
+There is no alert for the first load, for the same deployment with the same status, for a new or a removed service, or for a muted project. `AppState` clears the snapshot when the data source or the workspace changes, so the first load after a change gives no alerts.
+
+`AlertNotifier` shows a local notification for each alert, only when **Send alerts** is on and the user gave permission. The notification names the service, the environment and the project. In sample mode, it shows "Sample data". `NotificationPresenter` is the notification center delegate. `TopwayApp` sets it at launch, so alerts show as banners also while the popover is open.
+
+`UserDefaults` keeps `alertsEnabled` (off by default) and `mutedProjectIds`. Launch at login uses `SMAppService.mainApp`. The system keeps that state, so Settings reads it each time.
 
 ## Confirmation levels
 

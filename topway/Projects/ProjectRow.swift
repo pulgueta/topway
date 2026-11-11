@@ -7,9 +7,13 @@ struct ProjectRow: View {
     let onAddService: () -> Void
     let onRequestDelete: () -> Void
     let onServiceTap: (Service) -> Void
+    var isMuted = false
+    /// `nil` hides the mute button, for example when alerts are off.
+    var onToggleMute: (() -> Void)?
 
     @State private var isExpanded = true
     @State private var isHeaderHovered = false
+    @State private var isMuteHovered = false
     @State private var isAddHovered = false
     @State private var isDeleteHovered = false
 
@@ -65,6 +69,26 @@ struct ProjectRow: View {
             }
 
             Spacer()
+
+            if let onToggleMute {
+                Button(action: onToggleMute) {
+                    Image(systemName: isMuted ? "bell.slash" : "bell")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(isMuteHovered ? .primary : .secondary)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(isMuteHovered ? Color.primary.opacity(0.1) : Color.clear)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    isMuteHovered = hovering
+                }
+                .help(isMuted ? "Unmute alerts for this project" : "Mute alerts for this project")
+                .accessibilityLabel(isMuted ? "Unmute alerts" : "Mute alerts")
+            }
 
             // Add Service Button
             Button(action: onAddService) {

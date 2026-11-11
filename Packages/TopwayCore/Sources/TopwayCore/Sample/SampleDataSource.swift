@@ -30,8 +30,24 @@ public actor SampleDataSource: RailwayDataSource {
     }
 
     /// The sample data has one workspace, so this method ignores `workspaceId` and `token`.
+    /// Each environment gets the latest deployment of each service, as Railway gives it.
     public func fetchProjects(workspaceId: String, token: String) -> [Project] {
-        projects
+        projects.map { project in
+            let environments = project.environmentList.map { environment in
+                RailwayEnvironment(
+                    id: environment.id, name: environment.name,
+                    instances: project.serviceList.compactMap { service in
+                        guard
+                            let latest = deployments[Self.key(environment.id, service.id)]?.first
+                        else { return nil }
+                        return ServiceInstance(serviceId: service.id, latestDeployment: latest)
+                    })
+            }
+            return Project(
+                id: project.id, name: project.name, services: project.services,
+                environments: EnvironmentConnection(
+                    edges: environments.map { EnvironmentEdge(node: $0) }))
+        }
     }
 
     /// Names the service after the repository, as Railway does.

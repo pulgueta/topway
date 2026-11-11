@@ -33,6 +33,21 @@ public struct RailwayClient: RailwayDataSource {
                           node {
                             id
                             name
+                            deletedAt
+                            serviceInstances {
+                              edges {
+                                node {
+                                  serviceId
+                                  deletedAt
+                                  latestDeployment {
+                                    id
+                                    status
+                                    staticUrl
+                                    createdAt
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       }

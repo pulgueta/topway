@@ -50,6 +50,31 @@ struct SampleDataSourceTests {
         #expect(web.first?.createdAt == "2026-11-10T10:00:00Z")
     }
 
+    @Test("Projects give the latest deployment status, and a restart changes it")
+    func latestStatuses() async throws {
+        let source = makeSource()
+        func workerStatus() async throws -> String {
+            let statuses = await source.fetchProjects(workspaceId: "", token: "")
+                .flatMap(\.serviceStatuses)
+            return try #require(
+                statuses.first {
+                    $0.environmentId == "storefront-production"
+                        && $0.serviceId == "storefront-worker"
+                }
+            ).status
+        }
+
+        let statuses = await source.fetchProjects(workspaceId: "", token: "")
+            .flatMap(\.serviceStatuses)
+        #expect(statuses.count == 14)
+        #expect(try await workerStatus() == "CRASHED")
+        let worker = await source.fetchDeployments(
+            projectId: "storefront", environmentId: "storefront-production",
+            serviceId: "storefront-worker", token: "")
+        _ = await source.restartDeployment(deploymentId: try #require(worker.first).id, token: "")
+        #expect(try await workerStatus() == "SUCCESS")
+    }
+
     @Test("Variables keep Railway references as plain values")
     func variables() async {
         let variables = await makeSource().fetchVariables(
