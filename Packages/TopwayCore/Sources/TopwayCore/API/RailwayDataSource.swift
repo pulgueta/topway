@@ -1,6 +1,6 @@
 /// The Railway reads and actions that the app uses.
 ///
-/// `RailwayClient` sends them to Railway.
+/// `RailwayClient` sends them to Railway. `SampleDataSource` keeps them in memory.
 public protocol RailwayDataSource: Sendable {
     func fetchProjects(workspaceId: String, token: String) async throws -> [Project]
 
