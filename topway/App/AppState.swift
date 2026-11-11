@@ -73,7 +73,7 @@ class AppState {
 
     // MARK: - Private Properties
 
-    private let client = RailwayClient()
+    private let dataSource: any RailwayDataSource = RailwayClient()
     private var refreshTask: Task<Void, Never>?
     /// The message that the latest failed background refresh set.
     private var refreshFailureMessage: String?
@@ -120,7 +120,7 @@ class AppState {
         }
 
         do {
-            let fetchedProjects = try await client.fetchProjects(
+            let fetchedProjects = try await dataSource.fetchProjects(
                 workspaceId: workspaceId,
                 token: railwayToken
             )
@@ -153,7 +153,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            _ = try await client.createService(
+            _ = try await dataSource.createService(
                 projectId: projectId,
                 repo: repo,
                 token: railwayToken
@@ -182,7 +182,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            _ = try await client.createServiceWithImage(
+            _ = try await dataSource.createServiceWithImage(
                 projectId: projectId,
                 image: image,
                 token: railwayToken
@@ -213,7 +213,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let variables = try await client.fetchVariables(
+            let variables = try await dataSource.fetchVariables(
                 projectId: projectId,
                 environmentId: environmentId,
                 serviceId: serviceId,
@@ -240,7 +240,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await client.deleteProject(
+            let success = try await dataSource.deleteProject(
                 projectId: projectId,
                 token: railwayToken
             )
@@ -314,7 +314,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await client.upsertVariable(
+            let success = try await dataSource.upsertVariable(
                 projectId: projectId,
                 environmentId: environmentId,
                 serviceId: serviceId,
@@ -346,7 +346,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await client.deleteVariable(
+            let success = try await dataSource.deleteVariable(
                 projectId: projectId,
                 environmentId: environmentId,
                 serviceId: serviceId,
@@ -378,7 +378,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await client.deleteService(
+            let success = try await dataSource.deleteService(
                 serviceId: serviceId,
                 token: railwayToken
             )
@@ -413,7 +413,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let deployments = try await client.fetchDeployments(
+            let deployments = try await dataSource.fetchDeployments(
                 projectId: projectId,
                 environmentId: environmentId,
                 serviceId: serviceId,
@@ -438,7 +438,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await client.restartDeployment(
+            let success = try await dataSource.restartDeployment(
                 deploymentId: deploymentId,
                 token: railwayToken
             )
@@ -464,7 +464,7 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await client.redeployService(
+            let success = try await dataSource.redeployService(
                 environmentId: environmentId,
                 serviceId: serviceId,
                 token: railwayToken

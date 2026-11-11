@@ -1,6 +1,6 @@
 import Foundation
 
-public struct RailwayClient: Sendable {
+public struct RailwayClient: RailwayDataSource {
     private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
 
