@@ -190,17 +190,12 @@ struct LogsView: View {
         }
         .defaultScrollAnchor(.bottom)
         .scrollPosition($position)
-        .onScrollGeometryChange(for: ScrollGeometry.self) {
-            $0
+        .onScrollGeometryChange(for: LogScrollMetrics.self) { geometry in
+            LogScrollMetrics(
+                offsetY: geometry.contentOffset.y, contentHeight: geometry.contentSize.height,
+                visibleMaxY: geometry.visibleRect.maxY)
         } action: { old, new in
-            // A move up with no change in size comes from the user, so stop following.
-            if new.contentSize.height == old.contentSize.height,
-                new.contentOffset.y < old.contentOffset.y
-            {
-                isFollowing = false
-            } else if new.visibleRect.maxY >= new.contentSize.height - 16 {
-                isFollowing = true
-            }
+            isFollowing = new.isFollowing(after: old, wasFollowing: isFollowing)
         }
         .onChange(of: buffer.entries.last?.id) {
             if isFollowing {

@@ -141,7 +141,7 @@ A server `complete` ends the stream, with no polling. The most requests in one h
 - The footer shows the connection state. A stream that finishes with no error shows **End of log**. A stream that an error stops shows **Stopped**.
 - `LogBuffer` keeps the newest 1,000 lines in memory.
 - Warnings and errors have a symbol and a color, so the level does not show by color only.
-- The screen follows new lines at the bottom. When the user scrolls up, it stops. **Follow new lines** starts it again.
+- The screen follows new lines at the bottom. When the user scrolls up, it stops. **Follow new lines** starts it again. `LogScrollMetrics` keeps the rule: it checks the bottom first, so a bounce at the bottom keeps follow on.
 - Errors show in `ErrorBanner`, or in `ErrorStateView` with **Retry** when there are no lines.
 
 ## Confirmation levels
