@@ -6,11 +6,18 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 @main
 @MainActor
 struct TopwayApp: App {
     @State private var appState = AppState()
+    /// The notification center keeps a weak reference, so the app keeps this one.
+    private let notificationPresenter = NotificationPresenter()
+
+    init() {
+        UNUserNotificationCenter.current().delegate = notificationPresenter
+    }
 
     var body: some Scene {
         MenuBarExtra {

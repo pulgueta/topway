@@ -30,7 +30,7 @@ Each folder has the name of a feature.
 | Folder | Contents |
 |---|---|
 | `App` | App entry point, `AppState`, `MainView`, navigation and `SampleDataBanner`. |
-| `Health` | `MenuBarLabel` and `AlertNotifier`. |
+| `Health` | `MenuBarLabel`, `AlertNotifier` and `NotificationPresenter`. |
 | `Projects` | Project list rows, with the mute button. |
 | `Services` | Service rows and add service. |
 | `Deployments` | Deployment list, restart and redeploy. |
@@ -89,7 +89,7 @@ The projects query gets the latest deployment of each service in each environmen
 
 There is no alert for the first load, for the same deployment with the same status, for a new or a removed service, or for a muted project. `AppState` clears the snapshot when the data source or the workspace changes, so the first load after a change gives no alerts.
 
-`AlertNotifier` shows a local notification for each alert, only when **Send alerts** is on and the user gave permission. The notification names the service, the environment and the project. In sample mode, it shows "Sample data".
+`AlertNotifier` shows a local notification for each alert, only when **Send alerts** is on and the user gave permission. The notification names the service, the environment and the project. In sample mode, it shows "Sample data". `NotificationPresenter` is the notification center delegate. `TopwayApp` sets it at launch, so alerts show as banners also while the popover is open.
 
 `UserDefaults` keeps `alertsEnabled` (off by default) and `mutedProjectIds`. Launch at login uses `SMAppService.mainApp`. The system keeps that state, so Settings reads it each time.
 
