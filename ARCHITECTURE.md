@@ -114,10 +114,19 @@ There is no alert for the first load, for the same deployment with the same stat
 
 | Socket result | Next step |
 |---|---|
-| A live socket drops | Connect again after 2 seconds. The state is `reconnecting`. |
+| A live socket drops, or a reconnect fails | Connect again with a backoff: 2, 4, 8, 16, then 30 seconds. A payload resets the backoff. The state is `reconnecting`. |
 | A live socket fails 3 times in a row before it gives a payload | A network error: poll. Bad data (`decodingError`, `unknown`): stop the stream with the error. |
-| The socket cannot connect | Poll the matching query every 5 seconds until the stream stops. The state is `polling`. |
+| The socket never connected in this stream | Poll the matching query every 5 seconds. The state is `polling`. |
 | Railway sends an error, or does not accept the token | Stop the stream with the error. Polling gets the same answer. |
+
+`LogRecovery` keeps these rules. It has no network code. While the stream polls:
+
+- It sends one request each 5 seconds.
+- A network error does not stop the stream. The next poll tries again.
+- Every 60 seconds (12 polls), it tries the socket again. If the socket connects, the state is `live` again.
+- The build log query also reads the deployment status. When the build is finished (the status is not `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING` or `NEEDS_APPROVAL`), polling stops and the log ends.
+
+A server `complete` ends the stream, with no polling. The most requests in one hour: 720 polls and 60 socket tries while the stream polls. When the socket connects, gives a line and drops each time, the backoff resets, so the stream can connect up to 1,800 times in one hour.
 
 `LogDeduplicator` removes lines that a reconnect or a poll gives again. A line is a duplicate when its timestamp, message and severity are equal to one of the last 1,000 lines. It does not compare times, because Railway can add a line with an earlier timestamp.
 

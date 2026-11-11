@@ -2,4 +2,6 @@
 /// decode to the same type.
 struct LogsData: Decodable, Sendable {
     let lines: [LogLine]
+    /// Only the build log query reads the deployment.
+    let deployment: Deployment?
 }

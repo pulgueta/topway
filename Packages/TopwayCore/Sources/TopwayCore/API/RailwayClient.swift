@@ -332,10 +332,13 @@ public struct RailwayClient: RailwayDataSource {
     // MARK: - Logs
 
     private static let pollInterval = Duration.seconds(5)
+    /// 12 polls of 5 seconds: polling tries the socket again every 60 seconds.
+    private static let pollsBeforeSocketTry = 12
 
-    /// Uses the WebSocket subscription. When a live socket drops, the stream connects again
-    /// after 2 seconds. When the socket cannot connect, the stream polls the matching query
-    /// every 5 seconds until it stops. `LogDeduplicator` removes the lines that a reconnect
+    /// Uses the WebSocket subscription. `LogRecovery` decides what to do when the socket
+    /// fails: connect again with a backoff, poll, or stop. Polling reads the matching query
+    /// every 5 seconds and tries the socket again every 60 seconds. A network error in
+    /// polling does not stop the stream. `LogDeduplicator` removes the lines that a reconnect
     /// or a poll gives again.
     public func logs(_ kind: LogKind, deploymentId: String, token: String)
         -> AsyncThrowingStream<LogEvent, any Error>
@@ -371,8 +374,9 @@ public struct RailwayClient: RailwayDataSource {
 
         let subscription = GraphQLRequest(
             query: Self.logsDocument(kind, operation: "subscription"), variables: variables)
+        let query = Self.logsDocument(kind, operation: "query")
         var recovery = LogRecovery()
-        subscribing: while true {
+        while true {
             do {
                 for try await event in socket.subscribe(
                     subscription, token: token, as: LogsData.self)
@@ -395,33 +399,55 @@ public struct RailwayClient: RailwayDataSource {
                 case .reconnect(let delay):
                     continuation.yield(.connection(.reconnecting))
                     try await sleep(delay)
+                    continue
                 case .poll:
-                    break subscribing
+                    break
                 }
             }
-        }
 
-        continuation.yield(.connection(.polling))
-        let query = Self.logsDocument(kind, operation: "query")
-        while true {
-            let data: LogsData = try await execute(
-                query: query, variables: variables, token: token)
-            yield(data.lines)
-            try await sleep(Self.pollInterval)
+            // Poll until the next socket try. One request each 5 seconds.
+            continuation.yield(.connection(.polling))
+            for _ in 0..<Self.pollsBeforeSocketTry {
+                do {
+                    let data: LogsData = try await execute(
+                        query: query, variables: variables, token: token)
+                    yield(data.lines)
+                    if let deployment = data.deployment, !deployment.isBuildRunning {
+                        // A finished build log gets no more lines.
+                        return
+                    }
+                } catch RailwayError.networkError {
+                    // A short network problem. Try again at the next interval.
+                }
+                try await sleep(Self.pollInterval)
+            }
+            recovery.retryingFromPolling()
         }
     }
 
-    /// The subscription and the query have the same arguments and fields.
+    /// The subscription and the query have the same arguments and fields. The build log
+    /// query also reads the deployment status, so polling can stop when the build ends.
     private static func logsDocument(_ kind: LogKind, operation: String) -> String {
-        """
-        \(operation) Logs($deploymentId: String!) {
-          lines: \(kind.fieldName)(deploymentId: $deploymentId, limit: 500) {
-            timestamp
-            message
-            severity
-          }
-        }
-        """
+        let status =
+            kind == .build && operation == "query"
+            ? """
+
+              deployment(id: $deploymentId) {
+                id
+                status
+                staticUrl
+                createdAt
+              }
+            """ : ""
+        return """
+            \(operation) Logs($deploymentId: String!) {
+              lines: \(kind.fieldName)(deploymentId: $deploymentId, limit: 500) {
+                timestamp
+                message
+                severity
+              }\(status)
+            }
+            """
     }
 
     // MARK: - Private Methods

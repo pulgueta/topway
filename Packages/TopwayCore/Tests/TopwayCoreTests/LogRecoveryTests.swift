@@ -84,4 +84,37 @@ struct LogRecoveryTests {
             Issue.record("Expected a reconnect after the payload reset the count")
         }
     }
+
+    @Test("Failed reconnects after a live socket back off: 2, 4, 8, 16, then 30 seconds")
+    func backoff() {
+        var recovery = LogRecovery()
+        recovery.connected()
+        var steps = [recovery.step(after: .networkError(URLError(.networkConnectionLost)))]
+        for _ in 1...5 {
+            steps.append(recovery.step(after: .networkError(URLError(.cannotConnectToHost))))
+        }
+
+        #expect(
+            steps == [2, 4, 8, 16, 30, 30].map { .reconnect(after: .seconds($0)) })
+    }
+
+    @Test("A payload resets the backoff")
+    func payloadResetsBackoff() {
+        var recovery = LogRecovery()
+        recovery.connected()
+        _ = recovery.step(after: .unknown)
+        _ = recovery.step(after: .unknown)
+        recovery.connected()
+        recovery.payloadReceived()
+
+        #expect(recovery.step(after: .unknown) == .reconnect(after: .seconds(2)))
+    }
+
+    @Test("A socket try from polling that fails goes back to polling")
+    func retryFromPollingFails() {
+        var recovery = LogRecovery()
+        recovery.retryingFromPolling()
+
+        #expect(recovery.step(after: .networkError(URLError(.cannotConnectToHost))) == .poll)
+    }
 }

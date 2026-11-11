@@ -74,4 +74,106 @@ struct RailwayClientRecoveryTests {
 
         #expect(transport.task.maximumMessageSize == 16 * 1_024 * 1_024)
     }
+
+    static let complete = ScriptedTransport.Frame.text(#"{"id":"1","type":"complete"}"#)
+    static let next = ScriptedTransport.Frame.text(
+        #"{"id":"1","type":"next","payload":{"data":{"lines":[{"timestamp":"t1","message":"Ready","severity":"info"}]}}}"#
+    )
+
+    @Test("A drop, then a failed reconnect, does not stop the stream")
+    func dropThenFailedReconnect() async throws {
+        let connector = ScriptedConnector { connect in
+            switch connect {
+            case 1:
+                ScriptedTransport([Self.ack, Self.next, .failure(URLError(.networkConnectionLost))])
+            case 2: ScriptedTransport([.failure(URLError(.cannotConnectToHost))])
+            default: ScriptedTransport([Self.ack, Self.complete])
+            }
+        }
+        let sleep = StubSleep(stopAt: 100)
+
+        let (result, server) = await Self.stream(
+            connector, poll: StubReply(body: Self.lines), sleep: sleep)
+
+        #expect(connector.connects == 3)
+        #expect(result.error == nil)
+        #expect(result.events.filter { $0 == .connection(.live) }.count == 2)
+        #expect(sleep.durations == [.seconds(2), .seconds(4)])
+        #expect(server.requests.isEmpty)
+    }
+
+    @Test("Polling tries the socket again after 60 seconds, and goes back to live")
+    func pollingRecoversToSocket() async throws {
+        let connector = ScriptedConnector { connect in
+            connect == 1
+                ? ScriptedTransport([.failure(URLError(.cannotConnectToHost))])
+                : ScriptedTransport([Self.ack, Self.complete])
+        }
+        let sleep = StubSleep(stopAt: 100)
+
+        let (result, server) = await Self.stream(
+            connector, poll: StubReply(body: Self.lines), sleep: sleep)
+
+        #expect(connector.connects == 2)
+        #expect(server.requests.count == 12)
+        #expect(sleep.durations == Array(repeating: .seconds(5), count: 12))
+        #expect(result.events.first == .connection(.polling))
+        #expect(result.events.last == .connection(.live))
+        #expect(result.error == nil)
+    }
+
+    @Test("A network error in polling does not stop the stream")
+    func networkErrorInPolling() async throws {
+        let connector = ScriptedConnector { _ in
+            ScriptedTransport([.failure(URLError(.cannotConnectToHost))])
+        }
+
+        let (result, server) = await Self.stream(
+            connector, poll: StubReply(body: "", failure: URLError(.notConnectedToInternet)),
+            sleep: StubSleep(stopAt: 3))
+
+        #expect(server.requests.count == 3)
+        #expect(result.events == [.connection(.polling)])
+        #expect(result.error == nil)
+    }
+
+    @Test("A server complete ends the stream, with no polling")
+    func completeEndsStream() async throws {
+        let connector = ScriptedConnector { _ in
+            ScriptedTransport([Self.ack, Self.next, Self.complete])
+        }
+
+        let (result, server) = await Self.stream(
+            connector, poll: StubReply(body: Self.lines), sleep: StubSleep(stopAt: 100))
+
+        #expect(result.error == nil)
+        #expect(server.requests.isEmpty)
+    }
+
+    @Test(
+        "Polling a build log ends when the build is finished, and continues while it runs",
+        arguments: [("SUCCESS", 1), ("FAILED", 1), ("BUILDING", 3), ("QUEUED", 3)])
+    func buildLogEnds(status: String, polls: Int) async throws {
+        let connector = ScriptedConnector { _ in
+            ScriptedTransport([.failure(URLError(.cannotConnectToHost))])
+        }
+        let server = StubServer(
+            StubReply(
+                body: """
+                    {"data":{"lines":[],"deployment":{"id":"d1","status":"\(status)",\
+                    "staticUrl":null,"createdAt":"2026-11-10T12:00:00Z"}}}
+                    """))
+        let client = RailwayClient(
+            session: server.session, sleep: StubSleep(stopAt: 3).sleep, socket: connector.socket)
+
+        var events: [LogEvent] = []
+        for try await event in client.logs(.build, deploymentId: "d1", token: "secret") {
+            events.append(event)
+        }
+
+        #expect(server.requests.count == polls)
+        #expect(events == [.connection(.polling)])
+        let query = try #require(server.requests.first?.query)
+        #expect(query.contains("deployment(id: $deploymentId)"))
+    }
 }
