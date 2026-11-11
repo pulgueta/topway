@@ -1,15 +1,13 @@
 import SwiftUI
 import TopwayCore
 
-/// A confirmation presented as a floating Liquid Glass dialog over a dimmed backdrop,
-/// layered inside the current view.
+/// A confirmation that shows as a Liquid Glass card above a dimmed backdrop, in the
+/// menu bar window.
 ///
-/// Used instead of the native `confirmationDialog`/`alert`, which present in a
-/// separate window and steal key focus. That dismisses the `MenuBarExtra(.window)`
-/// popover out from under the dialog. Present it with the `destructiveConfirmation(...)`
-/// modifier, attached to a view that fills the popover so the backdrop covers the
-/// whole surface.
-@MainActor
+/// Do not use `confirmationDialog` or `alert`. They open a separate window and take the
+/// key focus, and that closes the `MenuBarExtra(.window)` window. Show this dialog with the
+/// `destructiveConfirmation(...)` modifier on a view that fills the window, so the backdrop
+/// covers all content.
 struct GlassConfirmationDialog: View {
     let request: ConfirmationRequest
     var isLoading: Bool = false
@@ -29,7 +27,7 @@ struct GlassConfirmationDialog: View {
 
     var body: some View {
         ZStack {
-            // Dimmed backdrop; tapping outside cancels (unless mid-action).
+            // A click outside the card cancels, but not while the action runs.
             Rectangle()
                 .fill(.black.opacity(0.3))
                 .ignoresSafeArea()
@@ -37,9 +35,10 @@ struct GlassConfirmationDialog: View {
                 .onTapGesture {
                     if !isLoading { onCancel() }
                 }
+                .accessibilityHidden(true)
 
             card
-                .padding(28)
+                .padding(24)
         }
         .task {
             isNameFieldFocused = request.harm.needsTypedName
@@ -47,27 +46,24 @@ struct GlassConfirmationDialog: View {
     }
 
     private var card: some View {
-        VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             if isProduction {
                 productionLabel
             }
 
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 15))
-                    .foregroundStyle(request.isDestructive ? .red : .orange)
-
+            Label {
                 Text(request.title)
-                    .font(.system(size: 14, weight: .semibold))
                     .fixedSize(horizontal: false, vertical: true)
-
-                Spacer()
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(request.isDestructive ? .red : .orange)
             }
+            .font(.headline)
+            .accessibilityAddTraits(.isHeader)
 
             Text(request.message)
-                .font(.system(size: 12))
+                .font(.callout)
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
 
             if request.harm.needsTypedName {
@@ -77,60 +73,76 @@ struct GlassConfirmationDialog: View {
             buttons
         }
         .padding(18)
-        .frame(maxWidth: 264)
+        .frame(maxWidth: 300)
+        // The one custom glass surface of the app. Its buttons are not glass, because
+        // glass on glass is hard to read.
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }
 
     private var productionLabel: some View {
         Text("Production environment")
-            .font(.system(size: 11, weight: .semibold))
+            .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(Capsule().fill(Color.red))
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.red, in: .capsule)
     }
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Type \(request.targetName) to continue.")
-                .font(.system(size: 12, weight: .medium))
+                .font(.callout.weight(.medium))
                 .fixedSize(horizontal: false, vertical: true)
 
-            TextField(request.targetName, text: $typedText)
+            TextField("Name to confirm", text: $typedText, prompt: Text(request.targetName))
                 .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13, design: .monospaced))
+                .font(.body.monospaced())
                 .autocorrectionDisabled()
                 .focused($isNameFieldFocused)
                 .disabled(isLoading)
-                .accessibilityLabel("Name to confirm")
+                .onSubmit {
+                    if canConfirm && !isLoading { onConfirm() }
+                }
         }
     }
 
     private var buttons: some View {
         HStack(spacing: 10) {
-            Button("Cancel", action: onCancel)
+            Button("Cancel") { onCancel() }
                 .buttonStyle(.bordered)
-                .controlSize(.large)
                 .keyboardShortcut(.cancelAction)
                 .disabled(isLoading)
 
-            Button(action: onConfirm) {
-                HStack(spacing: 4) {
-                    if isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                            .scaleEffect(0.8)
-                    }
-                    Text(request.actionTitle)
+            confirmButton
+        }
+        .controlSize(.large)
+    }
+
+    /// Return confirms only an action that is not destructive, so a fast Return cannot delete.
+    @ViewBuilder
+    private var confirmButton: some View {
+        let button = Button {
+            onConfirm()
+        } label: {
+            HStack(spacing: 6) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
                 }
-                .frame(maxWidth: .infinity)
+                Text(request.actionTitle)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(request.isDestructive ? .red : .accentColor)
-            .controlSize(.large)
-            .disabled(isLoading || !canConfirm)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(request.isDestructive ? .red : .accentColor)
+        .disabled(isLoading || !canConfirm)
+
+        if request.isDestructive {
+            button
+        } else {
+            button.keyboardShortcut(.defaultAction)
         }
     }
 }
@@ -140,7 +152,7 @@ struct GlassConfirmationDialog: View {
         Text("Background content")
         Spacer()
     }
-    .frame(width: 320, height: 400)
+    .frame(width: Layout.windowWidth, height: Layout.windowHeight)
     .destructiveConfirmation(
         request: ConfirmationRequest(
             harm: .high,

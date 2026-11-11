@@ -1,9 +1,9 @@
 import SwiftUI
 
 extension View {
-    /// Presents a floating Liquid Glass confirmation over this view, and stops input to
-    /// this view while the dialog is open. Attach to a view that fills the popover so
-    /// the dimmed backdrop covers the whole surface.
+    /// Shows a Liquid Glass confirmation above this view, and stops input to this view
+    /// while the dialog is open. Use it on a view that fills the menu bar window, so the
+    /// dimmed backdrop covers all content.
     func destructiveConfirmation(
         request: ConfirmationRequest?,
         isLoading: Bool = false,
@@ -23,6 +23,6 @@ extension View {
                     .transition(.scale(scale: 0.96).combined(with: .opacity))
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: request?.id)
+            .animation(.screenChange, value: request?.id)
     }
 }

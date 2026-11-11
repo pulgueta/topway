@@ -36,7 +36,7 @@ struct AlertsSettingsSection: View {
             Text("Alerts")
         } footer: {
             Text(
-                "Get a notification when a deployment fails, a service crashes or a service recovers. Topway checks at each refresh. To mute a project, select the bell in its row."
+                "Get a notification when a deployment fails, a service crashes or a service recovers. Topway checks at each refresh. To mute a project, select Manage in its row, then Mute alerts."
             )
             .font(.footnote)
             .foregroundStyle(.secondary)
