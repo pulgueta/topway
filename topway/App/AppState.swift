@@ -77,6 +77,8 @@ class AppState {
     // MARK: - Private Properties
 
     private var dataSource: any RailwayDataSource = RailwayClient()
+    /// Changes on each data source switch, so a load from the earlier source is dropped.
+    private var dataSourceGeneration = 0
     private var refreshTask: Task<Void, Never>?
     /// The message that the latest failed background refresh set.
     private var refreshFailureMessage: String?
@@ -122,23 +124,27 @@ class AppState {
             errorMessage = nil
         }
 
+        let generation = dataSourceGeneration
         do {
             let fetchedProjects = try await dataSource.fetchProjects(
                 workspaceId: workspaceId,
                 token: railwayToken
             )
+            guard generation == dataSourceGeneration else { return }
             projects = fetchedProjects
             if let refreshFailureMessage, errorMessage == refreshFailureMessage {
                 errorMessage = nil
             }
             refreshFailureMessage = nil
         } catch let error as RailwayError {
+            guard generation == dataSourceGeneration else { return }
             show(error)
             // A cancellation sets no message, so `errorMessage` can belong to a user action.
             if error.errorDescription != nil {
                 refreshFailureMessage = keepingError ? errorMessage : nil
             }
         } catch {
+            guard generation == dataSourceGeneration else { return }
             errorMessage = error.localizedDescription
             refreshFailureMessage = keepingError ? errorMessage : nil
         }
@@ -291,8 +297,10 @@ class AppState {
     /// Removes the projects of the earlier data source. `MainView` then loads the new projects.
     private func switchDataSource(to source: any RailwayDataSource, isSampleMode: Bool) {
         dataSource = source
+        dataSourceGeneration += 1
         self.isSampleMode = isSampleMode
         projects = []
+        isLoading = false
         clearError()
         restartAutoRefresh()
     }
