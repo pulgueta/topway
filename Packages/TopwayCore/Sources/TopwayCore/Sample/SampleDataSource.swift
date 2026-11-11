@@ -1,0 +1,162 @@
+import Foundation
+
+/// Keeps sample Railway data in memory, so the app can run with no token.
+/// It sends no network requests. Actions change the data, and later reads show the change.
+public actor SampleDataSource: RailwayDataSource {
+    private let now: @Sendable () -> Date
+    private var projects: [Project]
+    /// The deployments of each environment and service, newest first.
+    private var deployments: [String: [Deployment]] = [:]
+    private var deploymentCount = 0
+    private var serviceCount = 0
+    /// The variables of each environment and service.
+    private var variables = seedVariables
+
+    /// - Parameter now: Gives the current date. The deployment dates come from it.
+    public init(now: @escaping @Sendable () -> Date = { .now }) {
+        self.now = now
+        projects = Self.seedProjects
+        let date = now()
+        var count = 0
+        for seed in Self.seedDeployments {
+            deployments[Self.key(seed.environmentId, seed.serviceId)] = seed.deployments.map {
+                count += 1
+                return Self.makeDeployment(
+                    number: count, status: $0.status,
+                    createdAt: date - TimeInterval($0.age * 60))
+            }
+        }
+        deploymentCount = count
+    }
+
+    /// The sample data has one workspace, so this method ignores `workspaceId` and `token`.
+    public func fetchProjects(workspaceId: String, token: String) -> [Project] {
+        projects
+    }
+
+    /// Names the service after the repository, as Railway does.
+    public func createService(projectId: String, repo: String, token: String) throws -> String {
+        try addService(named: Self.serviceName(from: repo), toProject: projectId)
+    }
+
+    /// Names the service after the image, as Railway does.
+    public func createServiceWithImage(projectId: String, image: String, token: String) throws
+        -> String
+    {
+        try addService(named: Self.serviceName(from: image), toProject: projectId)
+    }
+
+    public func fetchVariables(
+        projectId: String, environmentId: String, serviceId: String, token: String
+    ) -> [String: String] {
+        variables[Self.key(environmentId, serviceId)] ?? [:]
+    }
+
+    /// Returns `false` when the project does not exist.
+    public func deleteProject(projectId: String, token: String) -> Bool {
+        guard let index = projects.firstIndex(where: { $0.id == projectId }) else { return false }
+        projects.remove(at: index)
+        return true
+    }
+
+    public func upsertVariable(
+        projectId: String, environmentId: String, serviceId: String, name: String, value: String,
+        token: String
+    ) -> Bool {
+        variables[Self.key(environmentId, serviceId), default: [:]][name] = value
+        return true
+    }
+
+    /// Returns `false` when the variable does not exist.
+    public func deleteVariable(
+        projectId: String, environmentId: String, serviceId: String, name: String, token: String
+    ) -> Bool {
+        variables[Self.key(environmentId, serviceId)]?.removeValue(forKey: name) != nil
+    }
+
+    /// Returns `false` when the service does not exist.
+    public func deleteService(serviceId: String, token: String) -> Bool {
+        guard
+            let index = projects.firstIndex(where: {
+                $0.serviceList.contains { $0.id == serviceId }
+            })
+        else { return false }
+        replaceServices(
+            inProjectAt: index, with: projects[index].serviceList.filter { $0.id != serviceId })
+        return true
+    }
+
+    public func fetchDeployments(
+        projectId: String, environmentId: String, serviceId: String, token: String
+    ) -> [Deployment] {
+        deployments[Self.key(environmentId, serviceId)] ?? []
+    }
+
+    /// Makes the deployment run again.
+    public func restartDeployment(deploymentId: String, token: String) -> Bool {
+        for (key, list) in deployments {
+            guard let index = list.firstIndex(where: { $0.id == deploymentId }) else { continue }
+            deployments[key]?[index] = Self.changing(list[index], to: "SUCCESS")
+            return true
+        }
+        return false
+    }
+
+    /// Adds a running deployment, dated now. The earlier running deployment becomes removed.
+    public func redeployService(environmentId: String, serviceId: String, token: String) -> Bool {
+        let key = Self.key(environmentId, serviceId)
+        let earlier = (deployments[key] ?? []).map {
+            $0.status == "SUCCESS" ? Self.changing($0, to: "REMOVED") : $0
+        }
+        deploymentCount += 1
+        let deployment = Self.makeDeployment(
+            number: deploymentCount, status: "SUCCESS", createdAt: now())
+        deployments[key] = [deployment] + earlier
+        return true
+    }
+
+    // MARK: - Private Methods
+
+    private func addService(named name: String, toProject projectId: String) throws -> String {
+        guard let index = projects.firstIndex(where: { $0.id == projectId }) else {
+            throw RailwayError.graphQLError("Project not found.")
+        }
+        serviceCount += 1
+        let service = Service(id: "service-\(serviceCount)", name: name)
+        replaceServices(inProjectAt: index, with: projects[index].serviceList + [service])
+        return service.id
+    }
+
+    private func replaceServices(inProjectAt index: Int, with services: [Service]) {
+        let project = projects[index]
+        projects[index] = Project(
+            id: project.id, name: project.name,
+            services: ServiceConnection(edges: services.map { ServiceEdge(node: $0) }),
+            environments: project.environments)
+    }
+
+    /// Takes the last path part without the tag: `ghcr.io/acme/search:1.2` gives `search`.
+    private static func serviceName(from source: String) -> String {
+        let last = source.split(separator: "/").last ?? Substring(source)
+        return String(last.split(separator: ":").first ?? last)
+    }
+
+    private static func key(_ environmentId: String, _ serviceId: String) -> String {
+        "\(environmentId)/\(serviceId)"
+    }
+
+    /// The sample deployments have no URL, so the app opens no unknown site.
+    private static func makeDeployment(number: Int, status: String, createdAt: Date)
+        -> Deployment
+    {
+        Deployment(
+            id: "deployment-\(number)", status: status, staticUrl: nil,
+            createdAt: createdAt.formatted(.iso8601))
+    }
+
+    private static func changing(_ deployment: Deployment, to status: String) -> Deployment {
+        Deployment(
+            id: deployment.id, status: status, staticUrl: deployment.staticUrl,
+            createdAt: deployment.createdAt)
+    }
+}

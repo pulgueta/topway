@@ -1,0 +1,278 @@
+import SwiftUI
+import TopwayCore
+
+@MainActor
+struct EditVariableView: View {
+    @Environment(AppState.self) private var appState
+
+    let projectId: String
+    let environmentId: String
+    let serviceId: String
+    let serviceName: String
+    let environmentName: String
+    let existingVariable: EnvironmentVariable?
+    /// The names of the variables in this environment. `nil` means the names are not known.
+    let existingNames: Set<String>?
+    let onDismiss: () -> Void
+    let onSave: () -> Void
+
+    @State private var name: String = ""
+    @State private var value: String = ""
+    @State private var isSaving = false
+    @State private var isDeleting = false
+
+    private var isEditing: Bool {
+        existingVariable != nil
+    }
+
+    private var isFormValid: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            headerView
+
+            Divider()
+
+            // Content
+            formView
+
+            if let error = appState.errorMessage {
+                ErrorBanner(message: error) { appState.clearError() }
+            }
+
+            Divider()
+
+            // Footer
+            footerView
+        }
+        .onAppear {
+            appState.clearError()
+            if let variable = existingVariable {
+                name = variable.name
+                value = variable.value
+            }
+        }
+    }
+
+    // MARK: - Form View
+
+    private var formView: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // Name Field
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Name")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+
+                    TextField("VARIABLE_NAME", text: $name)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13, design: .monospaced))
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.primary.opacity(0.05))
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                        )
+                        .disabled(isEditing)
+                        .opacity(isEditing ? 0.7 : 1)
+                }
+
+                // Value Field
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Value")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+
+                    TextEditor(text: $value)
+                        .font(.system(size: 13, design: .monospaced))
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 80, maxHeight: 120)
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.primary.opacity(0.05))
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                        )
+                }
+
+                // Info Text
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11))
+                    Text(
+                        isEditing
+                            ? "This change applies to this service in this environment after the next deploy."
+                            : "Use uppercase letters and underscores in the name."
+                    )
+                    .font(.system(size: 11))
+                }
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(16)
+        }
+    }
+
+    // MARK: - Header
+
+    private var headerView: some View {
+        HStack {
+            BackButton {
+                cancelEditing()
+            }
+
+            Spacer()
+
+            Text(isEditing ? "Edit Variable" : "Add Variable")
+                .font(.system(size: 14, weight: .semibold))
+
+            Spacer()
+
+            // Delete button for existing variables
+            if isEditing {
+                IconButton(
+                    icon: "trash",
+                    tint: .red,
+                    help: "Delete variable"
+                ) {
+                    confirmDelete()
+                }
+                .disabled(isDeleting)
+            } else {
+                Color.clear.frame(width: 24, height: 24)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Footer
+
+    private var footerView: some View {
+        HStack {
+            Button("Cancel") {
+                cancelEditing()
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button {
+                confirmSave()
+            } label: {
+                HStack(spacing: 6) {
+                    if isSaving {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.8)
+                    }
+                    Text(isEditing ? "Update" : "Create")
+                }
+            }
+            .buttonStyle(.glassProminent)
+            .controlSize(.regular)
+            .disabled(!isFormValid || isSaving || isDeleting)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Actions
+
+    // Only a user exit clears the error. A failed refresh must stay visible.
+    private func cancelEditing() {
+        appState.clearError()
+        onDismiss()
+    }
+
+    private func confirmSave() {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let confirmedValue = value
+        appState.confirm(
+            ConfirmationRequest(
+                harm: ConfirmationRules.variableSaveHarm(
+                    name: trimmedName, isEditing: isEditing, existingNames: existingNames),
+                title: "Update \(trimmedName)?",
+                message:
+                    "This sets the value for \(serviceName) in \(environmentName). "
+                    + "The service uses the new value after the next deploy.",
+                actionTitle: "Update variable",
+                environmentName: environmentName,
+                perform: { await saveVariable(name: trimmedName, value: confirmedValue) }
+            ))
+    }
+
+    private func confirmDelete() {
+        let confirmedName = name
+        appState.confirm(
+            ConfirmationRequest(
+                harm: .medium,
+                title: "Delete \(confirmedName)?",
+                message:
+                    "This removes the variable from \(serviceName) in \(environmentName). "
+                    + "You cannot undo this.",
+                actionTitle: "Delete variable",
+                isDestructive: true,
+                environmentName: environmentName,
+                perform: { await deleteVariable(name: confirmedName) }
+            ))
+    }
+
+    private func saveVariable(name: String, value: String) async {
+        isSaving = true
+
+        let success = await appState.upsertVariable(
+            projectId: projectId,
+            environmentId: environmentId,
+            serviceId: serviceId,
+            name: name,
+            value: value
+        )
+
+        isSaving = false
+
+        if success {
+            onSave()
+            onDismiss()
+        }
+    }
+
+    private func deleteVariable(name: String) async {
+        isDeleting = true
+
+        let success = await appState.deleteVariable(
+            projectId: projectId,
+            environmentId: environmentId,
+            serviceId: serviceId,
+            name: name
+        )
+
+        isDeleting = false
+
+        if success {
+            onSave()
+            onDismiss()
+        }
+    }
+}
+
+#Preview {
+    EditVariableView(
+        projectId: "proj1",
+        environmentId: "env1",
+        serviceId: "svc1",
+        serviceName: "web-app",
+        environmentName: "production",
+        existingVariable: nil,
+        existingNames: [],
+        onDismiss: {},
+        onSave: {}
+    )
+    .environment(AppState())
+    .frame(width: 320, height: 400)
+}

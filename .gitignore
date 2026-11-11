@@ -43,7 +43,6 @@ playground.xcworkspace
 .build/
 .swiftpm/
 Package.pins
-Packages/
 # Keep Package.resolved checked in for app targets; uncomment to ignore:
 # Package.resolved
 
@@ -68,3 +67,8 @@ iOSInjectionProject/
 .agents/
 .claude/
 skills-lock.json
+
+# Local task tracking and project settings
+.claude/settings.local.json
+odd/
+.atl/
