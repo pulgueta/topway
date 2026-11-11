@@ -46,15 +46,15 @@ struct RailwayClientRequestTests {
                 body: """
                     {"data":{"workspace":{"projects":{"edges":[
                       {"node":{"id":"p1","name":"shop","deletedAt":null,
-                       "services":{"edges":[{"node":{"id":"s1","name":"web",
-                         "serviceInstances":{"edges":[
-                           {"node":{"environmentId":"e1","latestDeployment":{"id":"d1",
+                       "services":{"edges":[{"node":{"id":"s1","name":"web"}}]},
+                       "environments":{"edges":[
+                         {"node":{"id":"e1","name":"production","serviceInstances":{"edges":[
+                           {"node":{"serviceId":"s1","latestDeployment":{"id":"d1",
                              "status":"CRASHED","staticUrl":null,
-                             "createdAt":"2026-11-10T10:00:00Z"}}},
-                           {"node":{"environmentId":"e2","latestDeployment":null}}
-                         ]}}}]},
-                       "environments":{"edges":[{"node":{"id":"e1","name":"production"}},
-                         {"node":{"id":"e2","name":"staging"}}]}}}
+                             "createdAt":"2026-11-10T10:00:00Z"}}}]}}},
+                         {"node":{"id":"e2","name":"staging","serviceInstances":{"edges":[
+                           {"node":{"serviceId":"s1","latestDeployment":null}}]}}}
+                       ]}}}
                     ]}}}}
                     """))
 

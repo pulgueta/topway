@@ -67,7 +67,7 @@ Sample mode lets the app run with no token, for example for App Review.
 
 ## Health and alerts
 
-The projects query gets the latest deployment of each service in each environment (`serviceInstances.latestDeployment`). `Project.serviceStatuses` gives one `ServiceStatus` for each service and environment that has a deployment.
+The projects query gets the latest deployment of each service in each environment (`environments.serviceInstances.latestDeployment`). Do not use `Service.serviceInstances`: Railway marks it as deprecated. `Project.serviceStatuses` gives one `ServiceStatus` for each service and environment that has a deployment.
 
 `HealthSummary` gives one health for all projects:
 

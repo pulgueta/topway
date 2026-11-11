@@ -54,18 +54,16 @@ struct HealthSummaryTests {
 
     /// Makes a project with one production environment and one service for each status.
     private func makeProject(_ name: String, statuses: [String]) -> Project {
-        let environment = RailwayEnvironment(id: "\(name)-production", name: "production")
-        let services = statuses.enumerated().map { index, status in
-            Service(
-                id: "\(name)-s\(index)", name: "s\(index)",
-                instances: [
-                    ServiceInstance(
-                        environmentId: environment.id,
-                        latestDeployment: Deployment(
-                            id: "\(name)-d\(index)", status: status, staticUrl: nil,
-                            createdAt: "2026-11-10T10:00:00Z"))
-                ])
-        }
+        let services = statuses.indices.map { Service(id: "\(name)-s\($0)", name: "s\($0)") }
+        let environment = RailwayEnvironment(
+            id: "\(name)-production", name: "production",
+            instances: zip(services, statuses).enumerated().map { index, pair in
+                ServiceInstance(
+                    serviceId: pair.0.id,
+                    latestDeployment: Deployment(
+                        id: "\(name)-d\(index)", status: pair.1, staticUrl: nil,
+                        createdAt: "2026-11-10T10:00:00Z"))
+            })
         return Project(
             id: name, name: name,
             services: ServiceConnection(edges: services.map { ServiceEdge(node: $0) }),
