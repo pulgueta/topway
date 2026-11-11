@@ -4,6 +4,7 @@ public struct RailwayClient: RailwayDataSource {
     private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
     private let sleep: @Sendable (Duration) async throws -> Void
+    private let socket: GraphQLWebSocket
 
     /// - Parameter sleep: Waits between polls and before a reconnect. Tests replace it.
     public init(
@@ -12,8 +13,17 @@ public struct RailwayClient: RailwayDataSource {
             try await Task.sleep(for: $0)
         }
     ) {
+        self.init(session: session, sleep: sleep, socket: GraphQLWebSocket(session: session))
+    }
+
+    /// Tests pass a socket with scripted frames.
+    init(
+        session: URLSession, sleep: @escaping @Sendable (Duration) async throws -> Void,
+        socket: GraphQLWebSocket
+    ) {
         self.session = session
         self.sleep = sleep
+        self.socket = socket
     }
 
     // MARK: - Fetch Projects
@@ -322,7 +332,6 @@ public struct RailwayClient: RailwayDataSource {
     // MARK: - Logs
 
     private static let pollInterval = Duration.seconds(5)
-    private static let reconnectDelay = Duration.seconds(2)
 
     /// Uses the WebSocket subscription. When a live socket drops, the stream connects again
     /// after 2 seconds. When the socket cannot connect, the stream polls the matching query
@@ -360,32 +369,32 @@ public struct RailwayClient: RailwayDataSource {
             }
         }
 
-        let socket = GraphQLWebSocket(session: session)
         let subscription = GraphQLRequest(
             query: Self.logsDocument(kind, operation: "subscription"), variables: variables)
+        var recovery = LogRecovery()
         subscribing: while true {
-            var wasLive = false
             do {
                 for try await event in socket.subscribe(
                     subscription, token: token, as: LogsData.self)
                 {
                     switch event {
                     case .connected:
-                        wasLive = true
+                        recovery.connected()
                         continuation.yield(.connection(.live))
                     case .payload(let data):
+                        recovery.payloadReceived()
                         yield(data.lines)
                     }
                 }
                 // Railway ended the subscription, or the consumer stopped the stream.
                 return
             } catch let error as RailwayError {
-                switch LogRecovery(after: error, wasLive: wasLive) {
+                switch recovery.step(after: error) {
                 case .fail:
                     throw error
-                case .reconnect:
+                case .reconnect(let delay):
                     continuation.yield(.connection(.reconnecting))
-                    try await sleep(Self.reconnectDelay)
+                    try await sleep(delay)
                 case .poll:
                     break subscribing
                 }

@@ -105,6 +105,7 @@ There is no alert for the first load, for the same deployment with the same stat
 - `GraphQLSubscription` keeps the protocol rules. It has no network code, so tests can use it directly. After `connection_ack`, it sends `subscribe`. It answers `ping` with `pong`. `next` gives the data, `error` and `next` with GraphQL errors give `RailwayError.graphQLError`, and `complete` ends the stream.
 - A refused upgrade with status 401, the close codes 4401 and 4403, and the message "Not Authorized" give `RailwayError.unauthorized`, the same error as an HTTP 401.
 - When the consumer task is cancelled, the client sends `complete` and closes the socket.
+- The live socket accepts messages up to 16 MiB (`maximumMessageSize`), because one message can hold many log lines.
 - `SocketKeepalive` finds a half-open socket. Every 20 seconds, it checks for a message from the server since the last check. If there is one, it sends a protocol `ping`, and Railway answers with `pong`. If there is none, the socket is dropped and the stream uses the reconnect rule. So a socket with no message for 20 seconds after a ping is dropped, at most 40 seconds after the last message. The protocol `ping` is used, not `URLSessionWebSocketTask.sendPing`, because its `pong` comes from the GraphQL server, and a proxy can answer a WebSocket ping frame.
 
 ### Log streams
@@ -114,6 +115,7 @@ There is no alert for the first load, for the same deployment with the same stat
 | Socket result | Next step |
 |---|---|
 | A live socket drops | Connect again after 2 seconds. The state is `reconnecting`. |
+| A live socket fails 3 times in a row before it gives a payload | A network error: poll. Bad data (`decodingError`, `unknown`): stop the stream with the error. |
 | The socket cannot connect | Poll the matching query every 5 seconds until the stream stops. The state is `polling`. |
 | Railway sends an error, or does not accept the token | Stop the stream with the error. Polling gets the same answer. |
 

@@ -11,15 +11,23 @@ struct GraphQLWebSocket: Sendable {
     private let connect: @Sendable (URLRequest) -> any MessageTransport
     private let sleep: @Sendable (Duration) async throws -> Void
 
+    /// Railway can send many log lines in one message. The default limit is 1 MiB.
+    static let maximumMessageSize = 16 * 1_024 * 1_024
+
     /// Connects with `URLSessionWebSocketTask`.
     init(session: URLSession) {
         self.init(
-            connect: { request in
-                let task = session.webSocketTask(with: request)
-                task.resume()
-                return URLSessionMessageTransport(task: task)
-            },
+            connect: { Self.liveTransport(session: session, request: $0) },
             sleep: { try await Task.sleep(for: $0) })
+    }
+
+    static func liveTransport(session: URLSession, request: URLRequest)
+        -> URLSessionMessageTransport
+    {
+        let task = session.webSocketTask(with: request)
+        task.maximumMessageSize = maximumMessageSize
+        task.resume()
+        return URLSessionMessageTransport(task: task)
     }
 
     /// - Parameters:
