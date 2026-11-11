@@ -242,7 +242,10 @@ struct MainView: View {
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         currentView = .variables(service: service, project: project)
                                     }
-                                }
+                                },
+                                isMuted: appState.mutedProjectIds.contains(project.id),
+                                onToggleMute: appState.alertsEnabled
+                                    ? { appState.toggleMute(projectId: project.id) } : nil
                             )
                             .padding(.horizontal, 8)
                         }
