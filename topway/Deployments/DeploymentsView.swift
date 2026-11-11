@@ -120,7 +120,7 @@ struct DeploymentsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = appState.errorMessage, deployments.isEmpty {
-            ErrorStateView(message: error) {
+            ErrorStateView(title: "Deployments did not load", message: error) {
                 Task { await loadDeployments() }
             }
         } else if deployments.isEmpty {

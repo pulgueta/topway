@@ -271,7 +271,7 @@ struct VariablesView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = appState.errorMessage, variables.isEmpty {
-            ErrorStateView(message: error) {
+            ErrorStateView(title: "Variables did not load", message: error) {
                 Task { await loadVariables() }
             }
         } else if variables.isEmpty {

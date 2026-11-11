@@ -70,6 +70,12 @@ struct MainView: View {
         .onChange(of: appState.isSampleMode) {
             currentView = .main
         }
+        // With no token, only the start screen is correct.
+        .onChange(of: appState.isConfigured) { _, isConfigured in
+            if !isConfigured {
+                currentView = .main
+            }
+        }
         // Escape to go back
         .onExitCommand {
             if appState.pendingConfirmation != nil {
@@ -101,7 +107,7 @@ struct MainView: View {
             } else if appState.isLoading && appState.projects.isEmpty {
                 loadingView
             } else if let error = appState.errorMessage, appState.projects.isEmpty {
-                ErrorStateView(message: error) {
+                ErrorStateView(title: "Projects did not load", message: error) {
                     Task { await appState.loadProjects() }
                 }
             } else {

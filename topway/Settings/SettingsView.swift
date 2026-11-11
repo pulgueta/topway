@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var workspace = ""
     @State private var hasLoaded = false
     @State private var saveError: String?
+    @State private var isConfirmingRemoval = false
+    @State private var removalError: String?
 
     private let refreshIntervals: [(label: String, seconds: TimeInterval)] = [
         ("15 seconds", 15),
@@ -25,6 +27,10 @@ struct SettingsView: View {
             Section {
                 SecureField("Railway API token", text: $token)
                 TextField("Workspace ID", text: $workspace)
+
+                if !appState.railwayToken.isEmpty {
+                    removeTokenRows
+                }
             } header: {
                 Text("Credentials")
             } footer: {
@@ -86,6 +92,40 @@ struct SettingsView: View {
             token = appState.railwayToken
             workspace = appState.workspaceId
             hasLoaded = true
+        }
+    }
+
+    /// The confirmation stays in this window. A separate dialog is not necessary.
+    @ViewBuilder
+    private var removeTokenRows: some View {
+        if isConfirmingRemoval {
+            LabeledContent {
+                Button("Cancel") { isConfirmingRemoval = false }
+                Button("Remove token", role: .destructive) { removeToken() }
+            } label: {
+                Text("Remove the token from this Mac?")
+                Text("Topway then shows the start screen. To connect again, add a token.")
+            }
+        } else {
+            Button("Remove token…", role: .destructive) { isConfirmingRemoval = true }
+                .help("Delete the saved token from the Keychain of this Mac.")
+        }
+
+        if let removalError {
+            Label(removalError, systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+    }
+
+    private func removeToken() {
+        isConfirmingRemoval = false
+        if appState.removeToken() {
+            token = ""
+            saveError = nil
+            removalError = nil
+        } else {
+            removalError = "Topway cannot remove the token from the Keychain. Try again."
         }
     }
 }

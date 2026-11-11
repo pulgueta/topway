@@ -1,33 +1,34 @@
 import SwiftUI
+import TopwayCore
 
+/// Shows why a load failed and what the user can do next.
+/// The actions come from `AppState.recoveryActions`, so a rejected token never traps the user.
 struct ErrorStateView: View {
+    @Environment(AppState.self) private var appState
+
+    /// Says what did not load, for example "Projects did not load".
+    let title: String
     let message: String
     let onRetry: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        let actions = appState.recoveryActions
 
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.orange)
-
-            VStack(spacing: 4) {
-                Text("Error")
-                    .font(.system(size: 14, weight: .semibold))
-
-                Text(message)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+        ContentUnavailableView {
+            Label(
+                appState.isTokenRejected ? "Railway did not accept your token" : title,
+                systemImage: "exclamationmark.triangle"
+            )
+        } description: {
+            Text(
+                appState.isTokenRejected
+                    ? "The token is expired or not correct. Add a new token in Settings, or use sample data."
+                    : message
+            )
+        } actions: {
+            ForEach(actions, id: \.self) { action in
+                RecoveryButton(action: action, isPrimary: action == actions.first, onRetry: onRetry)
             }
-
-            Button("Retry", action: onRetry)
-                .buttonStyle(.glassProminent)
-                .controlSize(.regular)
-
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

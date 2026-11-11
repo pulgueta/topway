@@ -147,7 +147,7 @@ struct LogsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = appState.errorMessage {
-            ErrorStateView(message: error) { attempt += 1 }
+            ErrorStateView(title: "Logs did not load", message: error) { attempt += 1 }
         } else {
             VStack(spacing: 16) {
                 Spacer()

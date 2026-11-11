@@ -9,7 +9,12 @@ class AppState {
 
     var projects: [Project] = []
     var isLoading = false
-    var errorMessage: String?
+    /// A new message does not belong to the token, unless `show(_:)` sets the flag after it.
+    var errorMessage: String? {
+        didSet { isTokenRejected = false }
+    }
+    /// `true` while `errorMessage` says that Railway did not accept the token.
+    private(set) var isTokenRejected = false
     var pendingConfirmation: ConfirmationRequest?
     var isRunningConfirmation = false
     /// Sample mode shows the data of `SampleDataSource`. It never reads or writes the
@@ -39,6 +44,26 @@ class AppState {
     func updateToken(_ value: String) -> Bool {
         tokenStorage = value
         return KeychainStore.save(value, for: Self.tokenKey)
+    }
+
+    /// Removes the saved token from this Mac. With no token, the app shows the start screen.
+    /// Sample mode stays on, because it does not use the token.
+    /// - Returns: `false` when the Keychain did not delete the token. The token then stays.
+    @discardableResult
+    func removeToken() -> Bool {
+        guard KeychainStore.delete(Self.tokenKey) else { return false }
+        // An earlier build kept the token here. A copy that stays comes back at the next launch.
+        UserDefaults.standard.removeObject(forKey: Self.tokenKey)
+        tokenStorage = ""
+        guard !isSampleMode else { return true }
+        latestProjectLoad += 1
+        alertSnapshot = nil
+        projects = []
+        isLoading = false
+        pendingConfirmation = nil
+        clearError()
+        stopAutoRefresh()
+        return true
     }
 
     /// Persisted in `UserDefaults`, but held as a stored property so `@Observable`
@@ -133,6 +158,11 @@ class AppState {
 
     var hasError: Bool {
         errorMessage != nil
+    }
+
+    /// What the user can do when a load fails. The most useful action is first.
+    var recoveryActions: [RecoveryAction] {
+        RecoveryRules.actions(isTokenRejected: isTokenRejected, isSampleMode: isSampleMode)
     }
 
     var health: HealthSummary {
@@ -306,6 +336,7 @@ class AppState {
     private func show(_ error: RailwayError) {
         if case .cancelled = error { return }
         errorMessage = error.errorDescription
+        isTokenRejected = error.isTokenRejected
     }
 
     func clearError() {
