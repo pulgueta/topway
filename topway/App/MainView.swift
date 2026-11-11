@@ -32,7 +32,7 @@ struct MainView: View {
                     )
                     .transition(.move(edge: .trailing).combined(with: .opacity))
                 case .variables(let service, let project):
-                    VariablesView(
+                    ServiceView(
                         service: service,
                         project: project,
                         onDismiss: {
@@ -53,7 +53,7 @@ struct MainView: View {
                 }
             }
         }
-        .frame(width: 320, height: 400)
+        .frame(width: Layout.windowWidth, height: Layout.windowHeight)
         .destructiveConfirmation(
             request: appState.pendingConfirmation,
             isLoading: appState.isRunningConfirmation,

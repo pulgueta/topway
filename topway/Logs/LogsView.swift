@@ -12,7 +12,7 @@ struct LogsView: View {
 
     @State private var kind: LogKind
     @State private var buffer = LogBuffer()
-    @State private var streamState: StreamState = .connecting
+    @State private var streamState: LogStreamState = .connecting
     @State private var attempt = 0
     @State private var isFollowing = true
     @State private var position = ScrollPosition(edge: .bottom)
@@ -24,15 +24,6 @@ struct LogsView: View {
         _kind = State(initialValue: deployment.defaultLogKind)
     }
 
-    private enum StreamState {
-        case connecting
-        case connection(LogConnection)
-        /// The stream finished with no error.
-        case ended
-        /// An error stopped the stream. `ErrorBanner` or `ErrorStateView` shows it.
-        case stopped
-    }
-
     /// A new value starts a new stream.
     private struct StreamID: Equatable {
         let kind: LogKind
@@ -40,23 +31,15 @@ struct LogsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
-
-            Divider()
-
-            infoView
-
-            Divider()
-
+        ScreenLayout {
             contentView
-
+        } top: {
+            ScreenHeader(title: "Logs", backTitle: "Deployments", onBack: { onDismiss() })
+            infoView
+        } bottom: {
             if let error = appState.errorMessage, !buffer.entries.isEmpty {
                 ErrorBanner(message: error) { appState.clearError() }
             }
-
-            Divider()
-
             footerView
         }
         .task(id: StreamID(kind: kind, attempt: attempt)) {
@@ -78,43 +61,23 @@ struct LogsView: View {
         }
     }
 
-    // MARK: - Header
-
-    private var headerView: some View {
-        HStack {
-            BackButton { onDismiss() }
-
-            Spacer()
-
-            Text("Logs")
-                .font(.system(size: 14, weight: .semibold))
-
-            Spacer()
-
-            // Keeps the title in the center.
-            Color.clear
-                .frame(width: 24, height: 24)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-    }
-
     // MARK: - Deployment Info
 
     private var infoView: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Layout.controlSpacing) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(service.name)
-                    .font(.system(size: 13, weight: .medium))
+                    .fontWeight(.medium)
                     .lineLimit(1)
 
                 Text("\(deployment.statusDisplay) · \(deployment.formattedDate)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+            .accessibilityElement(children: .combine)
 
-            Spacer()
+            Spacer(minLength: Layout.controlSpacing)
 
             Picker("Log type", selection: $kind) {
                 Text("Build").tag(LogKind.build)
@@ -122,11 +85,11 @@ struct LogsView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .controlSize(.small)
             .fixedSize()
+            .help("Show the build log or the deploy log.")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Layout.barPadding)
+        .padding(.bottom, Layout.controlSpacing)
     }
 
     // MARK: - Content
@@ -136,38 +99,12 @@ struct LogsView: View {
         if !buffer.entries.isEmpty {
             linesView
         } else if case .connecting = streamState {
-            VStack(spacing: 12) {
-                Spacer()
-                ProgressView()
-                    .controlSize(.regular)
-                Text("Loading logs...")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            LoadingStateView(title: "Loading logs…")
         } else if let error = appState.errorMessage {
             ErrorStateView(title: "Logs did not load", message: error) { attempt += 1 }
         } else {
-            VStack(spacing: 16) {
-                Spacer()
-                Image(systemName: "text.alignleft")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.tertiary)
-
-                VStack(spacing: 4) {
-                    Text("No Logs")
-                        .font(.system(size: 14, weight: .semibold))
-
-                    Text(emptyMessage)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                }
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ContentUnavailableView(
+                "No logs", systemImage: "text.alignleft", description: Text(emptyMessage))
         }
     }
 
@@ -189,11 +126,14 @@ struct LogsView: View {
             .padding(.vertical, 4)
         }
         .defaultScrollAnchor(.bottom)
+        // Dense log text under the bars makes the controls hard to read, so the edge is hard.
+        .scrollEdgeEffectStyle(.hard, for: .vertical)
         .scrollPosition($position)
         .onScrollGeometryChange(for: LogScrollMetrics.self) { geometry in
+            // The bottom bar covers the bottom inset, so that part does not show lines.
             LogScrollMetrics(
                 offsetY: geometry.contentOffset.y, contentHeight: geometry.contentSize.height,
-                visibleMaxY: geometry.visibleRect.maxY)
+                visibleMaxY: geometry.visibleRect.maxY - geometry.contentInsets.bottom)
         } action: { old, new in
             isFollowing = new.isFollowing(after: old, wasFollowing: isFollowing)
         }
@@ -208,11 +148,10 @@ struct LogsView: View {
                     isFollowing = true
                     position.scrollTo(edge: .bottom)
                 }
-                .font(.system(size: 11))
                 .buttonStyle(.glass)
                 .controlSize(.small)
-                .help("Go to the newest line and show new lines when they arrive")
-                .padding(8)
+                .help("Go to the newest line and show new lines when they arrive.")
+                .padding(Layout.controlSpacing)
             }
         }
     }
@@ -220,55 +159,15 @@ struct LogsView: View {
     // MARK: - Footer
 
     private var footerView: some View {
-        HStack {
-            connectionLabel
-
-            Spacer()
-
+        ActionBar {
+            LogConnectionLabel(state: streamState)
+        } actions: {
             if !buffer.entries.isEmpty {
-                CopyAllButton(title: "Copy logs") { copyLogs() }
+                CopyButton(title: "Copy logs") { copyLogs() }
+                    .buttonStyle(.glass)
+                    .help("Copy the lines on this screen, with their timestamps.")
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
-    private var connectionLabel: some View {
-        let (text, symbol, color, help): (String, String, Color, String) =
-            switch streamState {
-            case .connecting:
-                ("Connecting...", "ellipsis", .secondary, "Topway connects to Railway.")
-            case .connection(.live):
-                (
-                    "Live", "dot.radiowaves.left.and.right", .green,
-                    "New lines show when they arrive."
-                )
-            case .connection(.reconnecting):
-                (
-                    "Reconnecting...", "arrow.triangle.2.circlepath", .orange,
-                    "The live connection stopped. Topway connects again."
-                )
-            case .connection(.polling):
-                (
-                    "Checks every 5 seconds", "clock.arrow.circlepath", .secondary,
-                    "The live connection is not available. Topway reads the logs every 5 seconds."
-                )
-            case .ended:
-                ("End of log", "checkmark.circle", .secondary, "This log has no more lines.")
-            case .stopped:
-                ("Stopped", "stop.circle", .secondary, "An error stopped this log.")
-            }
-        return Label {
-            Text(text)
-                .foregroundStyle(.secondary)
-        } icon: {
-            Image(systemName: symbol)
-                .foregroundStyle(color)
-        }
-        .font(.system(size: 11))
-        .help(help)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Connection: \(text)")
     }
 
     // MARK: - Actions
