@@ -15,6 +15,9 @@ struct LogRecovery {
     /// A socket can connect and then fail before it gives a payload, each time. After this
     /// number of such passes in a row, the stream stops connecting again.
     static let emptyPassLimit = 3
+    /// After a live socket drops, the reconnects that do not connect, in a row, before
+    /// the stream polls. With the backoff, this is about 60 seconds of reconnects.
+    static let failedReconnectLimit = 5
     /// The longest wait before a reconnect.
     static let maximumDelay = Duration.seconds(30)
 
@@ -24,6 +27,7 @@ struct LogRecovery {
     private var passHasPayload = false
     private var isRetryFromPolling = false
     private var emptyLivePasses = 0
+    private var failedReconnects = 0
     /// The reconnects since the last payload. It sets the delay: 2, 4, 8, 16, then 30 seconds.
     private var reconnects = 0
 
@@ -31,6 +35,7 @@ struct LogRecovery {
         hasBeenLive = true
         isPassLive = true
         isRetryFromPolling = false
+        failedReconnects = 0
     }
 
     mutating func retryingFromPolling() {
@@ -69,6 +74,10 @@ struct LogRecovery {
         } else if isRetryFromPolling || !hasBeenLive {
             // The socket did not connect. Polling tries it again later.
             return .poll
+        } else {
+            // A reconnect after a live drop did not connect.
+            failedReconnects += 1
+            guard failedReconnects < Self.failedReconnectLimit else { return .poll }
         }
 
         let delay = min(.seconds(2 << min(reconnects, 4)), Self.maximumDelay)
