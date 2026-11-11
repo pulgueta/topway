@@ -10,12 +10,19 @@ struct LogsView: View {
     let deployment: Deployment
     let onDismiss: () -> Void
 
-    @State private var kind: LogKind = .deploy
+    @State private var kind: LogKind
     @State private var buffer = LogBuffer()
     @State private var streamState: StreamState = .connecting
     @State private var attempt = 0
     @State private var isFollowing = true
     @State private var position = ScrollPosition(edge: .bottom)
+
+    init(service: Service, deployment: Deployment, onDismiss: @escaping () -> Void) {
+        self.service = service
+        self.deployment = deployment
+        self.onDismiss = onDismiss
+        _kind = State(initialValue: deployment.defaultLogKind)
+    }
 
     private enum StreamState {
         case connecting

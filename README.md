@@ -24,7 +24,7 @@ Topway is a native macOS menu bar application for monitoring and managing your R
   - Open the live deployment URL in your browser.
 
 ### Logs
-- **Live logs**: On a deployment row, select **View logs**. The logs screen has the tabs **Build** and **Deploy**.
+- **Live logs**: On a deployment row, select **View logs**. The logs screen has the tabs **Build** and **Deploy**. It opens on **Build** when the deployment builds, waits to deploy or failed.
 - **Levels**: Warnings show in orange with a triangle. Errors show in red with an octagon.
 - **Follow**: The screen moves to new lines. If you scroll up, it stops. Select **Follow new lines** to go to the newest line again.
 - **Copy logs**: Copies the lines on the screen, with their timestamps. The screen keeps the newest 1,000 lines.

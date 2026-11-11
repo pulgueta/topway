@@ -125,6 +125,7 @@ There is no alert for the first load, for the same deployment with the same stat
 
 `DeploymentRow` has a **View logs** button. `VariablesView` then shows `LogsView`. Back and Escape go to the deployments.
 
+- The screen opens on **Build** when the deployment status is `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING`, `NEEDS_APPROVAL` or `FAILED` (`Deployment.defaultLogKind`). It opens on **Deploy** for all other statuses.
 - The **Build** and **Deploy** tabs each start a new stream. The stream stops when the screen closes or the tab changes.
 - `LogBuffer` keeps the newest 1,000 lines in memory.
 - Warnings and errors have a symbol and a color, so the level does not show by color only.

@@ -33,6 +33,15 @@ public struct Deployment: Identifiable, Decodable, Hashable, Sendable {
         }
     }
 
+    /// The log that the logs screen shows first. A deployment that builds, waits to deploy
+    /// or failed shows its build log. Other deployments show their deploy log.
+    public var defaultLogKind: LogKind {
+        switch status.uppercased() {
+        case "BUILDING", "QUEUED", "WAITING", "INITIALIZING", "NEEDS_APPROVAL", "FAILED": .build
+        default: .deploy
+        }
+    }
+
     public var formattedDate: String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
