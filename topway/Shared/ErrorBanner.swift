@@ -1,30 +1,35 @@
 import SwiftUI
 
+/// Shows the error of a failed action above the bottom bar, while the content stays visible.
 struct ErrorBanner: View {
     let message: String
     let onDismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(.orange)
+        HStack(alignment: .firstTextBaseline, spacing: Layout.controlSpacing) {
+            Label {
+                Text(message)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+            .font(.callout)
 
-            Text(message)
-                .font(.system(size: 11))
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
 
-            Spacer()
-
-            Button("Close message", systemImage: "xmark", action: onDismiss)
+            Button("Close message", systemImage: "xmark") { onDismiss() }
                 .labelStyle(.iconOnly)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
+                .help("Close this message")
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color.orange.opacity(0.1))
+        .background(.orange.opacity(0.15), in: .rect(cornerRadius: Layout.rowCornerRadius))
+        .padding(.horizontal, Layout.barPadding)
+        .padding(.top, 6)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Error")
     }
 }
