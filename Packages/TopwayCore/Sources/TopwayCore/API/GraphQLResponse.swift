@@ -19,3 +19,5 @@ struct GraphQLResponse<T: Decodable>: Decodable {
         }
     }
 }
+
+extension GraphQLResponse: Equatable where T: Equatable {}

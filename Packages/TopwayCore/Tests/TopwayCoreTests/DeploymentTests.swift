@@ -25,6 +25,21 @@ struct DeploymentTests {
         #expect(deployment.statusColor == color)
     }
 
+    @Test(
+        "The logs screen opens on Build for a build, a wait before deploy, or a failure",
+        arguments: [
+            ("BUILDING", LogKind.build), ("QUEUED", .build), ("WAITING", .build),
+            ("INITIALIZING", .build), ("NEEDS_APPROVAL", .build), ("FAILED", .build),
+            ("DEPLOYING", .deploy), ("SUCCESS", .deploy), ("CRASHED", .deploy),
+            ("REMOVED", .deploy), ("REMOVING", .deploy), ("SKIPPED", .deploy),
+            ("SLEEPING", .deploy),
+        ])
+    func defaultLogKind(status: String, kind: LogKind) throws {
+        let deployment = try makeDeployment(status: status, createdAt: "2026-01-15T10:00:00Z")
+
+        #expect(deployment.defaultLogKind == kind)
+    }
+
     @Test("A date that does not parse stays unchanged")
     func unparsableDate() throws {
         let deployment = try makeDeployment(status: "SUCCESS", createdAt: "not-a-date")

@@ -10,6 +10,7 @@ struct DeploymentsView: View {
     let project: Project
     let environmentId: String
     let onDismiss: () -> Void
+    let onViewLogs: (Deployment) -> Void
 
     @State private var deployments: [Deployment] = []
     @State private var isLoading = true
@@ -173,6 +174,9 @@ struct DeploymentsView: View {
                                 {
                                     openURL(url)
                                 }
+                            },
+                            onViewLogs: {
+                                onViewLogs(deployment)
                             }
                         )
                     }
@@ -282,7 +286,8 @@ struct DeploymentsView: View {
         service: mockService,
         project: mockProject,
         environmentId: "env1",
-        onDismiss: {}
+        onDismiss: {},
+        onViewLogs: { _ in }
     )
     .environment(AppState())
     .frame(width: 320, height: 400)

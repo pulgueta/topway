@@ -61,6 +61,24 @@ struct VariablesView: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             currentDestination = .list
                         }
+                    },
+                    onViewLogs: { deployment in
+                        appState.clearError()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentDestination = .logs(deployment)
+                        }
+                    }
+                )
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .logs(let deployment):
+                LogsView(
+                    service: service,
+                    deployment: deployment,
+                    onDismiss: {
+                        appState.clearError()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentDestination = .deployments
+                        }
                     }
                 )
                 .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -81,6 +99,11 @@ struct VariablesView: View {
         .onExitCommand {
             if appState.pendingConfirmation != nil {
                 appState.cancelConfirmation()
+            } else if case .logs = currentDestination {
+                appState.clearError()
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentDestination = .deployments
+                }
             } else if currentDestination != .list {
                 appState.clearError()
                 withAnimation(.easeInOut(duration: 0.2)) {

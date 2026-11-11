@@ -15,11 +15,12 @@ The app imports the core. The core does not import the app.
 
 | Folder | Contents |
 |---|---|
-| `API` | `RailwayDataSource`, `RailwayClient`, `RailwayError` and the GraphQL types. |
+| `API` | `RailwayDataSource`, `RailwayClient`, `RailwayError`, the GraphQL types and the WebSocket client (`GraphQLWebSocket`, `GraphQLSubscription`). |
 | `API/Responses` | Types that decode Railway responses. These types are internal. |
 | `Models` | `Project`, `Service`, `Deployment` and other types that the app uses. |
 | `Sample` | `SampleDataSource` and its start data. |
 | `Health` | `HealthSummary`, `Health`, `AlertSnapshot`, `HealthAlert` and `AlertKind`. |
+| `Logs` | `LogLine`, `LogKind`, `LogEvent`, `LogConnection`, `LogBuffer` and the fallback rules. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
@@ -34,6 +35,7 @@ Each folder has the name of a feature.
 | `Projects` | Project list rows, with the mute button. |
 | `Services` | Service rows and add service. |
 | `Deployments` | Deployment list, restart and redeploy. |
+| `Logs` | The logs screen and the log line row. |
 | `Variables` | Variable list, variable editor and the service actions menu. |
 | `Settings` | The native Settings window, the Alerts section and the launch at login toggle. |
 | `Shared` | Buttons, error views, the confirmation dialog and `openAppSettings`. |
@@ -92,6 +94,55 @@ There is no alert for the first load, for the same deployment with the same stat
 `AlertNotifier` shows a local notification for each alert, only when **Send alerts** is on and the user gave permission. The notification names the service, the environment and the project. In sample mode, it shows "Sample data". `NotificationPresenter` is the notification center delegate. `TopwayApp` sets it at launch, so alerts show as banners also while the popover is open.
 
 `UserDefaults` keeps `alertsEnabled` (off by default) and `mutedProjectIds`. Launch at login uses `SMAppService.mainApp`. The system keeps that state, so Settings reads it each time.
+
+## Logs
+
+### WebSocket client
+
+`GraphQLWebSocket` sends one subscription with the `graphql-transport-ws` protocol. The URL is `wss://backboard.railway.com/graphql/v2`. It moves text frames through `MessageTransport`. `URLSessionMessageTransport` (a `URLSessionWebSocketTask`) is the live type. Tests use scripted frames and an injected sleep, with no network.
+
+- Railway reads the token from the `Authorization: Bearer` header of the upgrade request, as the Railway CLI does. `connection_init` has no payload.
+- `GraphQLSubscription` keeps the protocol rules. It has no network code, so tests can use it directly. After `connection_ack`, it sends `subscribe`. It answers `ping` with `pong`. `next` gives the data, `error` and `next` with GraphQL errors give `RailwayError.graphQLError`, and `complete` ends the stream.
+- A refused upgrade with status 401, the close codes 4401 and 4403, and the message "Not Authorized" give `RailwayError.unauthorized`, the same error as an HTTP 401.
+- When the consumer task is cancelled, the client sends `complete` and closes the socket.
+- The live socket accepts messages up to 16 MiB (`maximumMessageSize`), because one message can hold many log lines.
+- `SocketKeepalive` finds a half-open socket. Every 20 seconds, it checks for a message from the server since the last check. If there is one, it sends a protocol `ping`, and Railway answers with `pong`. If there is none, the socket is dropped and the stream uses the reconnect rule. So a socket with no message for 20 seconds after a ping is dropped, at most 40 seconds after the last message. The protocol `ping` is used, not `URLSessionWebSocketTask.sendPing`, because its `pong` comes from the GraphQL server, and a proxy can answer a WebSocket ping frame.
+
+### Log streams
+
+`RailwayDataSource.logs(_:deploymentId:token:)` gives an `AsyncThrowingStream` of `LogEvent`: new lines, or a change of the connection (`live`, `reconnecting`, `polling`). The subscription and the query are `deploymentLogs` and `buildLogs`, with `limit: 500` and the alias `lines`.
+
+| Socket result | Next step |
+|---|---|
+| A live socket drops, or a reconnect fails | Connect again with a backoff: 2, 4, 8, 16, then 30 seconds. A payload resets the backoff. The state is `reconnecting`. After 5 reconnects in a row that do not connect, poll. |
+| A live socket fails 3 times in a row before it gives a payload | A network error: poll. Bad data (`decodingError`, `unknown`): stop the stream with the error. |
+| The socket never connected in this stream | Poll the matching query every 5 seconds. The state is `polling`. |
+| Railway sends an error, or does not accept the token | Stop the stream with the error. Polling gets the same answer. |
+
+`LogRecovery` keeps these rules. It has no network code. While the stream polls:
+
+- It sends one request each 5 seconds.
+- A network error does not stop the stream. The next poll tries again.
+- Every 60 seconds (12 polls), it tries the socket again. If the socket connects, the state is `live` again.
+- The build log query also reads the deployment status. When the build is finished (the status is not `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING` or `NEEDS_APPROVAL`), polling stops and the log ends.
+
+A server `complete` ends the stream, with no polling. The most requests in one hour: 720 polls and 60 socket tries while the stream polls. When the socket connects, gives a line and drops each time, the backoff resets, so the stream can connect up to 1,800 times in one hour.
+
+`LogDeduplicator` removes lines that a reconnect or a poll gives again. A line is a duplicate when its timestamp, message and severity are equal to one of the last 1,000 lines. It does not compare times, because Railway can add a line with an earlier timestamp.
+
+`SampleDataSource` gives the same sample lines for each deployment. Build logs give the build steps and end. Deploy logs give info, warning and error lines, then one line every 2 seconds. Its `sleep` parameter lets tests run with no wait.
+
+### Logs screen
+
+`DeploymentRow` has a **View logs** button. `VariablesView` then shows `LogsView`. Back and Escape go to the deployments.
+
+- The screen opens on **Build** when the deployment status is `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING`, `NEEDS_APPROVAL` or `FAILED` (`Deployment.defaultLogKind`). It opens on **Deploy** for all other statuses.
+- The **Build** and **Deploy** tabs each start a new stream. The stream stops when the screen closes or the tab changes.
+- The footer shows the connection state. A stream that finishes with no error shows **End of log**. A stream that an error stops shows **Stopped**.
+- `LogBuffer` keeps the newest 1,000 lines in memory.
+- Warnings and errors have a symbol and a color, so the level does not show by color only.
+- The screen follows new lines at the bottom. When the user scrolls up, it stops. **Follow new lines** starts it again. `LogScrollMetrics` keeps the rule: it checks the bottom first, so a bounce at the bottom keeps follow on.
+- Errors show in `ErrorBanner`, or in `ErrorStateView` with **Retry** when there are no lines.
 
 ## Confirmation levels
 

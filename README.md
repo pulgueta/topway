@@ -23,6 +23,14 @@ Topway is a native macOS menu bar application for monitoring and managing your R
   - Trigger a full redeploy of a service.
   - Open the live deployment URL in your browser.
 
+### Logs
+- **Live logs**: On a deployment row, select **View logs**. The logs screen has the tabs **Build** and **Deploy**. It opens on **Build** when the deployment builds, waits to deploy or failed.
+- **Levels**: Warnings show in orange with a triangle. Errors show in red with an octagon.
+- **Follow**: The screen moves to new lines. If you scroll up, it stops. Select **Follow new lines** to go to the newest line again.
+- **Copy logs**: Copies the lines on the screen, with their timestamps. The screen keeps the newest 1,000 lines.
+- **Connection**: The footer shows **Live**, **Reconnecting...** or **Checks every 5 seconds**. When a log has no more lines, it shows **End of log**. When an error stops the log, it shows **Stopped** and the error. Select **Retry** to start the log again. Topway uses a live connection to Railway. If it cannot connect, it reads the logs every 5 seconds.
+- Log text stays on your Mac. Topway does not send it to other services.
+
 ### Health and Alerts
 - **Menu bar health**: The menu bar icon shows the health of all services. The tram shows when all services are healthy. Arrows show when a build or a deploy is in progress. A warning triangle shows when a service failed or crashed.
 - **Background refresh**: When auto-refresh is on, Topway refreshes from launch, also when the menu bar window is closed. Turn it on in **Settings > Auto Refresh**. Topway checks for alerts at each refresh.
@@ -49,7 +57,7 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 
 You can use Topway with no Railway token. On the start screen, select **Try with sample data**.
 
-- Topway shows sample projects, services, deployments and variables. The label **Sample data** shows at the top of each screen.
+- Topway shows sample projects, services, deployments, variables and logs. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
 - Sample mode can send alerts. Each sample notification shows **Sample data**.

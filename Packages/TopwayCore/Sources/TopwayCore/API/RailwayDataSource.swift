@@ -34,4 +34,9 @@ public protocol RailwayDataSource: Sendable {
 
     func redeployService(environmentId: String, serviceId: String, token: String)
         async throws -> Bool
+
+    /// Gives the latest lines, then new lines while they arrive.
+    /// Cancel the consumer task to stop the stream.
+    func logs(_ kind: LogKind, deploymentId: String, token: String)
+        -> AsyncThrowingStream<LogEvent, any Error>
 }

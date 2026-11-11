@@ -3,9 +3,27 @@ import Foundation
 public struct RailwayClient: RailwayDataSource {
     private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
+    private let sleep: @Sendable (Duration) async throws -> Void
+    private let socket: GraphQLWebSocket
 
-    public init(session: URLSession = .shared) {
+    /// - Parameter sleep: Waits between polls and before a reconnect. Tests replace it.
+    public init(
+        session: URLSession = .shared,
+        sleep: @escaping @Sendable (Duration) async throws -> Void = {
+            try await Task.sleep(for: $0)
+        }
+    ) {
+        self.init(session: session, sleep: sleep, socket: GraphQLWebSocket(session: session))
+    }
+
+    /// Tests pass a socket with scripted frames.
+    init(
+        session: URLSession, sleep: @escaping @Sendable (Duration) async throws -> Void,
+        socket: GraphQLWebSocket
+    ) {
         self.session = session
+        self.sleep = sleep
+        self.socket = socket
     }
 
     // MARK: - Fetch Projects
@@ -309,6 +327,127 @@ public struct RailwayClient: RailwayDataSource {
             token: token
         )
         return data.serviceInstanceRedeploy
+    }
+
+    // MARK: - Logs
+
+    private static let pollInterval = Duration.seconds(5)
+    /// 12 polls of 5 seconds: polling tries the socket again every 60 seconds.
+    private static let pollsBeforeSocketTry = 12
+
+    /// Uses the WebSocket subscription. `LogRecovery` decides what to do when the socket
+    /// fails: connect again with a backoff, poll, or stop. Polling reads the matching query
+    /// every 5 seconds and tries the socket again every 60 seconds. A network error in
+    /// polling does not stop the stream. `LogDeduplicator` removes the lines that a reconnect
+    /// or a poll gives again.
+    public func logs(_ kind: LogKind, deploymentId: String, token: String)
+        -> AsyncThrowingStream<LogEvent, any Error>
+    {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    try await streamLogs(
+                        kind, deploymentId: deploymentId, token: token, to: continuation)
+                    continuation.finish()
+                } catch is CancellationError {
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func streamLogs(
+        _ kind: LogKind, deploymentId: String, token: String,
+        to continuation: AsyncThrowingStream<LogEvent, any Error>.Continuation
+    ) async throws {
+        let variables = ["deploymentId": deploymentId]
+        var deduplicator = LogDeduplicator(capacity: 1_000)
+        func yield(_ lines: [LogLine]) {
+            let new = deduplicator.newLines(in: lines)
+            if !new.isEmpty {
+                continuation.yield(.lines(new))
+            }
+        }
+
+        let subscription = GraphQLRequest(
+            query: Self.logsDocument(kind, operation: "subscription"), variables: variables)
+        let query = Self.logsDocument(kind, operation: "query")
+        var recovery = LogRecovery()
+        while true {
+            do {
+                for try await event in socket.subscribe(
+                    subscription, token: token, as: LogsData.self)
+                {
+                    switch event {
+                    case .connected:
+                        recovery.connected()
+                        continuation.yield(.connection(.live))
+                    case .payload(let data):
+                        recovery.payloadReceived()
+                        yield(data.lines)
+                    }
+                }
+                // Railway ended the subscription, or the consumer stopped the stream.
+                return
+            } catch let error as RailwayError {
+                switch recovery.step(after: error) {
+                case .fail:
+                    throw error
+                case .reconnect(let delay):
+                    continuation.yield(.connection(.reconnecting))
+                    try await sleep(delay)
+                    continue
+                case .poll:
+                    break
+                }
+            }
+
+            // Poll until the next socket try. One request each 5 seconds.
+            continuation.yield(.connection(.polling))
+            for _ in 0..<Self.pollsBeforeSocketTry {
+                do {
+                    let data: LogsData = try await execute(
+                        query: query, variables: variables, token: token)
+                    yield(data.lines)
+                    if let deployment = data.deployment, !deployment.isBuildRunning {
+                        // A finished build log gets no more lines.
+                        return
+                    }
+                } catch RailwayError.networkError {
+                    // A short network problem. Try again at the next interval.
+                }
+                try await sleep(Self.pollInterval)
+            }
+            recovery.retryingFromPolling()
+        }
+    }
+
+    /// The subscription and the query have the same arguments and fields. The build log
+    /// query also reads the deployment status, so polling can stop when the build ends.
+    private static func logsDocument(_ kind: LogKind, operation: String) -> String {
+        let status =
+            kind == .build && operation == "query"
+            ? """
+
+              deployment(id: $deploymentId) {
+                id
+                status
+                staticUrl
+                createdAt
+              }
+            """ : ""
+        return """
+            \(operation) Logs($deploymentId: String!) {
+              lines: \(kind.fieldName)(deploymentId: $deploymentId, limit: 500) {
+                timestamp
+                message
+                severity
+              }\(status)
+            }
+            """
     }
 
     // MARK: - Private Methods

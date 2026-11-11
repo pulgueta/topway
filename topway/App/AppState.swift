@@ -576,6 +576,38 @@ class AppState {
         }
     }
 
+    // MARK: - Logs
+
+    /// Gives each log event to `onEvent` until the stream ends or the task is cancelled.
+    /// Returns `true` when the stream ended with no error. Sets `errorMessage` when it fails.
+    func streamLogs(_ kind: LogKind, deploymentId: String, onEvent: (LogEvent) -> Void) async
+        -> Bool
+    {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return false
+        }
+
+        errorMessage = nil
+
+        do {
+            for try await event in dataSource.logs(
+                kind, deploymentId: deploymentId, token: railwayToken)
+            {
+                // An event of a cancelled stream must not reach the next tab.
+                guard !Task.isCancelled else { break }
+                onEvent(event)
+            }
+            return true
+        } catch let error as RailwayError {
+            show(error)
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Auto Refresh
 
     func startAutoRefresh() {
