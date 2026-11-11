@@ -90,12 +90,41 @@ struct LogRecoveryTests {
         var recovery = LogRecovery()
         recovery.connected()
         var steps = [recovery.step(after: .networkError(URLError(.networkConnectionLost)))]
-        for _ in 1...5 {
+        for _ in 1...4 {
             steps.append(recovery.step(after: .networkError(URLError(.cannotConnectToHost))))
         }
 
         #expect(
-            steps == [2, 4, 8, 16, 30, 30].map { .reconnect(after: .seconds($0)) })
+            steps == [2, 4, 8, 16, 30].map { .reconnect(after: .seconds($0)) })
+    }
+
+    @Test(
+        "After 5 failed reconnects in a row, a socket that was live falls back to polling",
+        arguments: socketErrors)
+    func failedReconnectsPoll(error: RailwayError) {
+        var recovery = LogRecovery()
+        recovery.connected()
+        _ = recovery.step(after: error)
+        for _ in 1...4 {
+            _ = recovery.step(after: error)
+        }
+
+        #expect(recovery.step(after: error) == .poll)
+    }
+
+    @Test("A connect resets the count of failed reconnects")
+    func connectResetsFailedReconnects() {
+        var recovery = LogRecovery()
+        recovery.connected()
+        _ = recovery.step(after: .unknown)
+        for _ in 1...4 {
+            _ = recovery.step(after: .unknown)
+        }
+        recovery.connected()
+        recovery.payloadReceived()
+
+        #expect(recovery.step(after: .unknown) == .reconnect(after: .seconds(2)))
+        #expect(recovery.step(after: .unknown) == .reconnect(after: .seconds(4)))
     }
 
     @Test("A payload resets the backoff")

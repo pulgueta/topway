@@ -38,7 +38,9 @@ struct LogsView: View {
             infoView
         } bottom: {
             if let error = appState.errorMessage, !buffer.entries.isEmpty {
-                ErrorBanner(message: error) { appState.clearError() }
+                ErrorBanner(
+                    message: error, onDismiss: { appState.clearError() },
+                    onRetry: { attempt += 1 })
             }
             footerView
         }

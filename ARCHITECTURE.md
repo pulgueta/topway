@@ -141,7 +141,7 @@ There is no alert for the first load, for the same deployment with the same stat
 
 | Socket result | Next step |
 |---|---|
-| A live socket drops, or a reconnect fails | Connect again with a backoff: 2, 4, 8, 16, then 30 seconds. A payload resets the backoff. The state is `reconnecting`. |
+| A live socket drops, or a reconnect fails | Connect again with a backoff: 2, 4, 8, 16, then 30 seconds. A payload resets the backoff. The state is `reconnecting`. After 5 reconnects in a row that do not connect, poll. |
 | A live socket fails 3 times in a row before it gives a payload | A network error: poll. Bad data (`decodingError`, `unknown`): stop the stream with the error. |
 | The socket never connected in this stream | Poll the matching query every 5 seconds. The state is `polling`. |
 | Railway sends an error, or does not accept the token | Stop the stream with the error. Polling gets the same answer. |

@@ -4,6 +4,8 @@ import SwiftUI
 struct ErrorBanner: View {
     let message: String
     let onDismiss: () -> Void
+    /// Shows a Retry button when it is set.
+    var onRetry: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Layout.controlSpacing) {
@@ -18,6 +20,11 @@ struct ErrorBanner: View {
             .font(.callout)
 
             Spacer(minLength: 0)
+
+            if let onRetry {
+                Button("Retry") { onRetry() }
+                    .buttonStyle(.borderless)
+            }
 
             Button("Close message", systemImage: "xmark") { onDismiss() }
                 .labelStyle(.iconOnly)

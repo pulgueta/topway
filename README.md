@@ -31,7 +31,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - **Levels**: Warnings show in orange with a triangle. Errors show in red with an octagon.
 - **Follow**: The screen moves to new lines. If you scroll up, it stops. Select **Follow new lines** to go to the newest line again.
 - **Copy logs**: Copies the lines on the screen, with their timestamps. The screen keeps the newest 1,000 lines.
-- **Connection**: The footer shows **Live**, **Reconnecting...** or **Checks every 5 seconds**. When a log has no more lines, it shows **End of log**. When an error stops the log, it shows **Stopped** and the error. Topway uses a live connection to Railway. If it cannot connect, it reads the logs every 5 seconds.
+- **Connection**: The footer shows **Live**, **Reconnecting...** or **Checks every 5 seconds**. When a log has no more lines, it shows **End of log**. When an error stops the log, it shows **Stopped** and the error. Select **Retry** to start the log again. Topway uses a live connection to Railway. If it cannot connect, it reads the logs every 5 seconds.
 - Log text stays on your Mac. Topway does not send it to other services.
 
 ### Health and Alerts
