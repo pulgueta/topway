@@ -77,6 +77,8 @@ class AppState {
     private var refreshTask: Task<Void, Never>?
     /// The message that the latest failed background refresh set.
     private var refreshFailureMessage: String?
+    /// Only the latest project load may change the screen.
+    private var latestProjectLoad = 0
 
     // MARK: - Init
 
@@ -119,23 +121,28 @@ class AppState {
             errorMessage = nil
         }
 
+        latestProjectLoad += 1
+        let load = latestProjectLoad
         do {
             let fetchedProjects = try await client.fetchProjects(
                 workspaceId: workspaceId,
                 token: railwayToken
             )
+            guard load == latestProjectLoad else { return }
             projects = fetchedProjects
             if let refreshFailureMessage, errorMessage == refreshFailureMessage {
                 errorMessage = nil
             }
             refreshFailureMessage = nil
         } catch let error as RailwayError {
+            guard load == latestProjectLoad else { return }
             show(error)
             // A cancellation sets no message, so `errorMessage` can belong to a user action.
             if error.errorDescription != nil {
                 refreshFailureMessage = keepingError ? errorMessage : nil
             }
         } catch {
+            guard load == latestProjectLoad else { return }
             errorMessage = error.localizedDescription
             refreshFailureMessage = keepingError ? errorMessage : nil
         }
