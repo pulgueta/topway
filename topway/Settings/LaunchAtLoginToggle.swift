@@ -58,5 +58,10 @@ struct LaunchAtLoginToggle: View {
                 : "Topway cannot turn off launch at login. \(error.localizedDescription)"
         }
         status = SMAppService.mainApp.status
+        // `register()` can throw when macOS waits for the user's approval. The approval hint
+        // explains that state, so an error message is not necessary.
+        if status == .requiresApproval {
+            errorMessage = nil
+        }
     }
 }

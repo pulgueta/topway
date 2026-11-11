@@ -6,8 +6,8 @@ struct MenuBarLabel: View {
     let health: HealthSummary
 
     var body: some View {
-        Image(systemName: symbolName)
-            .accessibilityLabel(accessibilityText)
+        // The menu bar shows only the icon. The title stays the accessibility label.
+        Label(accessibilityText, systemImage: symbolName)
     }
 
     private var symbolName: String {
