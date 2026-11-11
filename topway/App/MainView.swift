@@ -9,41 +9,48 @@ struct MainView: View {
     @State private var currentView: NavigationDestination = .main
 
     var body: some View {
-        ZStack {
-            switch currentView {
-            case .main:
-                mainContent
-                    .transition(.opacity)
-            case .addService(let projectId, let projectName):
-                AddServiceView(
-                    projectId: projectId,
-                    projectName: projectName,
-                    onDismiss: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main
-                        }
-                    }
-                )
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            case .variables(let service, let project):
-                VariablesView(
-                    service: service,
-                    project: project,
-                    onDismiss: {
-                        appState.clearError()
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            currentView = .main
-                        }
-                    },
-                    onDeleteService: {
-                        if await appState.deleteService(serviceId: service.id) {
+        VStack(spacing: 0) {
+            // On every screen, so no sample item looks like a Railway item.
+            if appState.isSampleMode {
+                SampleDataBanner { appState.exitSampleMode() }
+                Divider()
+            }
+            ZStack {
+                switch currentView {
+                case .main:
+                    mainContent
+                        .transition(.opacity)
+                case .addService(let projectId, let projectName):
+                    AddServiceView(
+                        projectId: projectId,
+                        projectName: projectName,
+                        onDismiss: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 currentView = .main
                             }
                         }
-                    }
-                )
-                .transition(.move(edge: .trailing).combined(with: .opacity))
+                    )
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                case .variables(let service, let project):
+                    VariablesView(
+                        service: service,
+                        project: project,
+                        onDismiss: {
+                            appState.clearError()
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentView = .main
+                            }
+                        },
+                        onDeleteService: {
+                            if await appState.deleteService(serviceId: service.id) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    currentView = .main
+                                }
+                            }
+                        }
+                    )
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
         }
         .frame(width: 320, height: 400)
@@ -58,6 +65,10 @@ struct MainView: View {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
             }
+        }
+        // Screens of the earlier data source show items that the new source does not have.
+        .onChange(of: appState.isSampleMode) {
+            currentView = .main
         }
         // Escape to go back
         .onExitCommand {
@@ -84,11 +95,6 @@ struct MainView: View {
         VStack(spacing: 0) {
             headerView
             Divider()
-
-            if appState.isSampleMode {
-                SampleDataBanner { appState.exitSampleMode() }
-                Divider()
-            }
 
             if !appState.isConfigured {
                 unconfiguredView
@@ -195,8 +201,10 @@ struct MainView: View {
 
                 Spacer()
 
-                ToolbarButton(icon: "plus", help: "Create project on Railway") {
-                    openRailwayDashboard()
+                if !appState.isSampleMode {
+                    ToolbarButton(icon: "plus", help: "Create project on Railway") {
+                        openRailwayDashboard()
+                    }
                 }
 
                 ToolbarButton(
@@ -267,26 +275,32 @@ struct MainView: View {
                 Text("No Projects Found")
                     .font(.system(size: 14, weight: .semibold))
 
-                Text("Create a project on Railway or check your Workspace ID in settings.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                Text(
+                    appState.isSampleMode
+                        ? "You deleted all sample projects. To get them back, exit sample data and start it again."
+                        : "Create a project on Railway or check your Workspace ID in settings."
+                )
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
             }
 
             HStack(spacing: 10) {
-                Button {
-                    openRailwayDashboard()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 10))
-                        Text("Create project")
-                            .font(.system(size: 12))
+                if !appState.isSampleMode {
+                    Button {
+                        openRailwayDashboard()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 10))
+                            Text("Create project")
+                                .font(.system(size: 12))
+                        }
                     }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.small)
 
                 Button {
                     openAppSettings(fallback: openSettings)

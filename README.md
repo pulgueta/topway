@@ -42,7 +42,7 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 
 You can use Topway with no Railway token. On the start screen, select **Try with sample data**.
 
-- Topway shows sample projects, services, deployments and variables. The label **Sample data** shows at the top.
+- Topway shows sample projects, services, deployments and variables. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
 - To go back to the start screen, select **Exit sample data**. If you save a token in Settings, Topway also exits sample mode.

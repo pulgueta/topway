@@ -50,11 +50,12 @@ struct SettingsView: View {
 
             Section {
                 Button("Save") {
-                    // Saved credentials replace the sample data. Sample mode never saves a token.
-                    appState.exitSampleMode()
                     appState.workspaceId = workspace
                     if appState.updateToken(token) {
                         saveError = nil
+                        // Saved credentials replace the sample data. Sample mode never saves a token.
+                        appState.exitSampleMode()
+                        appState.restartAutoRefresh()
                         Task { await appState.loadProjects() }
                     } else {
                         saveError = "Topway cannot save the token to the Keychain. Try again."

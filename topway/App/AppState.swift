@@ -301,6 +301,7 @@ class AppState {
         self.isSampleMode = isSampleMode
         projects = []
         isLoading = false
+        pendingConfirmation = nil
         clearError()
         restartAutoRefresh()
     }
