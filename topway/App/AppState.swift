@@ -579,11 +579,13 @@ class AppState {
     // MARK: - Logs
 
     /// Gives each log event to `onEvent` until the stream ends or the task is cancelled.
-    /// Sets `errorMessage` when the stream fails.
-    func streamLogs(_ kind: LogKind, deploymentId: String, onEvent: (LogEvent) -> Void) async {
+    /// Returns `true` when the stream ended with no error. Sets `errorMessage` when it fails.
+    func streamLogs(_ kind: LogKind, deploymentId: String, onEvent: (LogEvent) -> Void) async
+        -> Bool
+    {
         guard isConfigured else {
             errorMessage = "Add your API token and Workspace ID in Settings."
-            return
+            return false
         }
 
         errorMessage = nil
@@ -594,10 +596,13 @@ class AppState {
             {
                 onEvent(event)
             }
+            return true
         } catch let error as RailwayError {
             show(error)
+            return false
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 

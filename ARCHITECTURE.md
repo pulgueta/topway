@@ -127,6 +127,7 @@ There is no alert for the first load, for the same deployment with the same stat
 
 - The screen opens on **Build** when the deployment status is `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING`, `NEEDS_APPROVAL` or `FAILED` (`Deployment.defaultLogKind`). It opens on **Deploy** for all other statuses.
 - The **Build** and **Deploy** tabs each start a new stream. The stream stops when the screen closes or the tab changes.
+- The footer shows the connection state. A stream that finishes with no error shows **End of log**. A stream that an error stops shows **Stopped**.
 - `LogBuffer` keeps the newest 1,000 lines in memory.
 - Warnings and errors have a symbol and a color, so the level does not show by color only.
 - The screen follows new lines at the bottom. When the user scrolls up, it stops. **Follow new lines** starts it again.

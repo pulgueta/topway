@@ -27,6 +27,9 @@ struct LogsView: View {
     private enum StreamState {
         case connecting
         case connection(LogConnection)
+        /// The stream finished with no error.
+        case ended
+        /// An error stopped the stream. `ErrorBanner` or `ErrorStateView` shows it.
         case stopped
     }
 
@@ -60,7 +63,7 @@ struct LogsView: View {
             buffer = LogBuffer()
             streamState = .connecting
             isFollowing = true
-            await appState.streamLogs(kind, deploymentId: deployment.id) { event in
+            let isEnded = await appState.streamLogs(kind, deploymentId: deployment.id) { event in
                 switch event {
                 case .lines(let lines):
                     buffer.append(lines)
@@ -70,7 +73,7 @@ struct LogsView: View {
             }
             // A cancelled task belongs to a stream that a new stream replaced.
             if !Task.isCancelled {
-                streamState = .stopped
+                streamState = isEnded ? .ended : .stopped
             }
         }
     }
@@ -156,20 +159,24 @@ struct LogsView: View {
                     Text("No Logs")
                         .font(.system(size: 14, weight: .semibold))
 
-                    Text(
-                        kind == .build
-                            ? "This deployment has no build logs yet. New lines show here."
-                            : "This deployment has no deploy logs yet. New lines show here."
-                    )
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    Text(emptyMessage)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
                 }
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    private var emptyMessage: String {
+        let log = kind == .build ? "build logs" : "deploy logs"
+        if case .ended = streamState {
+            return "This deployment has no \(log)."
+        }
+        return "This deployment has no \(log) yet. New lines show here."
     }
 
     private var linesView: some View {
@@ -251,8 +258,10 @@ struct LogsView: View {
                     "Checks every 5 seconds", "clock.arrow.circlepath", .secondary,
                     "The live connection is not available. Topway reads the logs every 5 seconds."
                 )
+            case .ended:
+                ("End of log", "checkmark.circle", .secondary, "This log has no more lines.")
             case .stopped:
-                ("Stopped", "stop.circle", .secondary, "No more lines come from this stream.")
+                ("Stopped", "stop.circle", .secondary, "An error stopped this log.")
             }
         return Label {
             Text(text)
