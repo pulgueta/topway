@@ -3,9 +3,17 @@ import Foundation
 public struct RailwayClient: RailwayDataSource {
     private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
+    private let sleep: @Sendable (Duration) async throws -> Void
 
-    public init(session: URLSession = .shared) {
+    /// - Parameter sleep: Waits between polls and before a reconnect. Tests replace it.
+    public init(
+        session: URLSession = .shared,
+        sleep: @escaping @Sendable (Duration) async throws -> Void = {
+            try await Task.sleep(for: $0)
+        }
+    ) {
         self.session = session
+        self.sleep = sleep
     }
 
     // MARK: - Fetch Projects
@@ -309,6 +317,102 @@ public struct RailwayClient: RailwayDataSource {
             token: token
         )
         return data.serviceInstanceRedeploy
+    }
+
+    // MARK: - Logs
+
+    private static let pollInterval = Duration.seconds(5)
+    private static let reconnectDelay = Duration.seconds(2)
+
+    /// Uses the WebSocket subscription. When a live socket drops, the stream connects again
+    /// after 2 seconds. When the socket cannot connect, the stream polls the matching query
+    /// every 5 seconds until it stops. `LogDeduplicator` removes the lines that a reconnect
+    /// or a poll gives again.
+    public func logs(_ kind: LogKind, deploymentId: String, token: String)
+        -> AsyncThrowingStream<LogEvent, any Error>
+    {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    try await streamLogs(
+                        kind, deploymentId: deploymentId, token: token, to: continuation)
+                    continuation.finish()
+                } catch is CancellationError {
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func streamLogs(
+        _ kind: LogKind, deploymentId: String, token: String,
+        to continuation: AsyncThrowingStream<LogEvent, any Error>.Continuation
+    ) async throws {
+        let variables = ["deploymentId": deploymentId]
+        var deduplicator = LogDeduplicator(capacity: 1_000)
+        func yield(_ lines: [LogLine]) {
+            let new = deduplicator.newLines(in: lines)
+            if !new.isEmpty {
+                continuation.yield(.lines(new))
+            }
+        }
+
+        let socket = GraphQLWebSocket(session: session)
+        let subscription = GraphQLRequest(
+            query: Self.logsDocument(kind, operation: "subscription"), variables: variables)
+        subscribing: while true {
+            var wasLive = false
+            do {
+                for try await event in socket.subscribe(
+                    subscription, token: token, as: LogsData.self)
+                {
+                    switch event {
+                    case .connected:
+                        wasLive = true
+                        continuation.yield(.connection(.live))
+                    case .payload(let data):
+                        yield(data.lines)
+                    }
+                }
+                // Railway ended the subscription, or the consumer stopped the stream.
+                return
+            } catch let error as RailwayError {
+                switch LogRecovery(after: error, wasLive: wasLive) {
+                case .fail:
+                    throw error
+                case .reconnect:
+                    continuation.yield(.connection(.reconnecting))
+                    try await sleep(Self.reconnectDelay)
+                case .poll:
+                    break subscribing
+                }
+            }
+        }
+
+        continuation.yield(.connection(.polling))
+        let query = Self.logsDocument(kind, operation: "query")
+        while true {
+            let data: LogsData = try await execute(
+                query: query, variables: variables, token: token)
+            yield(data.lines)
+            try await sleep(Self.pollInterval)
+        }
+    }
+
+    /// The subscription and the query have the same arguments and fields.
+    private static func logsDocument(_ kind: LogKind, operation: String) -> String {
+        """
+        \(operation) Logs($deploymentId: String!) {
+          lines: \(kind.fieldName)(deploymentId: $deploymentId, limit: 500) {
+            timestamp
+            message
+            severity
+          }
+        }
+        """
     }
 
     // MARK: - Private Methods

@@ -74,6 +74,35 @@ extension SampleDataSource {
         "docs-production/docs-site": ["SITE_URL": "https://docs.example.com"],
     ]
 
+    /// The build log of each sample deployment, as severity and message.
+    static let seedBuildLogs: [(severity: String, message: String)] = [
+        ("info", "Using Nixpacks"),
+        ("info", "setup │ nodejs_22, npm-10_x"),
+        ("info", "install │ npm ci"),
+        ("warn", "npm warn deprecated inflight@1.0.6: This module is not supported"),
+        ("info", "build │ npm run build"),
+        ("info", "start │ npm run start"),
+        ("info", "Build time: 42.10 seconds"),
+    ]
+
+    /// The deploy log lines that show when the stream starts.
+    static let seedDeployLogs: [(severity: String, message: String)] = [
+        ("info", "Starting server on port 3000"),
+        ("info", "Connected to postgres.railway.internal:5432"),
+        ("info", "GET /health 200 2ms"),
+        ("warn", "Slow query: 820ms on orders"),
+        ("info", "GET /api/products 200 34ms"),
+        ("error", "Payment webhook failed: timeout after 10s"),
+    ]
+
+    /// The deploy log lines that arrive later, one for each tick, in a loop.
+    static let seedLiveLogs: [(severity: String, message: String)] = [
+        ("info", "GET /health 200 1ms"),
+        ("info", "GET /api/cart 200 12ms"),
+        ("warn", "Cache miss rate above 40%"),
+        ("error", "Request to inventory failed: connection reset"),
+    ]
+
     /// Makes a project with a production and a staging environment. The IDs come from the names.
     private static func project(_ name: String, services: [String]) -> Project {
         Project(

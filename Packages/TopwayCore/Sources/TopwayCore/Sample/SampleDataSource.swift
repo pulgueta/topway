@@ -4,6 +4,7 @@ import Foundation
 /// It sends no network requests. Actions change the data, and later reads show the change.
 public actor SampleDataSource: RailwayDataSource {
     private let now: @Sendable () -> Date
+    private let sleep: @Sendable (Duration) async throws -> Void
     private var projects: [Project]
     /// The deployments of each environment and service, newest first.
     private var deployments: [String: [Deployment]] = [:]
@@ -12,9 +13,17 @@ public actor SampleDataSource: RailwayDataSource {
     /// The variables of each environment and service.
     private var variables = seedVariables
 
-    /// - Parameter now: Gives the current date. The deployment dates come from it.
-    public init(now: @escaping @Sendable () -> Date = { .now }) {
+    /// - Parameters:
+    ///   - now: Gives the current date. The deployment and log dates come from it.
+    ///   - sleep: Waits between sample log lines. Tests replace it.
+    public init(
+        now: @escaping @Sendable () -> Date = { .now },
+        sleep: @escaping @Sendable (Duration) async throws -> Void = {
+            try await Task.sleep(for: $0)
+        }
+    ) {
         self.now = now
+        self.sleep = sleep
         projects = Self.seedProjects
         let date = now()
         var count = 0
@@ -129,6 +138,49 @@ public actor SampleDataSource: RailwayDataSource {
             number: deploymentCount, status: "SUCCESS", createdAt: now())
         deployments[key] = [deployment] + earlier
         return true
+    }
+
+    /// The same lines for each deployment. Build logs end after the build steps.
+    /// Deploy logs give the start lines, then one line every 2 seconds until the stream stops.
+    /// Each line is 1 second after the line before it.
+    public nonisolated func logs(_ kind: LogKind, deploymentId: String, token: String)
+        -> AsyncThrowingStream<LogEvent, any Error>
+    {
+        let start = now()
+        let sleep = sleep
+        func line(_ seed: (severity: String, message: String), second: Int) -> LogLine {
+            LogLine(
+                timestamp: (start + TimeInterval(second)).formatted(.iso8601),
+                message: seed.message, severity: seed.severity)
+        }
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                continuation.yield(.connection(.live))
+                let seeds = kind == .build ? Self.seedBuildLogs : Self.seedDeployLogs
+                continuation.yield(
+                    .lines(
+                        seeds.enumerated().map {
+                            line($0.element, second: $0.offset - seeds.count)
+                        }))
+                guard kind == .deploy else {
+                    continuation.finish()
+                    return
+                }
+                var second = 1
+                do {
+                    while true {
+                        try await sleep(.seconds(2))
+                        let seed = Self.seedLiveLogs[(second - 1) % Self.seedLiveLogs.count]
+                        continuation.yield(.lines([line(seed, second: second)]))
+                        second += 1
+                    }
+                } catch {
+                    // Only a cancelled sleep throws.
+                    continuation.finish()
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 
     // MARK: - Private Methods
