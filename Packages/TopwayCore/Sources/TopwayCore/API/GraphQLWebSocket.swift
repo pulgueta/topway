@@ -44,11 +44,29 @@ struct GraphQLWebSocket: Sendable {
         continuation: AsyncThrowingStream<SubscriptionEvent<Payload>, any Error>.Continuation
     ) async {
         var subscription = GraphQLSubscription<Payload>(id: Self.operationId, request: request)
+        let keepalive = SocketKeepalive()
+        // The protocol ping gets its pong from the GraphQL server, so it shows that the server
+        // still works. A WebSocket ping frame can get an answer from a proxy only.
+        let watchdog = Task {
+            do {
+                try await keepalive.run(sleep: { try await Task.sleep(for: $0) }) {
+                    try await socket.send(.string(GraphQLClientMessage.ping.text))
+                }
+                // No answer, so the socket is half-open. Closing it makes `receive` fail.
+                socket.cancel(with: .goingAway, reason: nil)
+            } catch {
+                // The stream ended, or the ping send failed. A failed send also makes
+                // `receive` fail, and the catch below reports that error.
+            }
+        }
+        defer { watchdog.cancel() }
         do {
             try await socket.send(.string(GraphQLClientMessage.connectionInit.text))
             while true {
+                let message = try await socket.receive()
+                keepalive.messageReceived()
                 let text =
-                    switch try await socket.receive() {
+                    switch message {
                     case .string(let text): text
                     case .data(let data): String(decoding: data, as: UTF8.self)
                     @unknown default: ""
@@ -76,9 +94,11 @@ struct GraphQLWebSocket: Sendable {
                 return
             }
             socket.cancel(with: .normalClosure, reason: nil)
+            // A dropped socket is a network failure, so the log stream connects again.
+            let failure = keepalive.isDropped ? URLError(.timedOut) : error
             continuation.finish(
                 throwing: GraphQLSubscription<Payload>.error(
-                    for: error, closeCode: socket.closeCode.rawValue,
+                    for: failure, closeCode: socket.closeCode.rawValue,
                     httpStatus: (socket.response as? HTTPURLResponse)?.statusCode))
         }
     }

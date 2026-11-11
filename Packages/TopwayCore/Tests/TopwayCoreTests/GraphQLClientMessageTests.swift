@@ -24,6 +24,11 @@ struct GraphQLClientMessageTests {
         #expect(GraphQLClientMessage.complete(id: "1").text == #"{"id":"1","type":"complete"}"#)
     }
 
+    @Test("ping checks that the server still answers")
+    func ping() {
+        #expect(GraphQLClientMessage.ping.text == #"{"type":"ping"}"#)
+    }
+
     @Test("pong answers a ping")
     func pong() {
         #expect(GraphQLClientMessage.pong.text == #"{"type":"pong"}"#)

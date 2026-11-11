@@ -5,6 +5,7 @@ enum GraphQLClientMessage: Encodable, Equatable {
     case connectionInit
     case subscribe(id: String, GraphQLRequest)
     case complete(id: String)
+    case ping
     case pong
 
     private enum CodingKeys: String, CodingKey {
@@ -34,6 +35,8 @@ enum GraphQLClientMessage: Encodable, Equatable {
         case .complete(let id):
             try container.encode("complete", forKey: .type)
             try container.encode(id, forKey: .id)
+        case .ping:
+            try container.encode("ping", forKey: .type)
         case .pong:
             try container.encode("pong", forKey: .type)
         }
