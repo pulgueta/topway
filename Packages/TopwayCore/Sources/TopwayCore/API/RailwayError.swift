@@ -20,6 +20,17 @@ public enum RailwayError: LocalizedError {
         }
     }
 
+    /// Makes the error for the GraphQL errors of a response or of a socket message.
+    /// Railway answers a request that has a bad token with status 200 and the message
+    /// "Not Authorized", so that message is the same error as an HTTP 401.
+    init(graphQLErrors errors: [GraphQLError]) {
+        if errors.contains(where: { $0.message.lowercased() == "not authorized" }) {
+            self = .unauthorized
+        } else {
+            self = .graphQLError(errors.map(\.message).joined(separator: ", "))
+        }
+    }
+
     /// Railway did not accept the token. A retry with the same token fails again.
     public var isTokenRejected: Bool {
         if case .unauthorized = self { true } else { false }

@@ -42,12 +42,12 @@ struct GraphQLSubscription<Payload: Decodable> {
         switch message {
         case .next(_, let response):
             if let errors = response.errors, !errors.isEmpty {
-                throw Self.error(from: errors)
+                throw RailwayError(graphQLErrors: errors)
             }
             guard let data = response.data else { throw .unknown }
             return .payload(data)
         case .error(_, let errors):
-            throw Self.error(from: errors)
+            throw RailwayError(graphQLErrors: errors)
         default:
             return .completed
         }
@@ -63,12 +63,5 @@ struct GraphQLSubscription<Payload: Decodable> {
             return .unauthorized
         }
         return RailwayError(transportFailure: failure)
-    }
-
-    private static func error(from errors: [GraphQLError]) -> RailwayError {
-        if errors.contains(where: { $0.message.lowercased() == "not authorized" }) {
-            return .unauthorized
-        }
-        return .graphQLError(errors.map(\.message).joined(separator: ", "))
     }
 }
