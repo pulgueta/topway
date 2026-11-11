@@ -594,6 +594,8 @@ class AppState {
             for try await event in dataSource.logs(
                 kind, deploymentId: deploymentId, token: railwayToken)
             {
+                // An event of a cancelled stream must not reach the next tab.
+                guard !Task.isCancelled else { break }
                 onEvent(event)
             }
             return true
