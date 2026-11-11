@@ -13,7 +13,9 @@ struct LaunchAtLoginToggle: View {
                 "Launch at login",
                 isOn: Binding(
                     get: { status == .enabled || status == .requiresApproval },
-                    set: setLaunchAtLogin)
+                    // A closure, not the method reference: Xcode 26.6 crashes when it converts
+                    // a main-actor method to the setter type.
+                    set: { setLaunchAtLogin($0) })
             )
 
             if status == .requiresApproval {
