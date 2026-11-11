@@ -72,6 +72,39 @@ struct RailwayClientRequestTests {
         #expect(query.contains("latestDeployment"))
     }
 
+    @Test("Deleted environments and deleted service instances give no status")
+    func deletedEnvironmentsAndInstances() async throws {
+        let deployment =
+            #"{"id":"d1","status":"FAILED","staticUrl":null,"createdAt":"2026-11-10T10:00:00Z"}"#
+        let server = StubServer(
+            StubReply(
+                body: """
+                    {"data":{"workspace":{"projects":{"edges":[
+                      {"node":{"id":"p1","name":"shop","deletedAt":null,
+                       "services":{"edges":[{"node":{"id":"s1","name":"web"}},
+                         {"node":{"id":"s2","name":"api"}}]},
+                       "environments":{"edges":[
+                         {"node":{"id":"e1","name":"production","deletedAt":null,
+                           "serviceInstances":{"edges":[
+                             {"node":{"serviceId":"s1","deletedAt":null,
+                               "latestDeployment":\(deployment)}},
+                             {"node":{"serviceId":"s2","deletedAt":"2026-11-09T00:00:00Z",
+                               "latestDeployment":\(deployment)}}]}}},
+                         {"node":{"id":"e2","name":"pr-12","deletedAt":"2026-11-09T00:00:00Z",
+                           "serviceInstances":{"edges":[
+                             {"node":{"serviceId":"s1","deletedAt":null,
+                               "latestDeployment":\(deployment)}}]}}}
+                       ]}}}
+                    ]}}}}
+                    """))
+
+        let projects = try await RailwayClient(session: server.session)
+            .fetchProjects(workspaceId: "w1", token: "secret")
+
+        #expect(projects.flatMap(\.serviceStatuses).map(\.environmentId) == ["e1"])
+        #expect(projects.flatMap(\.serviceStatuses).map(\.serviceId) == ["s1"])
+    }
+
     @Test(
         "User input reaches the request JSON unchanged, and only through variables",
         arguments: ClientCall.all,

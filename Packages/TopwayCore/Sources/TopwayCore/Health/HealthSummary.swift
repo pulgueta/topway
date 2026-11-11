@@ -3,16 +3,16 @@
 ///
 /// The rule:
 /// - `FAILED` and `CRASHED` are failing. One failing service makes the health failing.
-/// - `BUILDING`, `DEPLOYING`, `INITIALIZING`, `QUEUED` and `WAITING` are in progress. They make
-///   the health in progress if no service fails.
-/// - All other statuses are healthy. `REMOVED` and `SKIPPED` mean that no deployment needs an
-///   action. `SLEEPING` means that Railway stopped an idle service on purpose. An unknown status
-///   also counts as healthy, so it cannot cause a false alert.
+/// - `BUILDING`, `DEPLOYING`, `INITIALIZING`, `NEEDS_APPROVAL`, `QUEUED`, `REMOVING` and `WAITING`
+///   are in progress. They make the health in progress if no service fails.
+/// - `SUCCESS`, `REMOVED`, `SKIPPED` and `SLEEPING` are healthy. `REMOVED` and `SKIPPED` mean that
+///   no deployment needs an action. `SLEEPING` means that Railway stopped an idle service on
+///   purpose. An unknown status also counts as healthy, so it cannot cause a false alert.
 /// - No services gives healthy.
 public struct HealthSummary: Sendable {
     static let failingStatuses: Set = ["FAILED", "CRASHED"]
     static let inProgressStatuses: Set = [
-        "BUILDING", "DEPLOYING", "INITIALIZING", "QUEUED", "WAITING",
+        "BUILDING", "DEPLOYING", "INITIALIZING", "NEEDS_APPROVAL", "QUEUED", "REMOVING", "WAITING",
     ]
 
     public let health: Health

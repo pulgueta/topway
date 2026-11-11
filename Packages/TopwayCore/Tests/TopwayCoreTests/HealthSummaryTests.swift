@@ -13,6 +13,8 @@ struct HealthSummaryTests {
             ("INITIALIZING", .inProgress),
             ("QUEUED", .inProgress),
             ("WAITING", .inProgress),
+            ("NEEDS_APPROVAL", .inProgress),
+            ("REMOVING", .inProgress),
             ("SUCCESS", .healthy),
             ("REMOVED", .healthy),
             ("SKIPPED", .healthy),

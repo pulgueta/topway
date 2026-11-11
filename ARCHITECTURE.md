@@ -67,14 +67,14 @@ Sample mode lets the app run with no token, for example for App Review.
 
 ## Health and alerts
 
-The projects query gets the latest deployment of each service in each environment (`environments.serviceInstances.latestDeployment`). Do not use `Service.serviceInstances`: Railway marks it as deprecated. `Project.serviceStatuses` gives one `ServiceStatus` for each service and environment that has a deployment.
+The projects query gets the latest deployment of each service in each environment (`environments.serviceInstances.latestDeployment`). Do not use `Service.serviceInstances`: Railway marks it as deprecated. `Project.serviceStatuses` gives one `ServiceStatus` for each service and environment that has a deployment. It leaves out environments and service instances that have `deletedAt` set.
 
 `HealthSummary` gives one health for all projects:
 
 | Health | Latest statuses |
 |---|---|
 | Failing | One or more `FAILED` or `CRASHED`. |
-| In progress | No failing status, and one or more `BUILDING`, `DEPLOYING`, `INITIALIZING`, `QUEUED` or `WAITING`. |
+| In progress | No failing status, and one or more `BUILDING`, `DEPLOYING`, `INITIALIZING`, `NEEDS_APPROVAL`, `QUEUED`, `REMOVING` or `WAITING`. |
 | Healthy | All other statuses, for example `SUCCESS`, `REMOVED`, `SKIPPED`, `SLEEPING` or an unknown status. No services also gives healthy. |
 
 `MenuBarLabel` shows the health in the menu bar, with an accessibility label such as "Topway, 2 services failing".

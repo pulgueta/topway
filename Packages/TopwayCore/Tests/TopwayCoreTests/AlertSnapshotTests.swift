@@ -51,6 +51,21 @@ struct AlertSnapshotTests {
             ])
     }
 
+    @Test("A fix that waits for approval before it builds still gives a recovered alert")
+    func recoveredAfterApproval() {
+        let alerts = alerts(across: [
+            [status("web", "CRASHED", deployment: "d1")],
+            [status("web", "NEEDS_APPROVAL", deployment: "d2")],
+            [status("web", "BUILDING", deployment: "d2")],
+            [status("web", "SUCCESS", deployment: "d2")],
+        ])
+
+        #expect(
+            alerts == [
+                HealthAlert(kind: .recovered, service: status("web", "SUCCESS", deployment: "d2"))
+            ])
+    }
+
     @Test("A new failed deployment after a failed deployment gives a new alert")
     func failedAgain() {
         let alerts = alerts(across: [
@@ -108,6 +123,18 @@ struct AlertSnapshotTests {
             ], muted: ["shop"])
 
         #expect(alerts.map(\.service.projectId) == ["blog"])
+    }
+
+    @Test("A muted project still keeps its state, so unmuting gives no old alert")
+    func mutedProjectKeepsState() {
+        var snapshot = AlertSnapshot(statuses: [status("web", "SUCCESS")])
+
+        let mutedAlerts = snapshot.update(
+            with: [status("web", "CRASHED")], mutedProjectIds: ["shop"])
+        let unmutedAlerts = snapshot.update(with: [status("web", "CRASHED")], mutedProjectIds: [])
+
+        #expect(mutedAlerts.isEmpty)
+        #expect(unmutedAlerts.isEmpty)
     }
 
     @Test("The first snapshot gives no alerts")
