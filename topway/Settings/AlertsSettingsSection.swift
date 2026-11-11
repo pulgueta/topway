@@ -23,7 +23,7 @@ struct AlertsSettingsSection: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
-                Button("Open System Settings", action: openNotificationSettings)
+                Button("Open System Settings") { openNotificationSettings() }
                     .help("Turn on notifications for Topway.")
             }
 
