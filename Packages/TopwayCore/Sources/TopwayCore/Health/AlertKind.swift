@@ -1,9 +1,9 @@
-/// The change in a service that gives an alert.
+/// The change in a service that gives an alert. `AlertSnapshot` has the full rule.
 public enum AlertKind: Sendable {
-    /// The latest deployment changed to `FAILED`.
+    /// A new settled `FAILED` deployment.
     case failed
-    /// The latest deployment changed to `CRASHED`.
+    /// A new settled `CRASHED` deployment.
     case crashed
-    /// The latest deployment changed from `FAILED` or `CRASHED` to `SUCCESS`.
+    /// A settled `SUCCESS` after a settled `FAILED` or `CRASHED`.
     case recovered
 }

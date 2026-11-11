@@ -6,6 +6,7 @@ public struct ServiceStatus: Hashable, Sendable {
     public let environmentName: String
     public let serviceId: String
     public let serviceName: String
+    let deploymentId: String
     /// The Railway deployment status, for example `SUCCESS` or `CRASHED`.
     let status: String
 }

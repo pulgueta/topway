@@ -103,9 +103,9 @@ class AppState {
     /// Only the latest project load may change the screen. A data source switch also
     /// increases it, so a load from the earlier source is dropped.
     private var latestProjectLoad = 0
-    /// The service statuses of the latest load. It is `nil` before the first load of a data
+    /// The last settled state of each service. It is `nil` before the first load of a data
     /// source or a workspace, so that load gives no alerts.
-    private var alertSnapshot: [ServiceStatus]?
+    private var alertSnapshot: AlertSnapshot?
 
     // MARK: - Init
 
@@ -351,9 +351,12 @@ class AppState {
     /// The snapshot changes also when alerts are off, so turning them on gives no old alerts.
     private func sendAlerts(for projects: [Project]) {
         let statuses = projects.flatMap(\.serviceStatuses)
-        let alerts = AlertRules.alerts(
-            from: alertSnapshot, to: statuses, mutedProjectIds: mutedProjectIds)
-        alertSnapshot = statuses
+        guard var snapshot = alertSnapshot else {
+            alertSnapshot = AlertSnapshot(statuses: statuses)
+            return
+        }
+        let alerts = snapshot.update(with: statuses, mutedProjectIds: mutedProjectIds)
+        alertSnapshot = snapshot
         guard alertsEnabled, !alerts.isEmpty else { return }
         let isSampleMode = isSampleMode
         Task {

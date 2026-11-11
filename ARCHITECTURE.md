@@ -19,7 +19,7 @@ The app imports the core. The core does not import the app.
 | `API/Responses` | Types that decode Railway responses. These types are internal. |
 | `Models` | `Project`, `Service`, `Deployment` and other types that the app uses. |
 | `Sample` | `SampleDataSource` and its start data. |
-| `Health` | `HealthSummary`, `Health`, `AlertRules`, `HealthAlert` and `AlertKind`. |
+| `Health` | `HealthSummary`, `Health`, `AlertSnapshot`, `HealthAlert` and `AlertKind`. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
@@ -79,15 +79,15 @@ The projects query gets the latest deployment of each service in each environmen
 
 `MenuBarLabel` shows the health in the menu bar, with an accessibility label such as "Topway, 2 services failing".
 
-After each project load, `AppState` gives the earlier and the new statuses to `AlertRules`:
+`AlertSnapshot` keeps the last settled state (deployment ID and status) of each service in each environment. A status is settled when it is not in progress. An in-progress status does not replace the settled state, so a fix that builds first still gives a recovery alert. After each project load, `AppState` updates the snapshot:
 
-| Change | Alert |
+| Change in the settled state | Alert |
 |---|---|
-| To `FAILED` | Deployment failed |
-| To `CRASHED` | Service crashed |
+| To `FAILED`, or a new `FAILED` deployment | Deployment failed |
+| To `CRASHED`, or a new `CRASHED` deployment | Service crashed |
 | From `FAILED` or `CRASHED` to `SUCCESS` | Service recovered |
 
-There is no alert for the first load, for a status that did not change, for a new or a removed service, or for a muted project. `AppState` clears the earlier statuses when the data source or the workspace changes, so the first load after a change gives no alerts.
+There is no alert for the first load, for the same deployment with the same status, for a new or a removed service, or for a muted project. `AppState` clears the snapshot when the data source or the workspace changes, so the first load after a change gives no alerts.
 
 `AlertNotifier` shows a local notification for each alert, only when **Send alerts** is on and the user gave permission. The notification names the service, the environment and the project. In sample mode, it shows "Sample data".
 

@@ -66,7 +66,7 @@ struct RailwayClientRequestTests {
                 ServiceStatus(
                     projectId: "p1", projectName: "shop", environmentId: "e1",
                     environmentName: "production", serviceId: "s1", serviceName: "web",
-                    status: "CRASHED")
+                    deploymentId: "d1", status: "CRASHED")
             ])
         let query = try #require(server.requests.first?.query)
         #expect(query.contains("latestDeployment"))

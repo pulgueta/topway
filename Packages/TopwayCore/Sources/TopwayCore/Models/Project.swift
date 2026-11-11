@@ -41,7 +41,8 @@ public struct Project: Identifiable, Decodable, Hashable, Sendable {
                 return ServiceStatus(
                     projectId: id, projectName: name, environmentId: environment.id,
                     environmentName: environment.name, serviceId: instance.serviceId,
-                    serviceName: serviceName, status: deployment.status)
+                    serviceName: serviceName, deploymentId: deployment.id,
+                    status: deployment.status)
             }
         }
     }
