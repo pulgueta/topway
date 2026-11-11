@@ -19,6 +19,7 @@ The app imports the core. The core does not import the app.
 | `API/Responses` | Types that decode Railway responses. These types are internal. |
 | `Models` | `Project`, `Service`, `Deployment` and other types that the app uses. |
 | `Sample` | `SampleDataSource` and its start data. |
+| `Health` | `HealthSummary`, `Health`, `AlertRules`, `HealthAlert` and `AlertKind`. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
@@ -29,11 +30,12 @@ Each folder has the name of a feature.
 | Folder | Contents |
 |---|---|
 | `App` | App entry point, `AppState`, `MainView`, navigation and `SampleDataBanner`. |
-| `Projects` | Project list rows. |
+| `Health` | `MenuBarLabel` and `AlertNotifier`. |
+| `Projects` | Project list rows, with the mute button. |
 | `Services` | Service rows and add service. |
 | `Deployments` | Deployment list, restart and redeploy. |
 | `Variables` | Variable list, variable editor and the service actions menu. |
-| `Settings` | The native Settings window. |
+| `Settings` | The native Settings window, the Alerts section and the launch at login toggle. |
 | `Shared` | Buttons, error views, the confirmation dialog and `openAppSettings`. |
 
 ## Data flow
@@ -62,6 +64,34 @@ Sample mode lets the app run with no token, for example for App Review.
 - Sample mode does not read or write the Keychain token. It is not saved, so it ends when the app quits.
 - Actions change the sample data, and a later read shows the change. Redeploy adds a deployment with the current date.
 - `SampleDataSource` gets the date from its `now` parameter, so tests can set a fixed date.
+
+## Health and alerts
+
+The projects query gets the latest deployment of each service in each environment (`serviceInstances.latestDeployment`). `Project.serviceStatuses` gives one `ServiceStatus` for each service and environment that has a deployment.
+
+`HealthSummary` gives one health for all projects:
+
+| Health | Latest statuses |
+|---|---|
+| Failing | One or more `FAILED` or `CRASHED`. |
+| In progress | No failing status, and one or more `BUILDING`, `DEPLOYING`, `INITIALIZING`, `QUEUED` or `WAITING`. |
+| Healthy | All other statuses, for example `SUCCESS`, `REMOVED`, `SKIPPED`, `SLEEPING` or an unknown status. No services also gives healthy. |
+
+`MenuBarLabel` shows the health in the menu bar, with an accessibility label such as "Topway, 2 services failing".
+
+After each project load, `AppState` gives the earlier and the new statuses to `AlertRules`:
+
+| Change | Alert |
+|---|---|
+| To `FAILED` | Deployment failed |
+| To `CRASHED` | Service crashed |
+| From `FAILED` or `CRASHED` to `SUCCESS` | Service recovered |
+
+There is no alert for the first load, for a status that did not change, for a new or a removed service, or for a muted project. `AppState` clears the earlier statuses when the data source or the workspace changes, so the first load after a change gives no alerts.
+
+`AlertNotifier` shows a local notification for each alert, only when **Send alerts** is on and the user gave permission. The notification names the service, the environment and the project. In sample mode, it shows "Sample data".
+
+`UserDefaults` keeps `alertsEnabled` (off by default) and `mutedProjectIds`. Launch at login uses `SMAppService.mainApp`. The system keeps that state, so Settings reads it each time.
 
 ## Confirmation levels
 
