@@ -53,7 +53,8 @@ struct MainView: View {
             onConfirm: { appState.runPendingConfirmation() },
             onCancel: { appState.cancelConfirmation() }
         )
-        .task {
+        // Runs again when sample mode starts or ends, to load the projects of the new source.
+        .task(id: appState.isSampleMode) {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
             }
@@ -83,6 +84,11 @@ struct MainView: View {
         VStack(spacing: 0) {
             headerView
             Divider()
+
+            if appState.isSampleMode {
+                SampleDataBanner { appState.exitSampleMode() }
+                Divider()
+            }
 
             if !appState.isConfigured {
                 unconfiguredView
@@ -141,11 +147,20 @@ struct MainView: View {
                     .padding(.horizontal, 24)
             }
 
-            Button("Open Settings") {
-                openAppSettings(fallback: openSettings)
+            VStack(spacing: 8) {
+                Button("Open Settings") {
+                    openAppSettings(fallback: openSettings)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.regular)
+
+                Button("Try with sample data") {
+                    appState.enterSampleMode()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+                .help("Show sample projects. Topway does not connect to Railway.")
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.regular)
 
             Spacer()
         }

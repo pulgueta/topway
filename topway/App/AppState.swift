@@ -12,6 +12,9 @@ class AppState {
     var errorMessage: String?
     var pendingConfirmation: ConfirmationRequest?
     var isRunningConfirmation = false
+    /// Sample mode shows the data of `SampleDataSource`. It never reads or writes the
+    /// Keychain token, and it ends when the app quits.
+    private(set) var isSampleMode = false
 
     // MARK: - Persisted Properties
 
@@ -73,7 +76,7 @@ class AppState {
 
     // MARK: - Private Properties
 
-    private let dataSource: any RailwayDataSource = RailwayClient()
+    private var dataSource: any RailwayDataSource = RailwayClient()
     private var refreshTask: Task<Void, Never>?
     /// The message that the latest failed background refresh set.
     private var refreshFailureMessage: String?
@@ -99,7 +102,7 @@ class AppState {
     // MARK: - Computed Properties
 
     var isConfigured: Bool {
-        !railwayToken.isEmpty && !workspaceId.isEmpty
+        isSampleMode || (!railwayToken.isEmpty && !workspaceId.isEmpty)
     }
 
     var hasError: Bool {
@@ -272,6 +275,26 @@ class AppState {
     func clearError() {
         errorMessage = nil
         refreshFailureMessage = nil
+    }
+
+    // MARK: - Sample Mode
+
+    func enterSampleMode() {
+        switchDataSource(to: SampleDataSource(), isSampleMode: true)
+    }
+
+    func exitSampleMode() {
+        guard isSampleMode else { return }
+        switchDataSource(to: RailwayClient(), isSampleMode: false)
+    }
+
+    /// Removes the projects of the earlier data source. `MainView` then loads the new projects.
+    private func switchDataSource(to source: any RailwayDataSource, isSampleMode: Bool) {
+        dataSource = source
+        self.isSampleMode = isSampleMode
+        projects = []
+        clearError()
+        restartAutoRefresh()
     }
 
     // MARK: - Confirmation
