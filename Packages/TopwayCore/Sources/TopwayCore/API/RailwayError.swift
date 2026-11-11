@@ -20,6 +20,11 @@ public enum RailwayError: LocalizedError {
         }
     }
 
+    /// Railway did not accept the token. A retry with the same token fails again.
+    public var isTokenRejected: Bool {
+        if case .unauthorized = self { true } else { false }
+    }
+
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
