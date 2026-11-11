@@ -112,6 +112,10 @@ class AppState {
         errorMessage != nil
     }
 
+    var health: HealthSummary {
+        HealthSummary(projects: projects)
+    }
+
     // MARK: - Public Methods
 
     func loadProjects(keepingError: Bool = false) async {
@@ -542,9 +546,10 @@ class AppState {
         startAutoRefresh()
     }
 
-    func initializeAutoRefresh() {
-        if autoRefreshEnabled && isConfigured {
-            startAutoRefresh()
-        }
+    /// Runs at app launch. Loads the projects once, so the menu bar shows the health at once.
+    func initializeAutoRefresh() async {
+        guard isConfigured else { return }
+        startAutoRefresh()
+        await loadProjects()
     }
 }
