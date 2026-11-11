@@ -1,12 +1,37 @@
 import Foundation
 
-/// Sends one GraphQL subscription over a `URLSessionWebSocketTask`.
+/// Sends one GraphQL subscription over a `MessageTransport`.
 /// The protocol rules are in `GraphQLSubscription`; this type only moves the messages.
 struct GraphQLWebSocket: Sendable {
     private static let url = URL(string: "wss://backboard.railway.com/graphql/v2")
     private static let operationId = "1"
+    private static let normalClosure = 1_000
+    private static let goingAway = 1_001
 
-    let session: URLSession
+    private let connect: @Sendable (URLRequest) -> any MessageTransport
+    private let sleep: @Sendable (Duration) async throws -> Void
+
+    /// Connects with `URLSessionWebSocketTask`.
+    init(session: URLSession) {
+        self.init(
+            connect: { request in
+                let task = session.webSocketTask(with: request)
+                task.resume()
+                return URLSessionMessageTransport(task: task)
+            },
+            sleep: { try await Task.sleep(for: $0) })
+    }
+
+    /// - Parameters:
+    ///   - connect: Opens a transport for the upgrade request.
+    ///   - sleep: Waits between keepalive checks.
+    init(
+        connect: @escaping @Sendable (URLRequest) -> any MessageTransport,
+        sleep: @escaping @Sendable (Duration) async throws -> Void
+    ) {
+        self.connect = connect
+        self.sleep = sleep
+    }
 
     /// Cancel the consumer task to stop. The socket then sends `complete` and closes.
     func subscribe<Payload: Decodable & Sendable>(
@@ -22,25 +47,29 @@ struct GraphQLWebSocket: Sendable {
             upgrade.setValue(
                 GraphQLSubscription<Payload>.subprotocol,
                 forHTTPHeaderField: "Sec-WebSocket-Protocol")
-            let socket = session.webSocketTask(with: upgrade)
+            let transport = connect(upgrade)
 
             let task = Task {
                 await withTaskCancellationHandler {
-                    await run(socket, request: request, continuation: continuation)
+                    await run(transport, request: request, continuation: continuation)
                 } onCancel: {
                     let complete = GraphQLClientMessage.complete(id: Self.operationId).text
-                    socket.send(.string(complete)) { _ in
-                        socket.cancel(with: .normalClosure, reason: nil)
+                    Task {
+                        do {
+                            try await transport.sendText(complete)
+                        } catch {
+                            // The socket closes in the next step, so a failed send changes nothing.
+                        }
+                        transport.close(code: Self.normalClosure)
                     }
                 }
             }
             continuation.onTermination = { _ in task.cancel() }
-            socket.resume()
         }
     }
 
     private func run<Payload: Decodable & Sendable>(
-        _ socket: URLSessionWebSocketTask, request: GraphQLRequest,
+        _ transport: any MessageTransport, request: GraphQLRequest,
         continuation: AsyncThrowingStream<SubscriptionEvent<Payload>, any Error>.Continuation
     ) async {
         var subscription = GraphQLSubscription<Payload>(id: Self.operationId, request: request)
@@ -49,11 +78,11 @@ struct GraphQLWebSocket: Sendable {
         // still works. A WebSocket ping frame can get an answer from a proxy only.
         let watchdog = Task {
             do {
-                try await keepalive.run(sleep: { try await Task.sleep(for: $0) }) {
-                    try await socket.send(.string(GraphQLClientMessage.ping.text))
+                try await keepalive.run(sleep: sleep) {
+                    try await transport.sendText(GraphQLClientMessage.ping.text)
                 }
                 // No answer, so the socket is half-open. Closing it makes `receive` fail.
-                socket.cancel(with: .goingAway, reason: nil)
+                transport.close(code: Self.goingAway)
             } catch {
                 // The stream ended, or the ping send failed. A failed send also makes
                 // `receive` fail, and the catch below reports that error.
@@ -61,26 +90,20 @@ struct GraphQLWebSocket: Sendable {
         }
         defer { watchdog.cancel() }
         do {
-            try await socket.send(.string(GraphQLClientMessage.connectionInit.text))
+            try await transport.sendText(GraphQLClientMessage.connectionInit.text)
             while true {
-                let message = try await socket.receive()
+                let text = try await transport.receiveText()
                 keepalive.messageReceived()
-                let text =
-                    switch message {
-                    case .string(let text): text
-                    case .data(let data): String(decoding: data, as: UTF8.self)
-                    @unknown default: ""
-                    }
                 switch try subscription.receive(text) {
                 case .connected(let message):
-                    try await socket.send(.string(message.text))
+                    try await transport.sendText(message.text)
                     continuation.yield(.connected)
                 case .reply(let message):
-                    try await socket.send(.string(message.text))
+                    try await transport.sendText(message.text)
                 case .payload(let payload):
                     continuation.yield(.payload(payload))
                 case .completed:
-                    socket.cancel(with: .normalClosure, reason: nil)
+                    transport.close(code: Self.normalClosure)
                     continuation.finish()
                     return
                 case .ignore:
@@ -93,13 +116,13 @@ struct GraphQLWebSocket: Sendable {
                 continuation.finish()
                 return
             }
-            socket.cancel(with: .normalClosure, reason: nil)
+            transport.close(code: Self.normalClosure)
             // A dropped socket is a network failure, so the log stream connects again.
             let failure = keepalive.isDropped ? URLError(.timedOut) : error
             continuation.finish(
                 throwing: GraphQLSubscription<Payload>.error(
-                    for: failure, closeCode: socket.closeCode.rawValue,
-                    httpStatus: (socket.response as? HTTPURLResponse)?.statusCode))
+                    for: failure, closeCode: transport.closeCode,
+                    httpStatus: transport.httpStatus))
         }
     }
 }

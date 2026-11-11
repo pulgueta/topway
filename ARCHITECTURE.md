@@ -99,7 +99,7 @@ There is no alert for the first load, for the same deployment with the same stat
 
 ### WebSocket client
 
-`GraphQLWebSocket` sends one subscription over `URLSessionWebSocketTask` with the `graphql-transport-ws` protocol. The URL is `wss://backboard.railway.com/graphql/v2`.
+`GraphQLWebSocket` sends one subscription with the `graphql-transport-ws` protocol. The URL is `wss://backboard.railway.com/graphql/v2`. It moves text frames through `MessageTransport`. `URLSessionMessageTransport` (a `URLSessionWebSocketTask`) is the live type. Tests use scripted frames and an injected sleep, with no network.
 
 - Railway reads the token from the `Authorization: Bearer` header of the upgrade request, as the Railway CLI does. `connection_init` has no payload.
 - `GraphQLSubscription` keeps the protocol rules. It has no network code, so tests can use it directly. After `connection_ack`, it sends `subscribe`. It answers `ping` with `pong`. `next` gives the data, `error` and `next` with GraphQL errors give `RailwayError.graphQLError`, and `complete` ends the stream.

@@ -4,3 +4,5 @@ enum SubscriptionEvent<Payload: Sendable>: Sendable {
     case connected
     case payload(Payload)
 }
+
+extension SubscriptionEvent: Equatable where Payload: Equatable {}
