@@ -102,9 +102,6 @@ struct GlassConfirmationDialog: View {
                 .autocorrectionDisabled()
                 .focused($isNameFieldFocused)
                 .disabled(isLoading)
-                .onSubmit {
-                    if canConfirm && !isLoading { onConfirm() }
-                }
         }
     }
 
