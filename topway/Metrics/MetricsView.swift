@@ -39,7 +39,7 @@ struct MetricsView: View {
         if let metrics, !metrics.isEmpty {
             // The charts stay while a reload runs, so the screen does not flash.
             ScrollView {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     ForEach(metrics.series) { series in
                         MetricCard(series: series)
                     }
