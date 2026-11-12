@@ -14,24 +14,24 @@ struct ErrorStateView: View {
     var body: some View {
         let actions = appState.recoveryActions
         let shownTitle = appState.isTokenRejected ? "Railway did not accept your token" : title
+        let shownMessage =
+            appState.isTokenRejected
+            ? "The token is expired or not correct, or it has no access to this workspace. Check the token and the Workspace ID in Settings, or use sample data."
+            : message
 
         ContentUnavailableView {
             Label(shownTitle, systemImage: "exclamationmark.triangle")
         } description: {
-            Text(
-                appState.isTokenRejected
-                    ? "The token is expired or not correct, or it has no access to this workspace. Check the token and the Workspace ID in Settings, or use sample data."
-                    : message
-            )
+            Text(shownMessage)
         } actions: {
             ForEach(actions, id: \.self) { action in
                 RecoveryButton(action: action, isPrimary: action == actions.first, onRetry: onRetry)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // The error replaces the content, so VoiceOver must say it.
-        .task(id: shownTitle) {
-            AccessibilityNotification.Announcement(shownTitle).post()
+        // The error replaces the content, so VoiceOver must say it, with the cause and the next step.
+        .task(id: "\(shownTitle). \(shownMessage)") {
+            AccessibilityNotification.Announcement("\(shownTitle). \(shownMessage)").post()
         }
     }
 }
