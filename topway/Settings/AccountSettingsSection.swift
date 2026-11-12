@@ -32,8 +32,11 @@ struct AccountSettingsSection: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .task(id: appState.isSignedIn) {
-            guard appState.isSignedIn, appState.account == nil else { return }
+        // Sample mode loads no account, so the load runs again when sample mode ends.
+        .task(id: [appState.isSignedIn, appState.isSampleMode]) {
+            guard appState.isSignedIn, !appState.isSampleMode, appState.account == nil else {
+                return
+            }
             loadError = await appState.loadAccount()
         }
         // The error replaces the loading row, so VoiceOver must say it, also after a failed
@@ -79,6 +82,9 @@ struct AccountSettingsSection: View {
             if let account = appState.account {
                 Text(account.name.map { "\($0) (\(account.email))" } ?? account.email)
                     .textSelection(.enabled)
+            } else if appState.isSampleMode {
+                Text("Exit sample data to see the account.")
+                    .foregroundStyle(.secondary)
             } else if loadError == nil {
                 ProgressView()
                     .controlSize(.small)
@@ -128,7 +134,11 @@ struct AccountSettingsSection: View {
                     .foregroundStyle(.red)
             } label: {
                 Text("Sign out of Railway on this Mac?")
-                Text("Topway then shows the start screen. To connect again, sign in.")
+                Text(
+                    appState.isSampleMode
+                        ? "The sample data stays. When you exit it, Topway shows the start screen. To connect again, sign in."
+                        : "Topway then shows the start screen. To connect again, sign in."
+                )
             }
         } else {
             LabeledContent {

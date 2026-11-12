@@ -139,7 +139,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 | Load failed | `ErrorStateView`. The title says what did not load. The buttons come from `RecoveryRules`. |
 | Action failed | `ErrorBanner` above the bottom bar. |
 
-When Railway does not accept the token, `ErrorStateView` shows **Sign in again** and **Try with sample data**, and no retry. Settings has **Sign out…**, which shows the start screen again.
+When Railway does not accept the token, `ErrorStateView` shows **Sign in again** and **Try with sample data**, and no retry. Settings has **Sign out…**, which shows the start screen again. In sample mode, the sample data stays until the user exits it, and then the start screen shows.
 
 ## Copy
 
