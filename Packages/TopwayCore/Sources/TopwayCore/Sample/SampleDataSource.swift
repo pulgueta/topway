@@ -147,6 +147,18 @@ public actor SampleDataSource: RailwayDataSource {
             environmentId: environmentId, serviceId: serviceId, window: window, now: now())
     }
 
+    public func fetchSpend(workspaceId: String, token: String) -> Spend {
+        // The billing period started 12 days before now and has 30 days.
+        let start = now() - 12 * 86_400
+        return Spend(
+            cost: 23.47, periodStart: start, periodEnd: start + 30 * 86_400, softLimit: 50,
+            hardLimit: 100, isOverLimit: false,
+            usage: [
+                UsageTotal(kind: .cpu, value: 9_400), UsageTotal(kind: .memory, value: 31_000),
+                UsageTotal(kind: .egress, value: 14.2), UsageTotal(kind: .volume, value: 86_400),
+            ])
+    }
+
     /// The same lines for each deployment. Build logs end after the build steps.
     /// Deploy logs give the start lines, then one line every 2 seconds until the stream stops.
     /// Each line is 1 second after the line before it.

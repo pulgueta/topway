@@ -372,6 +372,60 @@ public struct RailwayClient: RailwayDataSource {
         return ServiceMetrics(results: data.metrics)
     }
 
+    // MARK: - Spend
+
+    /// Sends two requests: the usage query needs the dates of the billing period, and the
+    /// first answer gives them.
+    public func fetchSpend(workspaceId: String, token: String) async throws -> Spend {
+        let customerQuery = """
+            query Spend($workspaceId: String!) {
+              workspace(workspaceId: $workspaceId) {
+                customer {
+                  currentUsage
+                  billingPeriod {
+                    start
+                    end
+                  }
+                  usageLimit {
+                    softLimit
+                    hardLimit
+                    isOverLimit
+                  }
+                }
+              }
+            }
+            """
+        let spendData: SpendData = try await execute(
+            query: customerQuery, variables: ["workspaceId": workspaceId], token: token)
+        let customer = spendData.workspace.customer
+
+        // The measurements are constants of Topway, not user input.
+        let measurements = UsageKind.allCases.map(\.rawValue).joined(separator: ", ")
+        let usageQuery = """
+            query Usage($workspaceId: String!, $startDate: DateTime!, $endDate: DateTime!) {
+              usage(
+                workspaceId: $workspaceId
+                startDate: $startDate
+                endDate: $endDate
+                measurements: [\(measurements)]
+              ) {
+                measurement
+                value
+              }
+            }
+            """
+        let usageData: UsageData = try await execute(
+            query: usageQuery,
+            variables: [
+                "workspaceId": workspaceId,
+                "startDate": customer.billingPeriod.start.formatted(.iso8601),
+                "endDate": min(now(), customer.billingPeriod.end).formatted(.iso8601),
+            ],
+            token: token
+        )
+        return Spend(customer: customer, usage: usageData.usage)
+    }
+
     // MARK: - Logs
 
     private static let pollInterval = Duration.seconds(5)

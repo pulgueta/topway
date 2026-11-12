@@ -40,6 +40,9 @@ public protocol RailwayDataSource: Sendable {
         environmentId: String, serviceId: String, window: MetricWindow, token: String
     ) async throws -> ServiceMetrics
 
+    /// Gives the cost and the resource usage of the current billing period of a workspace.
+    func fetchSpend(workspaceId: String, token: String) async throws -> Spend
+
     /// Gives the latest lines, then new lines while they arrive.
     /// Cancel the consumer task to stop the stream.
     func logs(_ kind: LogKind, deploymentId: String, token: String)
