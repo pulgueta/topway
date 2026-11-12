@@ -5,6 +5,8 @@ import SwiftUI
 struct ServiceMenu: View {
     let serviceName: String
     let isRedeploying: Bool
+    /// `false` when the project has no environment. Settings, domains and a redeploy need one.
+    let hasEnvironment: Bool
     let onShowSettings: () -> Void
     let onShowDomains: () -> Void
     let onRedeploy: () -> Void
@@ -13,11 +15,13 @@ struct ServiceMenu: View {
     var body: some View {
         Menu("Manage") {
             Button("Settings", systemImage: "gearshape") { onShowSettings() }
+                .disabled(!hasEnvironment)
 
             Button("Domains", systemImage: "globe") { onShowDomains() }
+                .disabled(!hasEnvironment)
 
             Button("Redeploy", systemImage: "arrow.triangle.2.circlepath") { onRedeploy() }
-                .disabled(isRedeploying)
+                .disabled(isRedeploying || !hasEnvironment)
 
             Divider()
 

@@ -112,6 +112,10 @@ struct ServiceView: View {
             projectVariables = nil
             await loadVariables()
         }
+        // A reload can remove the selected environment, for example after a delete.
+        .onChange(of: environments.map(\.id)) { _, ids in
+            selectAvailableEnvironment(in: ids)
+        }
         // Escape goes back one step.
         .onExitCommand {
             if appState.pendingConfirmation != nil {
@@ -135,6 +139,7 @@ struct ServiceView: View {
                     ServiceMenu(
                         serviceName: service.name,
                         isRedeploying: isRedeploying,
+                        hasEnvironment: selectedEnvironmentId != nil,
                         onShowSettings: {
                             appState.clearError()
                             show(.settings)
@@ -155,39 +160,50 @@ struct ServiceView: View {
                     tab: $tab
                 )
             }
-            Group {
-                switch tab {
-                case .variables:
-                    VariablesTab(
-                        variables: variables,
-                        serviceId: service.id,
-                        services: project.serviceList,
-                        projectVariables: projectVariables,
-                        isLoading: isLoading,
-                        areVariablesKnown: areVariablesKnown,
-                        onRetry: {
-                            Task { await loadVariables() }
-                        },
-                        onAdd: { show(.editVariable(nil)) },
-                        onEdit: { variable in show(.editVariable(variable)) }
-                    )
-                case .deployments:
-                    DeploymentsView(
-                        service: service,
-                        project: project,
-                        environmentId: selectedEnvironmentId ?? "",
-                        reloadVersion: deploymentsVersion,
-                        onViewLogs: { deployment in
-                            appState.clearError()
-                            show(.logs(deployment))
-                        }
-                    )
-                    // The deployments of the earlier environment must not show for the new one.
-                    .id(selectedEnvironmentId)
-                case .metrics:
-                    MetricsView(service: service, environmentId: selectedEnvironmentId ?? "")
-                        // The metrics of the earlier environment must not show for the new one.
+            if selectedEnvironmentId == nil {
+                ContentUnavailableView(
+                    "No environments",
+                    systemImage: "square.stack.3d.up",
+                    description: Text(
+                        "This project has no environments. Go back to Projects and select "
+                            + "Manage > Environments.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Group {
+                    switch tab {
+                    case .variables:
+                        VariablesTab(
+                            variables: variables,
+                            serviceId: service.id,
+                            services: project.serviceList,
+                            projectVariables: projectVariables,
+                            isLoading: isLoading,
+                            areVariablesKnown: areVariablesKnown,
+                            onRetry: {
+                                Task { await loadVariables() }
+                            },
+                            onAdd: { show(.editVariable(nil)) },
+                            onEdit: { variable in show(.editVariable(variable)) }
+                        )
+                    case .deployments:
+                        DeploymentsView(
+                            service: service,
+                            project: project,
+                            environmentId: selectedEnvironmentId ?? "",
+                            reloadVersion: deploymentsVersion,
+                            onViewLogs: { deployment in
+                                appState.clearError()
+                                show(.logs(deployment))
+                            }
+                        )
+                        // The deployments of the earlier environment must not show for the new one.
                         .id(selectedEnvironmentId)
+                    case .metrics:
+                        MetricsView(service: service, environmentId: selectedEnvironmentId ?? "")
+                            // The metrics of the earlier environment must not show for the new one.
+                            .id(selectedEnvironmentId)
+                    }
                 }
             }
         }
@@ -207,6 +223,22 @@ struct ServiceView: View {
         withAnimation(.screenChange) {
             destination = newDestination
         }
+    }
+
+    /// When the selected environment is gone, its loads and its data stop, and the first
+    /// available environment loads. The steps and a dialog of this screen name the earlier
+    /// environment, so they close.
+    private func selectAvailableEnvironment(in ids: [String]) {
+        let selection = EnvironmentSelection.reconciled(selectedEnvironmentId, available: ids)
+        guard selection != selectedEnvironmentId else { return }
+        // A load that is in progress belongs to the earlier environment.
+        latestLoadID = UUID()
+        variables = []
+        projectVariables = nil
+        areVariablesKnown = false
+        appState.cancelConfirmation()
+        destination = .overview
+        selectedEnvironmentId = selection
     }
 
     private func loadVariables() async {
