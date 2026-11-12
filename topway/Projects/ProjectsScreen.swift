@@ -27,7 +27,9 @@ struct ProjectsScreen: View {
             if let error = appState.errorMessage, !appState.projects.isEmpty {
                 // A rejected token fails again on each refresh, so the banner gives the way out.
                 ErrorBanner(
-                    message: error,
+                    // A failed Sign in again shows with the rejected-token message.
+                    message: [error, appState.signInAgainError].compactMap { $0 }
+                        .joined(separator: " "),
                     onDismiss: { appState.clearError() },
                     recoveryActions: appState.isTokenRejected ? appState.recoveryActions : []
                 )

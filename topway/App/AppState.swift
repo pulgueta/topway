@@ -11,7 +11,10 @@ class AppState {
     var isLoading = false
     /// A new message does not belong to the token, unless `show(_:)` sets the flag after it.
     var errorMessage: String? {
-        didSet { isTokenRejected = false }
+        didSet {
+            isTokenRejected = false
+            signInAgainError = nil
+        }
     }
     /// `true` while `errorMessage` says that Railway did not accept the token.
     private(set) var isTokenRejected = false
@@ -34,6 +37,10 @@ class AppState {
     private(set) var isSigningIn = false
     /// Why the last sign-in failed. The start screen shows it with **Try again**.
     private(set) var signInError: String?
+    /// Why **Sign in again** failed while Railway did not accept the token. The error screens
+    /// show it below the rejected-token text, and **Sign in again** stays. A new
+    /// `errorMessage` removes it.
+    private(set) var signInAgainError: String?
     /// Why the start screen shows after a sign-in ended, for example a refresh token that
     /// Railway does not accept.
     private(set) var sessionNotice: String?
@@ -437,6 +444,7 @@ class AppState {
         webSignIn = web
         isSigningIn = true
         signInError = nil
+        signInAgainError = nil
         sessionNotice = nil
         defer {
             // A sign-out or sample data during the sign-in already reset these.
@@ -496,10 +504,13 @@ class AppState {
     }
 
     /// The start screen shows the message. While an earlier sign-in stays, for example after
-    /// **Sign in again**, the start screen does not show, so the open screen shows it.
+    /// **Sign in again**, the start screen does not show, so the open screen shows it. With a
+    /// rejected token, the rejected state stays, so the screen keeps **Sign in again**.
     private func reportSignInFailure(_ message: String?) {
         guard let message else { return }
-        if isSignedIn {
+        if isSignedIn, isTokenRejected {
+            signInAgainError = message
+        } else if isSignedIn {
             errorMessage = message
         } else {
             signInError = message
