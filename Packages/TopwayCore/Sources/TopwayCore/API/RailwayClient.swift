@@ -399,7 +399,8 @@ public struct RailwayClient: RailwayDataSource {
             query: customerQuery, variables: ["workspaceId": workspaceId], token: token)
         let customer = spendData.workspace.customer
 
-        // The measurements are constants of Topway, not user input.
+        // The measurements are constants of Topway, not user input. `includeDeleted` adds
+        // the deleted projects and services, which the cost of Railway also includes.
         let measurements = UsageKind.allCases.map(\.rawValue).joined(separator: ", ")
         let usageQuery = """
             query Usage($workspaceId: String!, $startDate: DateTime!, $endDate: DateTime!) {
@@ -408,6 +409,7 @@ public struct RailwayClient: RailwayDataSource {
                 startDate: $startDate
                 endDate: $endDate
                 measurements: [\(measurements)]
+                includeDeleted: true
               ) {
                 measurement
                 value

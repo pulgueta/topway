@@ -42,6 +42,8 @@ struct RailwayClientSpendTests {
         #expect(
             second.query?.contains(
                 "measurements: [CPU_USAGE, MEMORY_USAGE_GB, NETWORK_TX_GB, DISK_USAGE_GB]") == true)
+        // The cost that Railway gives includes deleted projects and services.
+        #expect(second.query?.contains("includeDeleted: true") == true)
     }
 
     @Test("A Railway error for the usage is the error of the spend")
