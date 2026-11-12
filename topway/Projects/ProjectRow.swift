@@ -63,8 +63,10 @@ struct ProjectRow: View {
             }
         }
         .buttonStyle(RowButtonStyle())
-        .accessibilityLabel(isMuted ? "\(project.name), alerts muted" : project.name)
-        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+        .accessibilityLabel(project.name)
+        .accessibilityValue(
+            (isExpanded ? "Expanded" : "Collapsed") + (isMuted ? ", alerts muted" : "")
+        )
         .accessibilityHint("Shows or hides the services of this project.")
     }
 
@@ -86,7 +88,11 @@ struct ProjectRow: View {
                 .buttonStyle(RowButtonStyle())
                 .foregroundStyle(.secondary)
                 .help(
-                    "Add a service to \(project.name) from a GitHub repository or a Docker image.")
+                    "Add a service to \(project.name) from a GitHub repository or a Docker image."
+                )
+                // Each project has this button, so the name says which project.
+                .accessibilityLabel("Add service to \(project.name)")
+                .accessibilityInputLabels(["Add service", "Add service to \(project.name)"])
         }
         .padding(.leading, 18)
     }

@@ -1,0 +1,119 @@
+name: Bug report
+description: Topway did something wrong, but it did not quit.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > **This issue is public. Do not paste secrets.**
+        > Do not paste your Railway token, your Workspace ID or the values of your variables.
+        > Remove them from logs and screenshots before you attach them.
+
+        Thank you for the report. If Topway quit, use the **Crash report** form.
+        If you opened this form from **Topway > Settings > Help**, the Mac details are filled in. Make sure that they are correct.
+  - type: checkboxes
+    id: no-secrets
+    attributes:
+      label: Secrets
+      options:
+        - label: This report contains no Railway token, no Workspace ID and no variable values.
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Your Mac
+  - type: input
+    id: app-version
+    attributes:
+      label: Topway version
+      description: The version and the build. In Finder, select Topway, then select File > Get Info.
+      placeholder: "1.0 (1)"
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: The version and the build. Select Apple menu > About This Mac.
+      placeholder: "macOS 26.2 (25C56)"
+    validations:
+      required: true
+  - type: input
+    id: mac-model
+    attributes:
+      label: Mac model
+      description: The model identifier. Select Apple menu > About This Mac > More Info > System Report.
+      placeholder: "Mac16,1"
+  - type: input
+    id: architecture
+    attributes:
+      label: Architecture
+      description: Write "Apple silicon (arm64)" or "Intel (x86_64)".
+      placeholder: "Apple silicon (arm64)"
+  - type: input
+    id: data-mode
+    attributes:
+      label: Data
+      description: Write "Railway token" if Topway showed your Railway projects. Write "Sample data" if Topway showed the sample projects.
+      placeholder: "Railway token"
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## The problem
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - Projects
+        - Services
+        - Variables
+        - Deployments
+        - Logs
+        - Alerts and menu bar
+        - Settings
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What occurred?
+      description: Tell us what you saw. Include the full text of an error message.
+      placeholder: "I selected Restart on a deployment. The row showed Running, but the service did not restart."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: "The deployment restarts and the row shows Deploying."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to see the problem again
+      description: Write one action on each line.
+      placeholder: |
+        1. Open Topway from the menu bar.
+        2. Select a service.
+        3. Select the Deployments tab.
+        4. Select Restart.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag images into this field. Hide tokens, Workspace IDs and variable values first.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste text that helps, for example lines from the Console app. Remove tokens, Workspace IDs and variable values first.
+      render: text

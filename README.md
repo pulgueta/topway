@@ -74,3 +74,27 @@ You can use Topway with no Railway token. On the start screen, select **Try with
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
 - Sample mode can send alerts. Each sample notification shows **Sample data**.
 - To go back to the start screen, select **Exit sample data**. If you save a token in Settings, Topway also exits sample mode.
+
+## Accessibility
+
+Topway is made to work with VoiceOver, Voice Control, the keyboard, the dark appearance, Increase Contrast, Reduce Motion and Reduce Transparency. A color is never the only sign of a status. [docs/accessibility.md](docs/accessibility.md) gives the details, the evaluation for the App Store labels and the manual checks.
+
+## Report a Problem
+
+Topway collects no data and sends no crash reports. To tell us about a problem, open an issue on GitHub.
+
+The fastest way is from the app. Select **Settings > Help**, then **Report a problem** or **Report a crash**. Topway opens the form on GitHub in your browser and fills in the Topway version, the macOS version, the Mac model, the architecture and the data mode. Topway sends nothing by itself. You read the form, add your text and send it.
+
+You can also [open a new issue](https://github.com/pulgueta/topway/issues/new/choose) and select a form:
+
+- **Crash report**: Topway quit when you did not tell it to quit. The form tells you how to find the macOS crash report.
+- **Bug report**: Topway did something wrong, but it did not quit.
+- **Feature request**: You have an idea for a change.
+
+Issues are public. Do not paste your Railway token, your Workspace ID or the values of your variables. Remove them from logs and screenshots.
+
+For a security problem, [send a private report](https://github.com/pulgueta/topway/security/advisories/new).
+
+## Privacy
+
+Topway collects no data. It keeps your token in the Keychain and connects only to Railway. Read the [privacy policy](PRIVACY.md).

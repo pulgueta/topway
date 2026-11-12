@@ -17,6 +17,8 @@ struct ScreenHeader<Trailing: View>: View {
                         .buttonStyle(.glass)
                         .help("Go back to \(backTitle) (Escape)")
                         .accessibilityLabel("Back to \(backTitle)")
+                        // Voice Control accepts the visible text.
+                        .accessibilityInputLabels([backTitle, "Back", "Back to \(backTitle)"])
                     Spacer(minLength: 0)
                 }
                 .frame(minWidth: Layout.headerSideWidth)

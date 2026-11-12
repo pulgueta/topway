@@ -23,6 +23,7 @@ The app imports the core. The core does not import the app.
 | `Logs` | `LogLine`, `LogKind`, `LogEvent`, `LogConnection`, `LogBuffer` and the fallback rules. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Recovery` | `RecoveryAction` and `RecoveryRules`, which give the actions after a failed load. |
+| `Reports` | `IssueReportLink`, which makes the link to a GitHub issue form with the `DeviceDetails` filled in. It sends no token and no project data. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
 ### App folders
@@ -38,7 +39,7 @@ Each folder has the name of a feature.
 | `Deployments` | The Deployments tab and its rows, with restart and redeploy. |
 | `Logs` | The logs screen, the log line row and the connection label. |
 | `Variables` | The Variables tab, its rows and the variable editor. |
-| `Settings` | The native Settings window, the Alerts section and the launch at login toggle. |
+| `Settings` | The native Settings window, the Alerts section, the launch at login toggle and the Help section, which opens the issue forms. |
 | `Shared` | The screen layout, the bars, button styles, state views, the confirmation dialog and `openAppSettings`. |
 
 ## Screens
@@ -106,7 +107,7 @@ The projects query gets the latest deployment of each service in each environmen
 | In progress | No failing status, and one or more `BUILDING`, `DEPLOYING`, `INITIALIZING`, `NEEDS_APPROVAL`, `QUEUED`, `REMOVING` or `WAITING`. |
 | Healthy | All other statuses, for example `SUCCESS`, `REMOVED`, `SKIPPED`, `SLEEPING` or an unknown status. No services also gives healthy. |
 
-`MenuBarLabel` shows the health in the menu bar, with an accessibility label such as "Topway, 2 services failing".
+`MenuBarLabel` shows the health in the menu bar, with an accessibility label such as "Topway, 2 services failing" (`HealthSummary.statusDescription`).
 
 `AlertSnapshot` keeps the last settled state (deployment ID and status) of each service in each environment. A status is settled when it is not in progress. An in-progress status does not replace the settled state, so a fix that builds first still gives a recovery alert. After each project load, `AppState` updates the snapshot:
 

@@ -6,10 +6,15 @@ struct SampleDataBanner: View {
 
     var body: some View {
         HStack(spacing: Layout.controlSpacing) {
-            Label("Sample data", systemImage: "testtube.2")
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(.orange)
-                .help("Topway does not connect to Railway. Changes stay until you exit.")
+            // The text keeps the primary color. Orange text on the orange tint is hard to read.
+            Label {
+                Text("Sample data")
+            } icon: {
+                Image(systemName: "testtube.2")
+                    .foregroundStyle(.orange)
+            }
+            .font(.callout.weight(.semibold))
+            .help("Topway does not connect to Railway. Changes stay until you exit.")
 
             Spacer()
 

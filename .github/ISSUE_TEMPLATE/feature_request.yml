@@ -1,0 +1,57 @@
+name: Feature request
+description: Tell us about a change that makes Topway more useful.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > **This issue is public. Do not paste secrets.**
+        > Do not paste your Railway token, your Workspace ID or the values of your variables.
+        > Remove them from logs and screenshots before you attach them.
+
+        Thank you for the idea. Tell us about the problem first. A clear problem helps us find the best solution.
+  - type: checkboxes
+    id: no-secrets
+    attributes:
+      label: Secrets
+      options:
+        - label: This request contains no Railway token, no Workspace ID and no variable values.
+          required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of Topway?
+      options:
+        - Projects
+        - Services
+        - Variables
+        - Deployments
+        - Logs
+        - Alerts and menu bar
+        - Settings
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem do you have?
+      description: Tell us what you try to do and what stops you.
+      placeholder: "I cannot see which environment a failed deployment is in. I must open Railway to find it."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What solution do you propose?
+      description: Tell us what Topway shows or does after the change.
+      placeholder: "The alert shows the name of the environment."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Which alternatives did you try?
+      description: For example, another tool or a different procedure. Leave this empty if there are none.

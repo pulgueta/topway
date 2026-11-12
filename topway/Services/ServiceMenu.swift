@@ -23,5 +23,6 @@ struct ServiceMenu: View {
         .fixedSize()
         .help("Redeploy or delete \(serviceName).")
         .accessibilityLabel("Manage \(serviceName)")
+        .accessibilityInputLabels(["Manage", "Manage \(serviceName)"])
     }
 }

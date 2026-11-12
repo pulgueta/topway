@@ -7,10 +7,13 @@ extension View {
     func destructiveConfirmation(
         request: ConfirmationRequest?,
         isLoading: Bool = false,
+        reduceMotion: Bool,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void
     ) -> some View {
         disabled(request != nil)
+            // VoiceOver and Voice Control must not get to the content behind the dialog.
+            .accessibilityHidden(request != nil)
             .overlay {
                 if let request {
                     GlassConfirmationDialog(
@@ -20,7 +23,9 @@ extension View {
                         onCancel: onCancel
                     )
                     .id(request.id)
-                    .transition(.scale(scale: 0.96).combined(with: .opacity))
+                    // With Reduce Motion, the dialog only fades.
+                    .transition(
+                        reduceMotion ? .opacity : .scale(scale: 0.96).combined(with: .opacity))
                 }
             }
             .animation(.screenChange, value: request?.id)

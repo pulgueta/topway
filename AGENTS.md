@@ -9,12 +9,12 @@ Topway is a native **macOS menu bar app** (SwiftUI) for monitoring and managing 
 The app is an Xcode project with one local package, `Packages/TopwayCore`. There are no third-party packages. Open `topway.xcodeproj` in Xcode and run (scheme `topway`), or from the CLI:
 
 ```sh
-# Build
-xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug build
+# Build (with no signing; signing needs the certificate of team 7QNFW3929Z)
+xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
 
 # Build into a known location, then launch
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug \
-  -derivedDataPath build build
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath build build
 open build/Build/Products/Debug/topway.app
 
 # Test the core
@@ -45,6 +45,8 @@ The app is built around a single observable state object injected through the Sw
 
 - **Design** — read `DESIGN.md` before you change a screen. The rules that matter most: every action has a text label, and no action shows only on hover; the only icon-only buttons are back and close, with an accessibility label and `.help`; each screen uses `ScreenLayout` with `ScreenHeader` (top) and `ActionBar` (bottom); Liquid Glass is only on the control layer (`.buttonStyle(.glass)` / `.glassProminent` in the bars, inside one `GlassEffectContainer` per bar), never on a list row; lists use `LazyVStack`; sizes come from `Layout`; UI copy is ASD-STE100 Simplified Technical English.
 
+- **Accessibility** — `docs/accessibility.md` has the evaluation for the App Store Accessibility Nutrition Labels and the manual checks. Keep these rules when you change a screen: a button that shows in each row names its item in the accessibility label, and `accessibilityInputLabels` gives Voice Control the visible text; a status is never color only; each custom animation and transition reads `accessibilityReduceMotion`; an error that shows away from the control posts an `AccessibilityNotification.Announcement`; the dialog hides the content behind it (`destructiveConfirmation`). Pure wording for a label, such as `HealthSummary.statusDescription`, goes in `TopwayCore` with tests.
+
 ### Key conventions & gotchas
 
 - **Credentials storage is split**: the API token lives in the **Keychain** via `KeychainStore` (in `TopwayCore`) (never UserDefaults); `workspaceId`, auto-refresh, alert and mute prefs live in `UserDefaults`. `AppState.init` migrates any legacy cleartext token out of UserDefaults into the Keychain. `AppState.railwayToken` reads an in-memory mirror (`tokenStorage`) to keep the Keychain off the hot path; writes go through `updateToken`, which returns success so the UI can surface a save failure. `removeToken()` deletes the token (Settings > Credentials > **Remove token…**); the app then shows the start screen.
@@ -60,3 +62,5 @@ The app is built around a single observable state object injected through the Sw
 - **Auto-refresh** is a single cancellable `Task` loop in `AppState` (`startAutoRefresh`/`stopAutoRefresh`/`restartAutoRefresh`). Toggling the setting or interval restarts it. `initializeAutoRefresh()` runs from the `.task` of the `MenuBarExtra` label (`MenuBarLabel`). The label shows at launch, so the refresh starts at launch, not when the popover opens. It also loads the projects once.
 
 - **Health and alerts** are pure logic in `TopwayCore/Health`. `HealthSummary(projects:)` gives the menu bar health. `AlertSnapshot` keeps the last settled state (deployment ID and status) of each service; in-progress statuses do not replace it. `AlertSnapshot.update(with:mutedProjectIds:)` gives the alerts of a new load. `AppState.sendAlerts(for:)` runs after each successful `loadProjects()` and keeps the snapshot (`alertSnapshot`). Set `alertSnapshot = nil` when the data source or the workspace changes; a `nil` snapshot gives no alerts. `AlertNotifier` sends `UNUserNotificationCenter` notifications; in sample mode the subtitle is "Sample data". `NotificationPresenter` (set in `TopwayApp.init`) shows banners while the app is active; the center keeps a weak reference, so `TopwayApp` keeps it. `alertsEnabled` and `mutedProjectIds` live in `UserDefaults`. Settings asks for notification permission only when the user turns alerts on. Launch at login uses `SMAppService.mainApp` in `LaunchAtLoginToggle`, which reads the system state and keeps no copy.
+
+- **Problem reports go through GitHub Issues only.** The app collects no data and has no crash SDK. **Settings > Help** (`HelpSettingsSection`) opens the link from `IssueReportLink` (`TopwayCore/Reports`, tested), which fills the device fields of a form in `.github/ISSUE_TEMPLATE` from `DeviceDetails`. The query item names are the field ids of the forms, so change them together. GitHub fills only text fields from a link, so the device fields are `input` fields, not dropdowns. Never add a token, a Workspace ID or project data to the link.

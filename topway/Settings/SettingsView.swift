@@ -77,6 +77,8 @@ struct SettingsView: View {
             Section("General") {
                 LaunchAtLoginToggle()
             }
+
+            HelpSettingsSection()
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 640)
@@ -112,13 +114,16 @@ struct SettingsView: View {
         if appState.updateToken(token) {
             saveError = nil
             isSaved = true
+            AccessibilityNotification.Announcement("Saved").post()
             // Saved credentials replace the sample data. Sample mode never saves a token.
             appState.exitSampleMode()
             appState.restartAutoRefresh()
             Task { await appState.loadProjects() }
         } else {
             isSaved = false
-            saveError = "Topway cannot save the token to the Keychain. Try again."
+            let message = "Topway cannot save the token to the Keychain. Try again."
+            saveError = message
+            AccessibilityNotification.Announcement(message).post()
         }
     }
 

@@ -23,6 +23,8 @@ struct DeploymentRow: View {
     var body: some View {
         // `formattedDate` makes date formatters, so the body reads it one time.
         let formattedDate = deployment.formattedDate
+        // Each row has the same buttons, so each accessibility label names the deployment.
+        let name = "\(deployment.statusDisplay), \(formattedDate)"
 
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: Layout.controlSpacing) {
@@ -45,15 +47,21 @@ struct DeploymentRow: View {
             HStack(spacing: 6) {
                 Button("View logs") { onViewLogs() }
                     .help("Show the build log and the deploy log of this deployment.")
+                    .accessibilityLabel("View logs, \(name)")
+                    .accessibilityInputLabels(["View logs"])
 
                 if deployment.staticUrl != nil {
                     Button("Open URL") { onOpenURL() }
                         .help("Open the URL of this deployment in your browser.")
+                        .accessibilityLabel("Open URL, \(name)")
+                        .accessibilityInputLabels(["Open URL"])
                 }
 
                 Button(isRestarting ? "Restarting…" : "Restart") { onRestart() }
                     .disabled(isRestarting)
                     .help("Stop this deployment and start it again.")
+                    .accessibilityLabel("\(isRestarting ? "Restarting" : "Restart"), \(name)")
+                    .accessibilityInputLabels(["Restart"])
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -66,6 +74,6 @@ struct DeploymentRow: View {
                 .padding(.leading, Layout.contentInset)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(deployment.statusDisplay), \(formattedDate)")
+        .accessibilityLabel(name)
     }
 }

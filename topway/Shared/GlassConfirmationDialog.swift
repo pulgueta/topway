@@ -15,7 +15,10 @@ struct GlassConfirmationDialog: View {
     let onCancel: () -> Void
 
     @State private var typedText = ""
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @FocusState private var isNameFieldFocused: Bool
+    @AccessibilityFocusState private var isTitleFocused: Bool
+    @AccessibilityFocusState private var isNameFieldAccessibilityFocused: Bool
 
     private var canConfirm: Bool {
         request.harm.canConfirm(typedText: typedText, targetName: request.targetName)
@@ -42,6 +45,10 @@ struct GlassConfirmationDialog: View {
         }
         .task {
             isNameFieldFocused = request.harm.needsTypedName
+            // VoiceOver goes to the name field, also when it does not follow the keyboard
+            // focus. With no field, it goes to the title.
+            isNameFieldAccessibilityFocused = request.harm.needsTypedName
+            isTitleFocused = !request.harm.needsTypedName
         }
     }
 
@@ -60,6 +67,7 @@ struct GlassConfirmationDialog: View {
             }
             .font(.headline)
             .accessibilityAddTraits(.isHeader)
+            .accessibilityFocused($isTitleFocused)
 
             Text(request.message)
                 .font(.callout)
@@ -75,19 +83,23 @@ struct GlassConfirmationDialog: View {
         .padding(18)
         .frame(maxWidth: 300)
         // The one custom glass surface of the app. Its buttons are not glass, because
-        // glass on glass is hard to read.
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        // glass on glass is hard to read. With Reduce Transparency, the card is opaque.
+        .background {
+            if reduceTransparency {
+                RoundedRectangle(cornerRadius: 20).fill(.background)
+            }
+        }
+        .glassEffect(reduceTransparency ? .identity : .regular, in: .rect(cornerRadius: 20))
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }
 
     private var productionLabel: some View {
-        Text("Production environment")
+        // Red text with a symbol, not white text on red: with Increase Contrast in a dark
+        // appearance, the system red is light, and white text on it is hard to read.
+        Label("Production environment", systemImage: "exclamationmark.octagon.fill")
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(.red, in: .capsule)
+            .foregroundStyle(.red)
     }
 
     private var nameField: some View {
@@ -101,6 +113,7 @@ struct GlassConfirmationDialog: View {
                 .font(.body.monospaced())
                 .autocorrectionDisabled()
                 .focused($isNameFieldFocused)
+                .accessibilityFocused($isNameFieldAccessibilityFocused)
                 .disabled(isLoading)
         }
     }
@@ -127,6 +140,7 @@ struct GlassConfirmationDialog: View {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
+                        .accessibilityHidden(true)
                 }
                 Text(request.actionTitle)
             }
@@ -161,6 +175,7 @@ struct GlassConfirmationDialog: View {
             environmentName: "production",
             perform: {}
         ),
+        reduceMotion: false,
         onConfirm: {},
         onCancel: {}
     )
