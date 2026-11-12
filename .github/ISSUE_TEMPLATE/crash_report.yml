@@ -61,8 +61,8 @@ body:
     id: data-mode
     attributes:
       label: Data
-      description: Write "Railway token" if Topway showed your Railway projects. Write "Sample data" if Topway showed the sample projects. Write "No token" if Topway had no token.
-      placeholder: "Railway token"
+      description: Write "Signed in with Railway" if Topway showed your Railway projects. Write "Sample data" if Topway showed the sample projects. Write "Not signed in" if Topway showed the start screen.
+      placeholder: "Signed in with Railway"
     validations:
       required: true
   - type: markdown

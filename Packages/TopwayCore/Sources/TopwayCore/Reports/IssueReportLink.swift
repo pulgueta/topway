@@ -46,10 +46,10 @@ public enum IssueReportLink {
         }
     }
 
-    /// Sample mode shows the sample projects, also when a token is saved.
+    /// Sample mode shows the sample projects, also while the user is signed in.
     private static func dataText(_ details: DeviceDetails) -> String {
         if details.isSampleMode { return "Sample data" }
-        return details.hasToken ? "Railway token" : "No token"
+        return details.isSignedIn ? "Signed in with Railway" : "Not signed in"
     }
 
     private static func macOSText(_ details: DeviceDetails) -> String {

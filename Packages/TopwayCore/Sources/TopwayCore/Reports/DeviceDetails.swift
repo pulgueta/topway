@@ -15,8 +15,8 @@ public struct DeviceDetails: Sendable, Equatable {
     public var architecture: CPUArchitecture
     /// `true` when Topway shows sample data and does not connect to Railway.
     public var isSampleMode: Bool
-    /// `true` when the user saved a Railway token. The report never has the token.
-    public var hasToken: Bool
+    /// `true` while the user is signed in with Railway. The report never has a token.
+    public var isSignedIn: Bool
 
     public init(
         appVersion: String,
@@ -26,7 +26,7 @@ public struct DeviceDetails: Sendable, Equatable {
         macModel: String,
         architecture: CPUArchitecture,
         isSampleMode: Bool,
-        hasToken: Bool
+        isSignedIn: Bool
     ) {
         self.appVersion = appVersion
         self.appBuild = appBuild
@@ -35,6 +35,6 @@ public struct DeviceDetails: Sendable, Equatable {
         self.macModel = macModel
         self.architecture = architecture
         self.isSampleMode = isSampleMode
-        self.hasToken = hasToken
+        self.isSignedIn = isSignedIn
     }
 }
