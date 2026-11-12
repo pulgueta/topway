@@ -108,6 +108,23 @@ struct SpendTests {
         #expect(Spend.dollars(amount) == text)
     }
 
+    @Test("A Not Authorized answer is about billing access, not about a rejected token")
+    func unauthorizedMessage() {
+        #expect(
+            Spend.failureMessage(for: .unauthorized)
+                == "Your token cannot read the billing of this workspace. Use the token of a member with billing access."
+        )
+    }
+
+    @Test("Other errors keep their message, and a cancelled load has no message")
+    func otherMessages() {
+        #expect(
+            Spend.failureMessage(for: .graphQLError("Workspace not found"))
+                == "Railway sent an error: Workspace not found")
+        #expect(Spend.failureMessage(for: .unknown) == "An error occurred. Try again.")
+        #expect(Spend.failureMessage(for: .cancelled) == nil)
+    }
+
     @Test("The cost text is the cost in US dollars")
     func formattedCost() throws {
         #expect(try spend().formattedCost == "$50.50")

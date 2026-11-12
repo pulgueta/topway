@@ -657,7 +657,11 @@ class AppState {
         do {
             return try await dataSource.fetchSpend(workspaceId: workspaceId, token: railwayToken)
         } catch let error as RailwayError {
-            show(error)
+            // Not `show(_:)`: a Not Authorized answer here is about billing access, and the
+            // token is not rejected. A cancelled load has no message.
+            if let message = Spend.failureMessage(for: error) {
+                errorMessage = message
+            }
             return nil
         } catch {
             errorMessage = error.localizedDescription

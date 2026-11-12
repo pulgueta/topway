@@ -64,6 +64,19 @@ public struct Spend: Hashable, Sendable {
         return cost / Double(limit)
     }
 
+    /// The message for a spend load that failed. `nil` for a cancelled load.
+    ///
+    /// Railway answers "Not Authorized" when the token cannot read the billing, for example
+    /// the token of a member with no billing access. The projects load with the same token,
+    /// so this is not a rejected token.
+    public static func failureMessage(for error: RailwayError) -> String? {
+        if case .unauthorized = error {
+            return
+                "Your token cannot read the billing of this workspace. Use the token of a member with billing access."
+        }
+        return error.errorDescription
+    }
+
     /// The text of an amount in US dollars, for example "$1,234.50".
     public static func dollars(_ amount: Double) -> String {
         // A fixed locale, because Railway bills in US dollars and the app text is English.
