@@ -53,6 +53,8 @@ Users see the name of the Railway OAuth app on the Railway consent page. The dev
 
    An archive with no client ID offers only sample data.
 
+4. **Blocker for the App Store release (not for TestFlight):** change the callback from `topway://oauth/callback` to an HTTPS callback. Any app on the same Mac can use the `topway` scheme and the public client ID, so a malicious local app can show the real Topway consent page and get the tokens (RFC 8252, section 8.6). An HTTPS callback through Associated Domains goes only to an app with the Topway signing identity. It needs a domain with an `apple-app-site-association` file, the redirect URI `https://<domain>/oauth/callback` in Railway, the Associated Domains entitlement, and `ASWebAuthenticationSession.Callback.https(host:path:)`.
+
 ## For each upload
 
 1. Increase `CURRENT_PROJECT_VERSION` (target **General > Identity > Build**). App Store Connect accepts each build number only one time for a version.
