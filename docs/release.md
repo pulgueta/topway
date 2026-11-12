@@ -8,7 +8,7 @@ This checklist is for the person who uploads a build. Do the steps in sequence. 
 
 Done. The app icon is `topway/Appicon.icon`, made in Icon Composer. The build setting `ASSETCATALOG_COMPILER_APPICON_NAME` is `Appicon`. If you rename the file, change the setting to the same name (Xcode: **General > App Icons and Launch Screen > App Icon**).
 
-Topway has no Dock icon (`LSUIElement`). The icon shows in Finder, in Launchpad, in the App Store and in notifications.
+Topway has no Dock icon (`LSUIElement`). The icon shows in Finder, in Apps, in the App Store and in notifications.
 
 ### 2. App record
 
@@ -57,7 +57,7 @@ External testers need Beta App Review for the first build of each version.
 
    > Topway needs no account for review. On the first screen, select "Try with sample data". The app then shows sample projects, services, variables, deployments and logs, and it does not connect to a server. All features work on the sample data.
 
-3. In **What to Test**, tell the testers to report problems from **Settings > Help** in the app.
+3. In **What to Test**, tell the testers to report problems from **Settings > Help** in the app. Also tell them: if you saved a token with a different build of Topway, macOS can ask for permission to use the Keychain item. Select **Always Allow**. If you select **Deny**, Topway shows the start screen, and you must enter the token again.
 4. Make an external group, add the build and submit it for review.
 
 ## Checks
