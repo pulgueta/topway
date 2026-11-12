@@ -130,6 +130,7 @@ class AppState {
     private var latestProjectLoad = 0
     /// Only the latest metrics load may show an error. A newer load replaces an earlier one.
     private var latestMetricsLoad = 0
+    private var latestSpendLoad = 0
     /// The last settled state of each service. It is `nil` before the first load of a data
     /// source or a workspace, so that load gives no alerts.
     private var alertSnapshot: AlertSnapshot?
@@ -653,18 +654,30 @@ class AppState {
         }
 
         errorMessage = nil
+        latestSpendLoad += 1
+        let load = latestSpendLoad
+        let requestedWorkspaceId = workspaceId
+
+        // A newer load, a cancelled load or a different workspace publishes no error.
+        func isCurrent() -> Bool {
+            load == latestSpendLoad && !Task.isCancelled && workspaceId == requestedWorkspaceId
+        }
 
         do {
-            return try await dataSource.fetchSpend(workspaceId: workspaceId, token: railwayToken)
+            let spend = try await dataSource.fetchSpend(
+                workspaceId: requestedWorkspaceId, token: railwayToken)
+            return isCurrent() ? spend : nil
         } catch let error as RailwayError {
             // Not `show(_:)`: a Not Authorized answer here is about billing access, and the
             // token is not rejected. A cancelled load has no message.
-            if let message = Spend.failureMessage(for: error) {
+            if isCurrent(), let message = Spend.failureMessage(for: error) {
                 errorMessage = message
             }
             return nil
         } catch {
-            errorMessage = error.localizedDescription
+            if isCurrent() {
+                errorMessage = error.localizedDescription
+            }
             return nil
         }
     }
