@@ -7,6 +7,12 @@ struct VariablesTab: View {
     @Environment(AppState.self) private var appState
 
     let variables: [EnvironmentVariable]
+    /// The service of the list. A same-service reference points to it.
+    let serviceId: String
+    /// The services of the project. A reference names one of them.
+    let services: [Service]
+    /// `nil` until they load. The links then show "Not checked".
+    let projectVariables: ProjectVariables?
     let isLoading: Bool
     /// `false` after a load that failed. An empty list is then not a fact.
     let areVariablesKnown: Bool
@@ -53,7 +59,12 @@ struct VariablesTab: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(variables) { variable in
-                        VariableRow(variable: variable) { onEdit(variable) }
+                        VariableRow(
+                            variable: variable,
+                            links: ReferenceLink.links(
+                                in: variable.value, serviceId: serviceId, services: services,
+                                variables: projectVariables)
+                        ) { onEdit(variable) }
                     }
                 }
             }

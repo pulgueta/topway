@@ -55,6 +55,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | **Usage and cost**: cost, period, limits, **Refresh** | E1, E3, E4, E16 | E1 | E10 | E16 | E12 | E13a |
 | Open a service, change the environment, change the tab | E1, E3, E4, E9 | E1, E3, check 2 | E10 | — | E12 | E13a |
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
+| Variables: the targets of references and their status | E3 | — | E10 | E11i | E12 | — |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
 | Service settings: name, commands, paths, **Save changes** | E1, E4, E7, E8, E9 | E1, E8 | E10 | E11g, E18 | E12, check 4 | E13a, E13c |
 | Domains: list, DNS records, **Copy**, **Copy value**, **Add Railway domain**, **Add custom domain**, **Delete…** | E1, E3, E4, E7, E8, E9 | E1, E3, E8 | E10 | E11f, E18, E19 | E12, check 4 | E13a, E13c, E13d |
@@ -85,6 +86,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - `EnvironmentRow`: the row is a group with the name of the environment. **Delete…** has the label "Delete" and the name of the environment.
 - `DomainRow`: the row is a group with the domain name. **Copy** and **Delete…** name the domain. `DNSRecordRow` is a group with the label "CNAME record shop", and **Copy value** has the label "Copy value of CNAME record shop".
 - `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
+- `ReferenceLinkRow`: one item for each target of a reference, with the label "Reference to postgres.DATABASE_URL: Found" (`ReferenceLink.accessibilityDescription`, tested). It has names only, never a value, so it does not show a hidden value.
 - Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", "Delete", "Copy value", and the name on the back button.
 
 **E4. Headers and back.** The title of each screen and of the dialog has the header trait (`ProjectsHeader`, `ScreenHeader`, `GlassConfirmationDialog`). The back button has the label "Back to" and the name of the screen.
@@ -110,6 +112,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - f. Destructive actions: the red text has the word "Delete" or "Remove". The production label has the text "Production environment" and an octagon.
 - g. Errors and results: a symbol and a text ("Saved", the error message).
 - h. Notifications: the title says the result, for example "Deployment failed".
+- i. Reference status: each status has a text and a different symbol: "Found" (check mark), "Service not found" and "Variable not found" (triangle), "Set by Railway" (circle with "i") and "Not checked" (question mark). Only the triangle is orange. The text is in the primary color.
 
 **E12. Sufficient Contrast.** Text uses the system text styles and the system colors, which change with Increase Contrast. Primary text is the default for names, values and log lines of the info level.
 - a. `SampleDataBanner`: the text is in the primary color. Only the symbol is orange.

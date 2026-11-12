@@ -10,6 +10,11 @@ public struct ReferenceLink: Hashable, Identifiable, Sendable {
         self.status = status
     }
 
+    /// What VoiceOver reads for the link. It has names only, never a value.
+    public var accessibilityDescription: String {
+        "Reference to \(target.displayName): \(status.label)"
+    }
+
     /// Gives each target of a value one time, in the order of the value.
     /// - Parameter variables: `nil` when they did not load. Each status is then
     ///   `notChecked`.

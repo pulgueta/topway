@@ -3,8 +3,11 @@ import TopwayCore
 
 /// One variable. The value is hidden until the user selects Show.
 /// All actions are always visible and have a text label.
+/// A value with references also shows each target and its status.
 struct VariableRow: View {
     let variable: EnvironmentVariable
+    /// The targets of the references in the value. Empty for a value with no reference.
+    var links: [ReferenceLink] = []
     let onEdit: () -> Void
 
     @State private var isValueVisible = false
@@ -46,6 +49,10 @@ struct VariableRow: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            ForEach(links) { link in
+                ReferenceLinkRow(link: link)
             }
         }
         .padding(.horizontal, Layout.contentInset)

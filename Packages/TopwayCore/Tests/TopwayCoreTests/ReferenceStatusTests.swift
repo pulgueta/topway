@@ -91,4 +91,26 @@ struct ReferenceStatusTests {
     func labels(status: ReferenceTargetStatus, label: String) {
         #expect(status.label == label)
     }
+
+    @Test("A row names the target, and a same-service target says so")
+    func displayNames() {
+        #expect(
+            ReferenceTarget(namespace: .service("postgres"), variableName: "DATABASE_URL")
+                .displayName == "postgres.DATABASE_URL")
+        #expect(
+            ReferenceTarget(namespace: .shared, variableName: "LOG_LEVEL").displayName
+                == "shared.LOG_LEVEL")
+        #expect(
+            ReferenceTarget(namespace: .sameService, variableName: "PORT").displayName
+                == "PORT in this service")
+    }
+
+    @Test("VoiceOver reads the target and its status")
+    func accessibilityDescription() {
+        let link = ReferenceLink(
+            target: ReferenceTarget(namespace: .service("billing"), variableName: "API_URL"),
+            status: .missingService)
+
+        #expect(link.accessibilityDescription == "Reference to billing.API_URL: Service not found")
+    }
 }

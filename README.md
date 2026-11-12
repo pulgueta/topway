@@ -36,6 +36,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - The **Variables** tab of a service shows its variables in one environment.
 - **Environment**: If the project has more than one environment, select the environment at the top.
 - **Show**, **Copy** and **Edit**: Each variable has these buttons. Values are hidden until you select **Show**.
+- **References**: A value can use the variable of a different service (`${{ postgres.DATABASE_URL }}`), a shared variable (`${{ shared.LOG_LEVEL }}`) or a variable of the same service (`${{ PORT }}`). Below the value, the row shows each target and its status: **Found**, **Service not found**, **Variable not found**, **Set by Railway** (a `RAILWAY_` variable, which Topway cannot check) or **Not checked** (the other variables did not load). **Show**, **Copy** and **Copy all** give the reference, not the value that Railway makes from it.
 - **Copy all** copies all variables as `NAME=value` lines. A value with a line break or a double quotation mark is put in double quotation marks, as in a `.env` file.
 - **Add variable** is at the bottom. To delete a variable, select **Edit**, then **Delete variable…**.
 

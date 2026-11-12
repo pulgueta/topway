@@ -17,6 +17,12 @@ public struct ReferenceTarget: Hashable, Sendable {
         }
     }
 
+    /// The text that a row shows: the expression, or the name and "in this service" for a
+    /// variable of the same service.
+    public var displayName: String {
+        namespace == .sameService ? "\(variableName) in this service" : expression
+    }
+
     /// The reference as a variable value, for example `${{postgres.DATABASE_URL}}`.
     public var template: String {
         "${{\(expression)}}"

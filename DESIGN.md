@@ -183,7 +183,7 @@ Tradeoffs:
 | Start | Shows only with no token. | The same screen. A rejected token now has a way back to it. |
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Settings, Domains, Redeploy and Delete service. |
 | Service settings | No settings. | A form with the name, the source as text, and one field for each setting of the environment. **Save changes** in the bottom bar is available only after a change. |
-| Variables | Edit, show and copy icons that show on hover. | **Show**, **Copy** and **Edit** buttons in each row. **Copy all** and **Add variable** in the bottom bar. |
+| Variables | Edit, show and copy icons that show on hover. | **Show**, **Copy** and **Edit** buttons in each row. A value with references shows each target below it, with its status as text and a symbol. The targets are names, so they show also while the value is hidden. **Copy all** and **Add variable** in the bottom bar. |
 | Edit variable | Trash icon in the top bar. | **Delete variable…**, **Cancel** and **Save changes** in the bottom bar. |
 | Domains | No domains. | One row for each domain, with its kind, its status as text with a symbol, and **Copy** and **Delete…**. A custom domain shows its DNS records, each with **Copy value**. **Add Railway domain** and **Add custom domain** in the bottom bar. |
 | Deployments | Logs and restart icons that show on hover. | **View logs**, **Open URL** and **Restart** buttons in each row, and a **Manage** menu for Roll back, Cancel deployment and Remove deployment. **Refresh** and **Redeploy** in the bottom bar. |
