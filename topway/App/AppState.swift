@@ -117,6 +117,8 @@ class AppState {
 
     private var dataSource: any RailwayDataSource = RailwayClient()
     private var refreshTask: Task<Void, Never>?
+    /// The action of the confirmation dialog while it runs.
+    private var confirmationTask: Task<Void, Never>?
     /// The message that the latest failed background refresh set.
     private var refreshFailureMessage: String?
     /// Only the latest project load may change the screen. A data source switch also
@@ -562,7 +564,7 @@ class AppState {
         clearIncident()
         projects = []
         isLoading = false
-        pendingConfirmation = nil
+        cancelRunningConfirmation()
         clearError()
         stopAutoRefresh()
     }
@@ -580,18 +582,42 @@ class AppState {
     /// request cannot repeat an action.
     /// - Parameter retryingRejected: `false` when a Not Authorized answer is about access
     ///   rights, so a new token cannot help.
+    ///
+    /// A sign-out, a new sign-in or sample data while the request waits makes its result
+    /// `RailwayError.cancelled`: no message and no retry, so a late answer cannot send a
+    /// request again with the token of a different account.
     private func withAccessToken<Value>(
         retryingRejected: Bool = true,
         _ request: (_ source: any RailwayDataSource, _ token: String) async throws -> Value
     ) async throws -> Value {
+        let generation = sessionGeneration
         let source = dataSource
         guard !isSampleMode else { return try await request(source, "") }
-        let token = try await accessToken()
+
+        func checkSession() throws {
+            guard generation == sessionGeneration else { throw RailwayError.cancelled }
+        }
+        /// Each result and each error of an earlier session is a cancellation.
+        func inSession<Output>(_ step: () async throws -> Output) async throws -> Output {
+            do {
+                let result = try await step()
+                try checkSession()
+                return result
+            } catch {
+                try checkSession()
+                throw error
+            }
+        }
+
+        let token = try await inSession { try await accessToken() }
         do {
-            return try await request(source, token)
-        } catch let error as RailwayError where error.isTokenRejected && retryingRejected {
-            let renewed = try await refreshedTokens(replacing: token)
-            return try await request(source, renewed.accessToken)
+            return try await inSession { try await request(source, token) }
+        } catch let error as RailwayError
+            where retryingRejected
+            && sessionGeneration.permitsRetry(of: error, startedIn: generation)
+        {
+            let renewed = try await inSession { try await refreshedTokens(replacing: token) }
+            return try await inSession { try await request(source, renewed.accessToken) }
         }
     }
 
@@ -611,12 +637,19 @@ class AppState {
     }
 
     /// Gives the log stream a token at each connect and each poll.
+    /// A stream that started before a sign-out gets no token of the next sign-in.
     private func logToken() -> @Sendable () async throws -> String {
         guard !isSampleMode else { return { "" } }
+        let generation = sessionGeneration
         return { [weak self] in
             guard let self else { throw RailwayError.cancelled }
-            return try await self.accessToken()
+            return try await self.streamToken(startedIn: generation)
         }
+    }
+
+    private func streamToken(startedIn generation: SessionGeneration) async throws -> String {
+        guard generation == sessionGeneration else { throw RailwayError.cancelled }
+        return try await accessToken()
     }
 
     /// Gets new tokens after `usedToken`. A request that comes during a refresh waits for it,
@@ -793,11 +826,22 @@ class AppState {
     func runPendingConfirmation() {
         guard let request = pendingConfirmation, !isRunningConfirmation else { return }
         isRunningConfirmation = true
-        Task {
+        confirmationTask = Task {
             await request.perform()
+            // A sign-out closed the dialog, and a new dialog can show now.
+            guard !Task.isCancelled else { return }
             isRunningConfirmation = false
             pendingConfirmation = nil
+            confirmationTask = nil
         }
+    }
+
+    /// Stops the action of the dialog and closes it. The action belongs to the earlier sign-in.
+    private func cancelRunningConfirmation() {
+        confirmationTask?.cancel()
+        confirmationTask = nil
+        isRunningConfirmation = false
+        pendingConfirmation = nil
     }
 
     // MARK: - Variable Management

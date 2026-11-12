@@ -22,4 +22,11 @@ public struct SessionGeneration: Sendable, Equatable {
             break
         }
     }
+
+    /// A request that Railway did not accept gets a new token and one more try, but only in
+    /// the session where it started. After a sign-out and a sign-in with another account, a
+    /// retry would send the request, for example a delete, with the token of that account.
+    public func permitsRetry(of error: RailwayError, startedIn start: SessionGeneration) -> Bool {
+        error.isTokenRejected && start == self
+    }
 }
