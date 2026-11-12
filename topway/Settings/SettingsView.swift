@@ -77,6 +77,8 @@ struct SettingsView: View {
             Section("General") {
                 LaunchAtLoginToggle()
             }
+
+            HelpSettingsSection()
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 640)

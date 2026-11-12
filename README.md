@@ -77,7 +77,11 @@ You can use Topway with no Railway token. On the start screen, select **Try with
 
 ## Report a Problem
 
-Topway collects no data and sends no crash reports. To tell us about a problem, open an issue on GitHub. [Open a new issue](https://github.com/pulgueta/topway/issues/new/choose) and select a form:
+Topway collects no data and sends no crash reports. To tell us about a problem, open an issue on GitHub.
+
+The fastest way is from the app. Select **Settings > Help**, then **Report a problem** or **Report a crash**. Topway opens the form on GitHub in your browser and fills in the Topway version, the macOS version, the Mac model, the architecture and the data mode. Topway sends nothing by itself. You read the form, add your text and send it.
+
+You can also [open a new issue](https://github.com/pulgueta/topway/issues/new/choose) and select a form:
 
 - **Crash report**: Topway quit when you did not tell it to quit. The form tells you how to find the macOS crash report.
 - **Bug report**: Topway did something wrong, but it did not quit.
