@@ -39,7 +39,7 @@ Each folder has the name of a feature.
 | `Deployments` | The Deployments tab and its rows, with restart and redeploy. |
 | `Logs` | The logs screen, the log line row and the connection label. |
 | `Variables` | The Variables tab, its rows and the variable editor. |
-| `Settings` | The native Settings window, the Alerts section and the launch at login toggle. |
+| `Settings` | The native Settings window, the Alerts section, the launch at login toggle and the Help section, which opens the issue forms. |
 | `Shared` | The screen layout, the bars, button styles, state views, the confirmation dialog and `openAppSettings`. |
 
 ## Screens
