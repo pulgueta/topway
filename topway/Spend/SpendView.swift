@@ -8,7 +8,7 @@ struct SpendView: View {
 
     let onDismiss: () -> Void
 
-    /// `nil` before the first load and after a load that failed.
+    /// `nil` until a load gives the usage. A failed reload keeps the earlier usage.
     @State private var spend: Spend?
     @State private var isLoading = true
     @State private var latestLoadID = UUID()
@@ -97,8 +97,13 @@ struct SpendView: View {
         let fetched = await appState.fetchSpend()
         // Only the latest call may update the screen.
         guard loadID == latestLoadID else { return }
-        spend = fetched
+        // A cancelled load is not a failure, so it changes nothing and shows no message.
+        guard !Task.isCancelled else { return }
         isLoading = false
+        // After a failed reload, the values stay and the banner shows the error.
+        if let fetched {
+            spend = fetched
+        }
     }
 }
 
