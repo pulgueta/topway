@@ -54,7 +54,13 @@ struct ServiceLinksView: View {
                     Task {
                         // New or renamed services must be in the links.
                         isLoading = true
-                        await appState.loadProjects(keepingError: true)
+                        // This clears an earlier error, so an error after it is from this load.
+                        await appState.loadProjects()
+                        // When the projects did not load, the error stays and the links stay.
+                        guard appState.errorMessage == nil else {
+                            isLoading = false
+                            return
+                        }
                         refreshCount += 1
                     }
                 }
