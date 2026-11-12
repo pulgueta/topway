@@ -1,7 +1,7 @@
 import SwiftUI
 import TopwayCore
 
-@MainActor
+/// The Deployments tab of the service screen: the list, its states and its actions.
 struct DeploymentsView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openURL) private var openURL
@@ -9,11 +9,14 @@ struct DeploymentsView: View {
     let service: Service
     let project: Project
     let environmentId: String
-    let onDismiss: () -> Void
+    /// A new value loads the deployments again, for example after a redeploy from the Manage menu.
+    var reloadVersion = 0
     let onViewLogs: (Deployment) -> Void
 
     @State private var deployments: [Deployment] = []
     @State private var isLoading = true
+    /// `false` after a load that failed. An empty list is then not a fact.
+    @State private var areDeploymentsKnown = false
     @State private var isRedeploying = false
     @State private var restartingDeploymentId: String?
     @State private var latestLoadID = UUID()
@@ -22,191 +25,96 @@ struct DeploymentsView: View {
         project.environmentList.first { $0.id == environmentId }?.name ?? ""
     }
 
+    private var deploymentCount: String {
+        "\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")"
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            headerView
-
-            Divider()
-
-            // Service Info
-            serviceInfoView
-
-            Divider()
-
-            // Content
-            contentView
-
-            if let error = appState.errorMessage, !isLoading, !deployments.isEmpty {
+        ScreenLayout {
+            content
+        } top: {
+            EmptyView()
+        } bottom: {
+            // With a known list, the error belongs to a different action, not to this load.
+            if let error = appState.errorMessage, !deployments.isEmpty || areDeploymentsKnown {
                 ErrorBanner(message: error) { appState.clearError() }
             }
-
-            Divider()
-
-            // Footer
-            footerView
+            footer
         }
-        .task {
+        .task(id: reloadVersion) {
             await loadDeployments()
         }
-    }
-
-    // MARK: - Header
-
-    private var headerView: some View {
-        HStack {
-            BackButton { onDismiss() }
-
-            Spacer()
-
-            Text("Deployments")
-                .font(.system(size: 14, weight: .semibold))
-
-            Spacer()
-
-            // Refresh button
-            if isLoading {
-                ProgressView()
-                    .controlSize(.small)
-                    .scaleEffect(0.7)
-                    .frame(width: 24, height: 24)
-            } else {
-                IconButton(
-                    icon: "arrow.clockwise",
-                    help: "Refresh"
-                ) {
-                    Task { await loadDeployments() }
-                }
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-    }
-
-    // MARK: - Service Info
-
-    private var serviceInfoView: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "gearshape.fill")
-                .font(.system(size: 12))
-                .foregroundStyle(.blue)
-
-            Text(service.name)
-                .font(.system(size: 13, weight: .medium))
-
-            Spacer()
-
-            Text(project.name)
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
     }
 
     // MARK: - Content
 
     @ViewBuilder
-    private var contentView: some View {
-        if isLoading {
-            VStack(spacing: 12) {
-                Spacer()
-                ProgressView()
-                    .controlSize(.regular)
-                Text("Loading deployments...")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let error = appState.errorMessage, deployments.isEmpty {
-            ErrorStateView(message: error) {
-                Task { await loadDeployments() }
-            }
-        } else if deployments.isEmpty {
-            VStack(spacing: 16) {
-                Spacer()
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.tertiary)
-
-                VStack(spacing: 4) {
-                    Text("No Deployments")
-                        .font(.system(size: 14, weight: .semibold))
-
-                    Text("Deploy your service to see deployment history here.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                }
-
-                Button {
-                    confirmRedeploy()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 10))
-                        Text("Deploy Now")
-                            .font(.system(size: 12))
-                    }
-                }
-                .buttonStyle(.glassProminent)
-                .controlSize(.small)
-                .disabled(isRedeploying)
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
+    private var content: some View {
+        if !deployments.isEmpty {
+            // The list stays while a reload runs, so the screen does not flash.
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(deployments) { deployment in
                         DeploymentRow(
                             deployment: deployment,
                             isRestarting: restartingDeploymentId == deployment.id,
-                            onRestart: {
-                                confirmRestart(deployment)
-                            },
-                            onOpenURL: {
-                                if let urlString = deployment.staticUrl,
-                                    let url = URL(string: "https://\(urlString)")
-                                {
-                                    openURL(url)
-                                }
-                            },
-                            onViewLogs: {
-                                onViewLogs(deployment)
-                            }
+                            onRestart: { confirmRestart(deployment) },
+                            onOpenURL: { open(deployment) },
+                            onViewLogs: { onViewLogs(deployment) }
                         )
                     }
                 }
-                .padding(.vertical, 4)
             }
+        } else if isLoading {
+            LoadingStateView(title: "Loading deployments…")
+        } else if !areDeploymentsKnown {
+            // The error can be gone, for example after a new token, but the list did not load.
+            ErrorStateView(
+                title: "Deployments did not load",
+                message: appState.errorMessage ?? "Select Try again to load the deployments."
+            ) {
+                Task { await loadDeployments() }
+            }
+        } else {
+            ContentUnavailableView(
+                "No deployments",
+                systemImage: "arrow.triangle.2.circlepath",
+                description: Text(
+                    "This service has no deployments in this environment. Select Redeploy to start one."
+                )
+            )
         }
     }
 
     // MARK: - Footer
 
-    private var footerView: some View {
-        HStack {
-            Text("\(deployments.count) deployment\(deployments.count == 1 ? "" : "s")")
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-
-            Spacer()
-
-            // Redeploy button
-            RedeployButton(isLoading: isRedeploying) {
-                confirmRedeploy()
+    private var footer: some View {
+        ActionBar {
+            if !isLoading || !deployments.isEmpty {
+                Text(deploymentCount)
             }
-            .disabled(isRedeploying)
+        } actions: {
+            Button("Refresh", systemImage: "arrow.clockwise") {
+                Task { await loadDeployments() }
+            }
+            .buttonStyle(.glass)
+            .disabled(isLoading)
+            .help("Load the deployments again.")
+
+            Button(isRedeploying ? "Redeploying…" : "Redeploy") { confirmRedeploy() }
+                .buttonStyle(.glassProminent)
+                .disabled(isRedeploying)
+                .help("Build and start a new deployment of \(service.name).")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
     }
 
     // MARK: - Actions
+
+    private func open(_ deployment: Deployment) {
+        if let host = deployment.staticUrl, let url = URL(string: "https://\(host)") {
+            openURL(url)
+        }
+    }
 
     private func confirmRestart(_ deployment: Deployment) {
         appState.confirm(
@@ -243,7 +151,8 @@ struct DeploymentsView: View {
         )
         // Only the latest call may update the screen.
         guard loadID == latestLoadID else { return }
-        deployments = fetched
+        deployments = fetched ?? []
+        areDeploymentsKnown = fetched != nil
         isLoading = false
     }
 
@@ -251,7 +160,7 @@ struct DeploymentsView: View {
         restartingDeploymentId = deployment.id
         let success = await appState.restartDeployment(deploymentId: deployment.id)
         restartingDeploymentId = nil
-        // Reload deployments to see updated status
+        // The list then shows the new status.
         if success {
             await loadDeployments()
         }
@@ -264,7 +173,7 @@ struct DeploymentsView: View {
             serviceId: service.id
         )
         isRedeploying = false
-        // Reload deployments to see the new one
+        // The list then shows the new deployment.
         if success {
             await loadDeployments()
         }
@@ -272,23 +181,17 @@ struct DeploymentsView: View {
 }
 
 #Preview {
-    let mockService = Service(id: "1", name: "web-app")
-    let mockProject = Project(
+    let service = Service(id: "1", name: "web-app")
+    let project = Project(
         id: "1",
         name: "My Project",
-        services: ServiceConnection(edges: [ServiceEdge(node: mockService)]),
+        services: ServiceConnection(edges: [ServiceEdge(node: service)]),
         environments: EnvironmentConnection(edges: [
             EnvironmentEdge(node: RailwayEnvironment(id: "env1", name: "production"))
         ])
     )
 
-    DeploymentsView(
-        service: mockService,
-        project: mockProject,
-        environmentId: "env1",
-        onDismiss: {},
-        onViewLogs: { _ in }
-    )
-    .environment(AppState())
-    .frame(width: 320, height: 400)
+    DeploymentsView(service: service, project: project, environmentId: "env1", onViewLogs: { _ in })
+        .environment(AppState())
+        .frame(width: Layout.windowWidth, height: Layout.windowHeight)
 }

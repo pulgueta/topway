@@ -4,24 +4,27 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 
 ## Features
 
-### Project & Service Monitoring
-- View all your Railway projects in a clean, compact list.
-- See services associated with each project.
-- **Add Services**: Create new services from a GitHub repository or a Docker image.
-- **Delete Projects/Services**: Manage your resources (with confirmation).
+Each action in Topway has a text label. No action shows only when the pointer is on a row. [DESIGN.md](DESIGN.md) gives the design rules.
+
+### Projects and Services
+- The first screen shows all your Railway projects and their services.
+- **Refresh** and **Settings** are at the top. **New project** opens Railway in your browser. **Quit Topway** is at the bottom.
+- **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image.
+- **Manage**: Each project has a **Manage** menu, with **Add service**, **Mute alerts** and **Delete project…**.
+- Select a service to see its variables and deployments. The **Manage** menu of the service has **Redeploy** and **Delete service…**.
+- To delete a project or a service, you must type its name.
 
 ### Environment Variables
-- **View & Edit**: easy access to environment variables for any service.
-- **Multi-Environment Support**: Switch between environments (e.g., Production, Staging) to see scoped variables.
-- **Clipboard Actions**: One-click copy for individual values or all variables at once.
-- **Privacy**: Values are masked by default, toggle to reveal.
+- The **Variables** tab of a service shows its variables in one environment.
+- **Environment**: If the project has more than one environment, select the environment at the top.
+- **Show**, **Copy** and **Edit**: Each variable has these buttons. Values are hidden until you select **Show**.
+- **Copy all** copies all variables as `NAME=value` lines. A value with a line break or a double quotation mark is put in double quotation marks, as in a `.env` file.
+- **Add variable** is at the bottom. To delete a variable, select **Edit**, then **Delete variable…**.
 
-### Deployment Management
-- **Status at a Glance**: View the latest deployments and their status (Success, Failed, Building, etc.).
-- **Actions**:
-  - Restart a specific deployment.
-  - Trigger a full redeploy of a service.
-  - Open the live deployment URL in your browser.
+### Deployments
+- The **Deployments** tab of a service shows its latest deployments and their status, for example Running, Failed or Building.
+- **View logs**, **Open URL** and **Restart**: Each deployment has these buttons. **Open URL** shows only when the deployment has a URL.
+- **Redeploy** builds and starts a new deployment of the service.
 
 ### Logs
 - **Live logs**: On a deployment row, select **View logs**. The logs screen has the tabs **Build** and **Deploy**. It opens on **Build** when the deployment builds, waits to deploy or failed.
@@ -35,7 +38,7 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 - **Menu bar health**: The menu bar icon shows the health of all services. The tram shows when all services are healthy. Arrows show when a build or a deploy is in progress. A warning triangle shows when a service failed or crashed.
 - **Background refresh**: When auto-refresh is on, Topway refreshes from launch, also when the menu bar window is closed. Turn it on in **Settings > Auto Refresh**. Topway checks for alerts at each refresh.
 - **Alerts**: Turn on **Settings > Alerts > Send alerts** to get a notification when a deployment fails, a service crashes or a service recovers. Alerts are off by default. Topway asks for notification permission when you turn them on. If you denied the permission, select **Open System Settings**.
-- **Mute**: When alerts are on, each project row has a bell. Select it to mute the alerts of that project.
+- **Mute**: When alerts are on, select **Manage** in a project row, then **Mute alerts**. A muted project shows a bell with a line.
 - **Launch at login**: Turn on **Settings > General > Launch at login**. If macOS asks for approval, select **Open Login Items**.
 
 ## Limitations
@@ -48,14 +51,23 @@ Topway is a native macOS menu bar application for monitoring and managing your R
 
 1. Download/Build the app.
 2. Launch Topway (it will appear in your menu bar).
-3. Open **Settings**.
-4. Enter your **Railway API Token** and **Workspace ID**.
-   - *Token*: Generate this in your Railway Account Settings.
+3. Select **Open Settings**.
+4. Enter your **API token** and **Workspace ID**, then select **Save**.
+   - *Token*: Make this in your Railway account settings. Settings has a link to the Railway tokens page.
    - *Workspace ID*: Press `Cmd + K` in the Railway Dashboard and search for "Copy Active Workspace ID".
+
+### If Railway does not accept the token
+
+A token can expire, or you can revoke it on Railway. Topway then shows **Railway did not accept your token**, with two buttons:
+
+- **Open Settings**: Enter a new token and select **Save**.
+- **Try with sample data**: Use Topway with no token.
+
+To remove the saved token from your Mac, select **Settings > Credentials > Remove token…**. Topway then shows the start screen.
 
 ## Sample Data
 
-You can use Topway with no Railway token. On the start screen, select **Try with sample data**.
+You can use Topway with no Railway token. On the start screen, select **Try with sample data**. The same button shows when Railway does not accept your token.
 
 - Topway shows sample projects, services, deployments, variables and logs. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.

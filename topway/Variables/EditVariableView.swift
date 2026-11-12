@@ -1,7 +1,7 @@
 import SwiftUI
 import TopwayCore
 
-@MainActor
+/// Adds a variable, or changes or deletes one.
 struct EditVariableView: View {
     @Environment(AppState.self) private var appState
 
@@ -20,6 +20,12 @@ struct EditVariableView: View {
     @State private var value: String = ""
     @State private var isSaving = false
     @State private var isDeleting = false
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case name
+        case value
+    }
 
     private var isEditing: Bool {
         existingVariable != nil
@@ -30,23 +36,19 @@ struct EditVariableView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            headerView
-
-            Divider()
-
-            // Content
-            formView
-
+        ScreenLayout {
+            form
+        } top: {
+            ScreenHeader(
+                title: isEditing ? "Edit variable" : "Add variable",
+                backTitle: "Variables",
+                onBack: { cancelEditing() }
+            )
+        } bottom: {
             if let error = appState.errorMessage {
                 ErrorBanner(message: error) { appState.clearError() }
             }
-
-            Divider()
-
-            // Footer
-            footerView
+            footer
         }
         .onAppear {
             appState.clearError()
@@ -54,132 +56,91 @@ struct EditVariableView: View {
                 name = variable.name
                 value = variable.value
             }
+            // The name of a saved variable cannot change, so the value gets the focus.
+            focusedField = isEditing ? .value : .name
         }
     }
 
-    // MARK: - Form View
+    // MARK: - Form
 
-    private var formView: some View {
+    private var form: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                // Name Field
+            VStack(alignment: .leading, spacing: 16) {
+                Label("\(serviceName) in \(environmentName)", systemImage: "cube")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Name")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .font(.callout.weight(.medium))
 
-                    TextField("VARIABLE_NAME", text: $name)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13, design: .monospaced))
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.primary.opacity(0.05))
-                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                        )
+                    TextField("Name", text: $name, prompt: Text("VARIABLE_NAME"))
+                        .textFieldStyle(.roundedBorder)
+                        .font(.body.monospaced())
+                        .autocorrectionDisabled()
+                        .focused($focusedField, equals: .name)
                         .disabled(isEditing)
-                        .opacity(isEditing ? 0.7 : 1)
-                }
 
-                // Value Field
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Value")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-
-                    TextEditor(text: $value)
-                        .font(.system(size: 13, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .frame(minHeight: 80, maxHeight: 120)
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.primary.opacity(0.05))
-                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                        )
-                }
-
-                // Info Text
-                HStack(spacing: 6) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 11))
                     Text(
                         isEditing
-                            ? "This change applies to this service in this environment after the next deploy."
-                            : "Use uppercase letters and underscores in the name."
+                            ? "You cannot change the name of a saved variable."
+                            : "Use uppercase letters, digits and underscores."
                     )
-                    .font(.system(size: 11))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(16)
-        }
-    }
 
-    // MARK: - Header
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Value")
+                        .font(.callout.weight(.medium))
 
-    private var headerView: some View {
-        HStack {
-            BackButton {
-                cancelEditing()
-            }
+                    // A text editor keeps the line breaks of a value with many lines.
+                    TextEditor(text: $value)
+                        .font(.body.monospaced())
+                        .autocorrectionDisabled()
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 96, maxHeight: 140)
+                        .padding(6)
+                        .background(.background.secondary, in: .rect(cornerRadius: 6))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(.separator)
+                        }
+                        .focused($focusedField, equals: .value)
+                        .accessibilityLabel("Value")
 
-            Spacer()
-
-            Text(isEditing ? "Edit Variable" : "Add Variable")
-                .font(.system(size: 14, weight: .semibold))
-
-            Spacer()
-
-            // Delete button for existing variables
-            if isEditing {
-                IconButton(
-                    icon: "trash",
-                    tint: .red,
-                    help: "Delete variable"
-                ) {
-                    confirmDelete()
+                    Text("The service uses the value after the next deploy.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                .disabled(isDeleting)
-            } else {
-                Color.clear.frame(width: 24, height: 24)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, Layout.controlSpacing)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
     }
 
     // MARK: - Footer
 
-    private var footerView: some View {
-        HStack {
-            Button("Cancel") {
-                cancelEditing()
+    private var footer: some View {
+        ActionBar {
+            if isEditing {
+                Button("Delete variable…", role: .destructive) { confirmDelete() }
+                    .buttonStyle(.bordered)
+                    .foregroundStyle(.red)
+                    .disabled(isDeleting || isSaving)
+                    .help("Remove this variable from \(serviceName) in \(environmentName).")
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+        } actions: {
+            Button("Cancel") { cancelEditing() }
+                .buttonStyle(.glass)
 
-            Spacer()
-
-            Button {
-                confirmSave()
-            } label: {
-                HStack(spacing: 6) {
-                    if isSaving {
-                        ProgressView()
-                            .controlSize(.small)
-                            .scaleEffect(0.8)
-                    }
-                    Text(isEditing ? "Update" : "Create")
-                }
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.regular)
-            .disabled(!isFormValid || isSaving || isDeleting)
+            Button(isEditing ? "Save changes" : "Add variable") { confirmSave() }
+                .buttonStyle(.glassProminent)
+                .keyboardShortcut(.return, modifiers: .command)
+                .disabled(!isFormValid || isSaving || isDeleting)
+                .help(isEditing ? "Save the new value (⌘Return)." : "Add the variable (⌘Return).")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
     }
 
     // MARK: - Actions
@@ -274,5 +235,5 @@ struct EditVariableView: View {
         onSave: {}
     )
     .environment(AppState())
-    .frame(width: 320, height: 400)
+    .frame(width: Layout.windowWidth, height: Layout.windowHeight)
 }

@@ -22,6 +22,7 @@ The app imports the core. The core does not import the app.
 | `Health` | `HealthSummary`, `Health`, `AlertSnapshot`, `HealthAlert` and `AlertKind`. |
 | `Logs` | `LogLine`, `LogKind`, `LogEvent`, `LogConnection`, `LogBuffer` and the fallback rules. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
+| `Recovery` | `RecoveryAction` and `RecoveryRules`, which give the actions after a failed load. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
 ### App folders
@@ -30,15 +31,26 @@ Each folder has the name of a feature.
 
 | Folder | Contents |
 |---|---|
-| `App` | App entry point, `AppState`, `MainView`, navigation and `SampleDataBanner`. |
+| `App` | App entry point, `AppState`, `MainView`, navigation, `StartView` and `SampleDataBanner`. |
 | `Health` | `MenuBarLabel`, `AlertNotifier` and `NotificationPresenter`. |
-| `Projects` | Project list rows, with the mute button. |
-| `Services` | Service rows and add service. |
-| `Deployments` | Deployment list, restart and redeploy. |
-| `Logs` | The logs screen and the log line row. |
-| `Variables` | Variable list, variable editor and the service actions menu. |
+| `Projects` | The projects screen, its top bar, the project rows and the project **Manage** menu. |
+| `Services` | The service screen with its tabs, the service **Manage** menu, service rows and add service. |
+| `Deployments` | The Deployments tab and its rows, with restart and redeploy. |
+| `Logs` | The logs screen, the log line row and the connection label. |
+| `Variables` | The Variables tab, its rows and the variable editor. |
 | `Settings` | The native Settings window, the Alerts section and the launch at login toggle. |
-| `Shared` | Buttons, error views, the confirmation dialog and `openAppSettings`. |
+| `Shared` | The screen layout, the bars, button styles, state views, the confirmation dialog and `openAppSettings`. |
+
+## Screens
+
+[DESIGN.md](DESIGN.md) gives the design rules. Follow it when you add or change a screen.
+
+- The menu bar window has a fixed size of 360 × 480 points (`Layout`).
+- There is no `NavigationStack`. `MainView` shows one `NavigationDestination`: the projects, add service, or one service.
+- `ServiceView` shows one `ServiceDestination`: the overview, the variable editor, or the logs. The overview has the tabs **Variables** and **Deployments** (`ServiceTab`).
+- `ScreenLayout` gives each screen a top bar, content and a bottom bar. `ScreenHeader` is the top bar and `ActionBar` is the bottom bar.
+- Escape goes back one step. `ServiceView` handles its own steps, then `MainView` handles the others.
+- Each action has a text label. No action shows only on hover.
 
 ## Data flow
 
@@ -49,6 +61,21 @@ Each folder has the name of a feature.
 5. The data source returns a value or throws a `RailwayError`.
 6. `AppState` updates its properties. If the action fails, `AppState` sets `errorMessage`.
 7. The view updates. `ErrorBanner` or `ErrorStateView` shows `errorMessage`.
+
+## Failed loads and the token
+
+`ErrorStateView` shows a failed load. Its buttons come from `RecoveryRules.actions(isTokenRejected:isSampleMode:)`, through `AppState.recoveryActions`:
+
+| State | Buttons |
+|---|---|
+| Railway did not accept the token | **Open Settings**, **Try with sample data**. No retry, because the same token fails again. |
+| Other failures | **Try again**, **Open Settings**. |
+| Sample mode | **Try again**. |
+
+- `RailwayError.isTokenRejected` is `true` only for `RailwayError.unauthorized`.
+- Railway answers a request that has a bad token with status 200 and the GraphQL error "Not Authorized". `RailwayError.init(graphQLErrors:)` makes `unauthorized` from that message, for HTTP requests and for the socket. An HTTP 401 also gives `unauthorized`.
+- `AppState.isTokenRejected` is `true` while `errorMessage` comes from that error. Each new `errorMessage` sets it to `false`, and then `show(_:)` sets it for the new error.
+- **Settings > Credentials > Remove token…** calls `AppState.removeToken()`. It deletes the token from the Keychain, removes the projects and stops the refresh. `isConfigured` is then `false`, so `MainView` shows the start screen. Sample mode stays on.
 
 ## Data sources and sample mode
 
@@ -61,7 +88,7 @@ Each folder has the name of a feature.
 
 Sample mode lets the app run with no token, for example for App Review.
 
-- The start screen has the **Try with sample data** button. It calls `appState.enterSampleMode()`.
+- The start screen has the **Try with sample data** button. It calls `appState.enterSampleMode()`. `ErrorStateView` has the same button when Railway does not accept the token.
 - In sample mode, `MainView` shows `SampleDataBanner`. Its **Exit sample data** button calls `appState.exitSampleMode()`.
 - Sample mode does not read or write the Keychain token. It is not saved, so it ends when the app quits.
 - Actions change the sample data, and a later read shows the change. Redeploy adds a deployment with the current date.
@@ -103,7 +130,7 @@ There is no alert for the first load, for the same deployment with the same stat
 
 - Railway reads the token from the `Authorization: Bearer` header of the upgrade request, as the Railway CLI does. `connection_init` has no payload.
 - `GraphQLSubscription` keeps the protocol rules. It has no network code, so tests can use it directly. After `connection_ack`, it sends `subscribe`. It answers `ping` with `pong`. `next` gives the data, `error` and `next` with GraphQL errors give `RailwayError.graphQLError`, and `complete` ends the stream.
-- A refused upgrade with status 401, the close codes 4401 and 4403, and the message "Not Authorized" give `RailwayError.unauthorized`, the same error as an HTTP 401.
+- A refused upgrade with status 401, the close codes 4401 and 4403, and the message "Not Authorized" give `RailwayError.unauthorized`, the same error as an HTTP 401. HTTP requests use the same rule for the message.
 - When the consumer task is cancelled, the client sends `complete` and closes the socket.
 - The live socket accepts messages up to 16 MiB (`maximumMessageSize`), because one message can hold many log lines.
 - `SocketKeepalive` finds a half-open socket. Every 20 seconds, it checks for a message from the server since the last check. If there is one, it sends a protocol `ping`, and Railway answers with `pong`. If there is none, the socket is dropped and the stream uses the reconnect rule. So a socket with no message for 20 seconds after a ping is dropped, at most 40 seconds after the last message. The protocol `ping` is used, not `URLSessionWebSocketTask.sendPing`, because its `pong` comes from the GraphQL server, and a proxy can answer a WebSocket ping frame.
@@ -134,7 +161,7 @@ A server `complete` ends the stream, with no polling. The most requests in one h
 
 ### Logs screen
 
-`DeploymentRow` has a **View logs** button. `VariablesView` then shows `LogsView`. Back and Escape go to the deployments.
+`DeploymentRow` has a **View logs** button. `ServiceView` then shows `LogsView`. The back button and Escape go to the Deployments tab.
 
 - The screen opens on **Build** when the deployment status is `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING`, `NEEDS_APPROVAL` or `FAILED` (`Deployment.defaultLogKind`). It opens on **Deploy** for all other statuses.
 - The **Build** and **Deploy** tabs each start a new stream. The stream stops when the screen closes or the tab changes.
@@ -142,7 +169,7 @@ A server `complete` ends the stream, with no polling. The most requests in one h
 - `LogBuffer` keeps the newest 1,000 lines in memory.
 - Warnings and errors have a symbol and a color, so the level does not show by color only.
 - The screen follows new lines at the bottom. When the user scrolls up, it stops. **Follow new lines** starts it again. `LogScrollMetrics` keeps the rule: it checks the bottom first, so a bounce at the bottom keeps follow on.
-- Errors show in `ErrorBanner`, or in `ErrorStateView` with **Retry** when there are no lines.
+- Errors show in `ErrorBanner`, or in `ErrorStateView` with **Try again** when there are no lines.
 
 ## Confirmation levels
 
@@ -156,7 +183,9 @@ Each action that changes data has a `HarmLevel`.
 
 A production environment shows a red label in the dialog.
 
-To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows `GlassConfirmationDialog` above all screens with `destructiveConfirmation(...)`. Do not use `alert` or `confirmationDialog`, because they close the menu bar window.
+To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows `GlassConfirmationDialog` above all screens with `destructiveConfirmation(...)`. Do not use `alert` or `confirmationDialog`, because they close the menu bar window. Return confirms only an action that is not destructive.
+
+The Settings window is a separate window, so **Remove token…** asks for its confirmation in the Settings form.
 
 ## Add a feature
 
@@ -164,5 +193,5 @@ To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confi
 2. Add the same action to `SampleDataSource`, so it changes the sample data. Add tests first.
 3. Add new response types to `API/Responses`. Add new public models to `Models`.
 4. Add a method on `AppState`. Set `errorMessage` when the action fails.
-5. Add the views to a feature folder. Make a new folder if no folder is correct.
+5. Add the views to a feature folder. Make a new folder if no folder is correct. Follow [DESIGN.md](DESIGN.md): use `ScreenLayout`, give each action a text label, and keep glass on the bars.
 6. If the action changes data, select a `HarmLevel` and use `appState.confirm`.

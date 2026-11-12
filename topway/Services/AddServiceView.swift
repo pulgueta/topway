@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Adds a service to a project from a GitHub repository or a Docker image.
 struct AddServiceView: View {
     @Environment(AppState.self) private var appState
 
@@ -11,6 +12,7 @@ struct AddServiceView: View {
     @State private var repoName: String = ""
     @State private var imageName: String = ""
     @State private var isCreating = false
+    @FocusState private var isSourceFocused: Bool
 
     private var sourceValue: String {
         sourceType == .gitHub ? repoName : imageName
@@ -21,139 +23,108 @@ struct AddServiceView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                BackButton {
-                    // Only a user exit clears the error. A failed refresh must stay visible.
-                    appState.clearError()
-                    onDismiss()
-                }
-
-                Spacer()
-
-                Text("Add Service")
-                    .font(.system(size: 14, weight: .semibold))
-
-                Spacer()
-
-                Color.clear.frame(width: 24, height: 24)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-
-            Divider()
-
-            // Content
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Project Info
-                    HStack(spacing: 8) {
-                        Image(systemName: "folder.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.orange)
-                        Text(projectName)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.primary.opacity(0.03))
-                    )
-
-                    // Source Type Picker
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Source Type")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-
-                        HStack(spacing: 8) {
-                            SourceTypeButton(
-                                label: "GitHub",
-                                icon: "link",
-                                isSelected: sourceType == .gitHub
-                            ) {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    sourceType = .gitHub
-                                }
-                            }
-
-                            SourceTypeButton(
-                                label: "Docker",
-                                icon: "shippingbox.fill",
-                                isSelected: sourceType == .docker
-                            ) {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    sourceType = .docker
-                                }
-                            }
-                        }
-                    }
-
-                    // Input Field based on source type
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(sourceType == .gitHub ? "GitHub Repository" : "Docker Image")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-
-                        TextField(
-                            sourceType == .gitHub ? "owner/repository" : "image:tag",
-                            text: sourceType == .gitHub ? $repoName : $imageName
-                        )
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.primary.opacity(0.04))
-                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                        )
-
-                        Text(
-                            sourceType == .gitHub
-                                ? "e.g., railwayapp-templates/django"
-                                : "e.g., nginx:latest"
-                        )
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                    }
-                }
-                .padding(16)
-            }
-
+        ScreenLayout {
+            form
+        } top: {
+            ScreenHeader(title: "Add service", backTitle: "Projects", onBack: { cancel() })
+                .disabled(isCreating)
+        } bottom: {
             if let error = appState.errorMessage {
                 ErrorBanner(message: error) { appState.clearError() }
             }
+            footer
+        }
+        .onAppear {
+            isSourceFocused = true
+        }
+        // Escape obeys the same rule as Cancel.
+        .onExitCommand { cancel() }
+    }
 
-            Divider()
+    // MARK: - Form
 
-            // Footer with Create Button
-            VStack {
-                Button {
-                    createService()
-                } label: {
-                    if isCreating {
-                        ProgressView()
-                            .controlSize(.small)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("Create Service")
-                            .font(.system(size: 13, weight: .medium))
-                            .frame(maxWidth: .infinity)
+    private var form: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Label(projectName, systemImage: "folder")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .accessibilityLabel("Project: \(projectName)")
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Source")
+                        .font(.callout.weight(.medium))
+
+                    Picker("Source", selection: $sourceType) {
+                        Text("GitHub repository").tag(ServiceSourceType.gitHub)
+                        Text("Docker image").tag(ServiceSourceType.docker)
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-                .disabled(!isInputValid || isCreating)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(sourceType == .gitHub ? "Repository" : "Image")
+                        .font(.callout.weight(.medium))
+
+                    TextField(
+                        sourceType == .gitHub ? "Repository" : "Image",
+                        text: sourceType == .gitHub ? $repoName : $imageName,
+                        prompt: Text(sourceType == .gitHub ? "owner/repository" : "image:tag")
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .font(.body.monospaced())
+                    .autocorrectionDisabled()
+                    .focused($isSourceFocused)
+                    .onSubmit { createService() }
+
+                    Text(
+                        sourceType == .gitHub
+                            ? "Example: railwayapp-templates/django. Railway must have access to the repository."
+                            : "Example: nginx:latest."
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, Layout.controlSpacing)
         }
     }
 
+    // MARK: - Footer
+
+    private var footer: some View {
+        ActionBar {
+            if isCreating {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityLabel("Adding the service")
+            }
+        } actions: {
+            Button("Cancel") { cancel() }
+                .buttonStyle(.glass)
+                .disabled(isCreating)
+
+            Button(isCreating ? "Adding…" : "Add service") { createService() }
+                .buttonStyle(.glassProminent)
+                .disabled(!isInputValid || isCreating)
+        }
+    }
+
+    // MARK: - Actions
+
+    // Only a user exit clears the error. A failed refresh must stay visible.
+    // The screen stays while Railway adds the service, so the result shows here.
+    private func cancel() {
+        guard !isCreating else { return }
+        appState.clearError()
+        onDismiss()
+    }
+
     private func createService() {
+        guard isInputValid, !isCreating else { return }
         isCreating = true
         appState.clearError()
 
@@ -183,5 +154,5 @@ struct AddServiceView: View {
 #Preview {
     AddServiceView(projectId: "123", projectName: "My Project", onDismiss: {})
         .environment(AppState())
-        .frame(width: 320, height: 400)
+        .frame(width: Layout.windowWidth, height: Layout.windowHeight)
 }

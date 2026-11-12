@@ -1,27 +1,14 @@
 import SwiftUI
 import TopwayCore
 
-@MainActor
+/// One deployment: its status, its date and its actions.
+/// All actions are always visible and have a text label.
 struct DeploymentRow: View {
     let deployment: Deployment
     let isRestarting: Bool
     let onRestart: () -> Void
     let onOpenURL: () -> Void
     let onViewLogs: () -> Void
-
-    @State private var isHovered = false
-    @FocusState private var focusedAction: RowAction?
-    @Environment(\.accessibilityVoiceOverEnabled) private var isVoiceOverEnabled
-
-    private enum RowAction: Hashable {
-        case viewLogs
-        case openURL
-        case restart
-    }
-
-    private var areActionsVisible: Bool {
-        isHovered || isRestarting || focusedAction != nil || isVoiceOverEnabled
-    }
 
     private var statusColor: Color {
         switch deployment.statusColor {
@@ -34,67 +21,51 @@ struct DeploymentRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            // Status indicator
-            Circle()
-                .fill(statusColor)
-                .frame(width: 8, height: 8)
+        // `formattedDate` makes date formatters, so the body reads it one time.
+        let formattedDate = deployment.formattedDate
 
-            VStack(alignment: .leading, spacing: 2) {
-                // Status
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: Layout.controlSpacing) {
+                // The status text is next to the dot, so the color is not the only sign.
+                Circle()
+                    .fill(statusColor)
+                    .frame(width: 8, height: 8)
+                    .accessibilityHidden(true)
+
                 Text(deployment.statusDisplay)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .fontWeight(.medium)
 
-                // Date
-                Text(deployment.formattedDate)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                Spacer(minLength: Layout.controlSpacing)
+
+                Text(formattedDate)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            HStack(spacing: 6) {
+                Button("View logs") { onViewLogs() }
+                    .help("Show the build log and the deploy log of this deployment.")
 
-            // Actions
-            HStack(spacing: 4) {
-                IconButton(icon: "text.alignleft", help: "View logs") {
-                    onViewLogs()
-                }
-                .focused($focusedAction, equals: .viewLogs)
-
-                // Open URL (if available)
                 if deployment.staticUrl != nil {
-                    IconButton(icon: "link", help: "Open URL") {
-                        onOpenURL()
-                    }
-                    .focused($focusedAction, equals: .openURL)
+                    Button("Open URL") { onOpenURL() }
+                        .help("Open the URL of this deployment in your browser.")
                 }
 
-                // Restart button
-                if isRestarting {
-                    ProgressView()
-                        .controlSize(.small)
-                        .scaleEffect(0.7)
-                        .frame(width: 22, height: 22)
-                } else {
-                    IconButton(icon: "arrow.clockwise", help: "Restart deployment") {
-                        onRestart()
-                    }
-                    .focused($focusedAction, equals: .restart)
-                }
+                Button(isRestarting ? "Restarting…" : "Restart") { onRestart() }
+                    .disabled(isRestarting)
+                    .help("Stop this deployment and start it again.")
             }
-            .opacity(areActionsVisible ? 1 : 0)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .padding(.leading, 16)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(isHovered ? Color.primary.opacity(0.04) : Color.clear)
-        )
-        .contentShape(.rect)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
+        .padding(.horizontal, Layout.contentInset)
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) {
+            Divider()
+                .padding(.leading, Layout.contentInset)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(deployment.statusDisplay), \(formattedDate)")
     }
 }

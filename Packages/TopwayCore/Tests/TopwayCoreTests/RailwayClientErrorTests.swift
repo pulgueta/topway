@@ -20,6 +20,36 @@ struct RailwayClientErrorTests {
         }
     }
 
+    // Railway answers a request that has a bad token with status 200 and this message.
+    @Test(
+        "A Not Authorized GraphQL error is the same error as a 401 response",
+        arguments: [
+            #"{"errors":[{"message":"Not Authorized"}]}"#,
+            #"{"errors":[{"message":"not authorized"}],"data":null}"#,
+            #"{"errors":[{"message":"Other"},{"message":"Not Authorized"}]}"#,
+        ])
+    func notAuthorizedMessage(body: String) async throws {
+        let error = try #require(await failingCall(StubReply(body: body)))
+
+        guard case .unauthorized = error else {
+            Issue.record("Unexpected error: \(error)")
+            return
+        }
+    }
+
+    @Test("A Workspace not found GraphQL error does not mean that Railway rejected the token")
+    func workspaceNotFoundMessage() async throws {
+        let body = #"{"errors":[{"message":"Workspace not found"}]}"#
+        let error = try #require(await failingCall(StubReply(body: body)))
+
+        guard case .graphQLError(let message) = error else {
+            Issue.record("Unexpected error: \(error)")
+            return
+        }
+        #expect(message == "Workspace not found")
+        #expect(!error.isTokenRejected)
+    }
+
     @Test("A 429 response gives the Retry-After value")
     func rateLimitedWithRetryAfter() async throws {
         let error = try #require(

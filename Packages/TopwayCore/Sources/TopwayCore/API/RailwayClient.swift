@@ -481,7 +481,7 @@ public struct RailwayClient: RailwayDataSource {
         }
 
         if let errors = response.errors, !errors.isEmpty {
-            throw RailwayError.graphQLError(errors.map { $0.message }.joined(separator: ", "))
+            throw RailwayError(graphQLErrors: errors)
         }
 
         guard let data = response.data else {
