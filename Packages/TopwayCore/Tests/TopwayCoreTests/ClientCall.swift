@@ -42,6 +42,14 @@ struct ClientCall: Sendable, CustomTestStringConvertible {
                     projectId: input, environmentId: input, serviceId: input, token: "token")
             }),
         ClientCall(
+            name: "fetchProjectVariables",
+            reply: #"{"data":{"shared":{},"s0":{}}}"#,
+            variableNames: ["projectId", "environmentId", "s0"],
+            run: { client, input in
+                _ = try await client.fetchProjectVariables(
+                    projectId: input, environmentId: input, serviceIds: [input], token: "token")
+            }),
+        ClientCall(
             name: "deleteProject",
             reply: #"{"data":{"projectDelete":true}}"#,
             variableNames: ["id"],

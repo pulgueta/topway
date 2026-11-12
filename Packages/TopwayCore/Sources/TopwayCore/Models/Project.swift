@@ -29,6 +29,15 @@ public struct Project: Identifiable, Decodable, Hashable, Sendable {
         environments.edges.map { $0.node }.filter { $0.deletedAt == nil }
     }
 
+    /// The services that are in an environment, in the order of `serviceList`.
+    public func serviceList(in environmentId: String) -> [Service] {
+        guard let environment = environmentList.first(where: { $0.id == environmentId }) else {
+            return []
+        }
+        let ids = Set(environment.instanceList.filter { $0.deletedAt == nil }.map(\.serviceId))
+        return serviceList.filter { ids.contains($0.id) }
+    }
+
     /// The latest deployment status of each service in each environment.
     /// A service with no deployment in an environment gives no status there. Deleted
     /// environments and deleted services in an environment give no status.

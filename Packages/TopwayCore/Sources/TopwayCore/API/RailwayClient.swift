@@ -133,12 +133,19 @@ public struct RailwayClient: RailwayDataSource {
 
     // MARK: - Fetch Variables for a Service
 
+    /// With `unrendered: true`, a reference keeps its template, as in the Railway CLI.
+    /// The editor then saves the reference, not the value that Railway rendered from it.
     public func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [String: String] {
         let query = """
             query Variables($projectId: String!, $environmentId: String!, $serviceId: String!) {
-              variables(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId)
+              variables(
+                projectId: $projectId
+                environmentId: $environmentId
+                serviceId: $serviceId
+                unrendered: true
+              )
             }
             """
 

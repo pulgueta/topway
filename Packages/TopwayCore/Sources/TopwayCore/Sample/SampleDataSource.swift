@@ -13,6 +13,8 @@ public actor SampleDataSource: RailwayDataSource {
     var environmentCount = 0
     /// The variables of each environment and service.
     var variables = seedVariables
+    /// The shared variables of each environment.
+    var sharedVariables = seedSharedVariables
     /// The settings that the user saved, for each environment and service.
     var settings: [String: ServiceSettings] = [:]
     /// The domains of each environment and service.

@@ -9,9 +9,17 @@ public protocol RailwayDataSource: Sendable {
     func createServiceWithImage(projectId: String, image: String, token: String) async throws
         -> String
 
+    /// Gives the variables of a service unrendered: a reference keeps its template, for
+    /// example `${{ postgres.DATABASE_URL }}`.
     func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [String: String]
+
+    /// Gives the unrendered shared variables of an environment and the unrendered variables
+    /// of each service in `serviceIds`, in one request.
+    func fetchProjectVariables(
+        projectId: String, environmentId: String, serviceIds: [String], token: String
+    ) async throws -> ProjectVariables
 
     func deleteProject(projectId: String, token: String) async throws -> Bool
 

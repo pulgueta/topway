@@ -51,6 +51,8 @@ extension SampleDataSource {
         ],
         "storefront-production/storefront-worker": [
             "DATABASE_URL": "${{ postgres.DATABASE_URL }}",
+            // The project has no billing service, so this reference has a missing target.
+            "BILLING_URL": "${{ billing.API_URL }}",
             "QUEUE_CONCURRENCY": "4",
         ],
         "storefront-production/storefront-postgres": [
@@ -72,6 +74,11 @@ extension SampleDataSource {
             "BATCH_SIZE": "500",
         ],
         "docs-production/docs-site": ["SITE_URL": "https://docs.example.com"],
+    ]
+
+    /// The shared variables of each environment.
+    static let seedSharedVariables: [String: [String: String]] = [
+        "storefront-production": ["LOG_LEVEL": "info"]
     ]
 
     /// The build log of each sample deployment, as severity and message.

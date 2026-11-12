@@ -20,6 +20,7 @@ extension SampleDataSource {
         let environment = RailwayEnvironment(id: "environment-\(environmentCount)", name: name)
         replaceEnvironments(inProjectAt: index, with: project.environmentList + [environment])
         if let sourceEnvironmentId {
+            sharedVariables[environment.id] = sharedVariables[sourceEnvironmentId]
             for service in project.serviceList {
                 let source = Self.key(sourceEnvironmentId, service.id)
                 let target = Self.key(environment.id, service.id)
@@ -42,6 +43,7 @@ extension SampleDataSource {
         let project = projects[index]
         replaceEnvironments(
             inProjectAt: index, with: project.environmentList.filter { $0.id != environmentId })
+        sharedVariables[environmentId] = nil
         for service in project.serviceList {
             deployments[Self.key(environmentId, service.id)] = nil
             variables[Self.key(environmentId, service.id)] = nil
