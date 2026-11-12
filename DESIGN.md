@@ -68,10 +68,11 @@ Projects (start screen with no token)
 2. Only two icon-only buttons are permitted: back and close. They must have an accessibility label and a `.help` text. At this time, only the close button of `ErrorBanner` has no text.
 3. Put the actions of a screen in the bottom bar. At most one is prominent (`.glassProminent`). It is the action that the user does most.
 4. Put the actions of a row in the row, as small bordered buttons.
-5. Use a menu only for the rare actions of one item, and give the menu a text label. The label is **Manage**. The project menu has Add service, Mute alerts and Delete project. The service menu has Redeploy and Delete service. The primary action is also visible outside the menu.
+5. Use a menu only for the rare actions of one item, and give the menu a text label. The label is **Manage**. The project menu has Add service, Mute alerts and Delete project. The service menu has Redeploy and Delete service. The menu of a deployment has Roll back, Cancel deployment and Remove deployment, and it shows only the actions that the deployment permits. The primary action is also visible outside the menu.
 6. Put a destructive action last, after a divider. Its label ends with "…" when a confirmation follows. Its text is red. A menu item gets red text from `role: .destructive`. A bordered button needs `.foregroundStyle(.red)` too, because the role alone does not change its color on macOS.
 7. Each action that changes data goes through `appState.confirm`. `GlassConfirmationDialog` shows in the window. Do not use `alert`, `confirmationDialog` or a sheet, because they close the menu bar window.
 8. In a dialog, Return confirms only an action that is not destructive.
+9. When the action of a dialog has the word "Cancel", change the label of the other button (`cancelTitle`), for example **Keep deployment** and **Cancel deployment**.
 
 ## Components
 
@@ -177,7 +178,7 @@ Tradeoffs:
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Redeploy and Delete service. |
 | Variables | Edit, show and copy icons that show on hover. | **Show**, **Copy** and **Edit** buttons in each row. **Copy all** and **Add variable** in the bottom bar. |
 | Edit variable | Trash icon in the top bar. | **Delete variable…**, **Cancel** and **Save changes** in the bottom bar. |
-| Deployments | Logs and restart icons that show on hover. | **View logs**, **Open URL** and **Restart** buttons in each row. **Refresh** and **Redeploy** in the bottom bar. |
+| Deployments | Logs and restart icons that show on hover. | **View logs**, **Open URL** and **Restart** buttons in each row, and a **Manage** menu for Roll back, Cancel deployment and Remove deployment. **Refresh** and **Redeploy** in the bottom bar. |
 | Metrics | No metrics. | One chart for each metric, with the latest and the highest value as text. A **Time range** menu and **Refresh** in the bottom bar. |
 | Logs | Back icon. | Back button **Deployments**. The connection state and **Copy logs** in the bottom bar. |
 | Add service | Custom source buttons. | A segmented control for the source. **Cancel** and **Add service** in the bottom bar. |

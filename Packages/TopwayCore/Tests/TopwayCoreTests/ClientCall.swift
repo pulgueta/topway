@@ -96,5 +96,26 @@ struct ClientCall: Sendable, CustomTestStringConvertible {
                 _ = try await client.redeployService(
                     environmentId: input, serviceId: input, token: "token")
             }),
+        ClientCall(
+            name: "rollbackDeployment",
+            reply: #"{"data":{"deploymentRollback":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.rollbackDeployment(deploymentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "cancelDeployment",
+            reply: #"{"data":{"deploymentCancel":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.cancelDeployment(deploymentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "removeDeployment",
+            reply: #"{"data":{"deploymentRemove":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.removeDeployment(deploymentId: input, token: "token")
+            }),
     ]
 }

@@ -25,6 +25,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - The **Deployments** tab of a service shows its latest deployments and their status, for example Running, Failed or Building.
 - **View logs**, **Open URL** and **Restart**: Each deployment has these buttons. **Open URL** shows only when the deployment has a URL.
 - **Redeploy** builds and starts a new deployment of the service.
+- **Manage**: A deployment has this menu when it permits one of these actions. **Cancel deployment…** stops a build or a deploy that is in progress. **Roll back…** deploys an earlier deployment again, when Railway permits it. **Remove deployment…** stops the service in the environment. Each action asks for a confirmation.
 
 ### Railway incidents
 - When Railway reports an open incident, a banner **Railway incident** shows at the top of each screen, with the status and the title of the incident.

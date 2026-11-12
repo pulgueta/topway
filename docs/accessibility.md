@@ -57,6 +57,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
 | Deployments: list, **View logs**, **Open URL**, **Restart**, **Redeploy** | E3, E5, E8 | E3, E8 | E10 | E11d | E12 | E13c |
+| Deployment **Manage** menu: **Roll back…**, **Cancel deployment…**, **Remove deployment…** | E1, E3, E8 | E1, E3, E8 | E10 | E11f | E12, check 4 | E13c |
 | Metrics: charts, **Time range**, **Refresh** | E1, E15 | E1 | E10 | E15 | E12 | E13f |
 | Logs: tabs, follow, **Copy logs**, **Retry** | E1, E4, E6, E7 | E1, check 2 | E10 | E11e | E12b, check 4 | E13d |
 | Add a service | E1, E4, E6 | E1 | E10 | — | E12 | E13a |
@@ -77,7 +78,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 **E3. Rows.**
 - `ProjectRow`: the label is the project name, the value is "Expanded" or "Collapsed", with "alerts muted" for a muted project. **Add service** has the label "Add service to" and the project name.
 - `ServiceRow`: the label is the service name, not the names of its symbols.
-- `ProjectMenu` and `ServiceMenu`: the label is "Manage" and the name of the item.
+- `ProjectMenu` and `ServiceMenu`: the label is "Manage" and the name of the item. The **Manage** menu of `DeploymentRow` has the label "Manage" and the status and date of the deployment.
 - `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
 - Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", and the name on the back button.
 

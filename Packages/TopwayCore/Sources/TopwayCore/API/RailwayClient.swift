@@ -281,6 +281,7 @@ public struct RailwayClient: RailwayDataSource {
                     status
                     staticUrl
                     createdAt
+                    canRollback
                   }
                 }
               }
@@ -574,7 +575,7 @@ public struct RailwayClient: RailwayDataSource {
     // MARK: - Private Methods
 
     /// - Parameter token: `nil` sends no `Authorization` header.
-    private func execute<T: Decodable>(
+    func execute<T: Decodable>(
         query: String, variables: [String: String], token: String?
     ) async throws -> T {
         guard let url = URL(string: baseURL) else {

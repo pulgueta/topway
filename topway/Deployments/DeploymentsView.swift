@@ -19,6 +19,8 @@ struct DeploymentsView: View {
     @State private var areDeploymentsKnown = false
     @State private var isRedeploying = false
     @State private var restartingDeploymentId: String?
+    /// The deployment that an action of its Manage menu changes at this time.
+    @State private var busyDeploymentId: String?
     @State private var latestLoadID = UUID()
 
     private var environmentName: String {
@@ -58,7 +60,9 @@ struct DeploymentsView: View {
                         DeploymentRow(
                             deployment: deployment,
                             isRestarting: restartingDeploymentId == deployment.id,
+                            isBusy: busyDeploymentId == deployment.id,
                             onRestart: { confirmRestart(deployment) },
+                            onAction: { action in confirm(action, on: deployment) },
                             onOpenURL: { open(deployment) },
                             onViewLogs: { onViewLogs(deployment) }
                         )
@@ -138,6 +142,57 @@ struct DeploymentsView: View {
                 environmentName: environmentName,
                 perform: { await triggerRedeploy() }
             ))
+    }
+
+    private func confirm(_ action: DeploymentAction, on deployment: Deployment) {
+        let target = "\(service.name) in \(environmentName)"
+        let request =
+            switch action {
+            case .rollback:
+                ConfirmationRequest(
+                    harm: .medium,
+                    title: "Roll back \(target)?",
+                    message:
+                        "Railway deploys the deployment of \(deployment.formattedDate) again. "
+                        + "The deployment that runs now stops.",
+                    actionTitle: "Roll back",
+                    environmentName: environmentName,
+                    perform: { await perform(action, on: deployment) }
+                )
+            case .cancel:
+                ConfirmationRequest(
+                    harm: .medium,
+                    title: "Cancel the deployment of \(target)?",
+                    message:
+                        "Railway stops this build or deploy. The deployment that runs now stays.",
+                    actionTitle: "Cancel deployment",
+                    cancelTitle: "Keep deployment",
+                    environmentName: environmentName,
+                    perform: { await perform(action, on: deployment) }
+                )
+            case .remove:
+                ConfirmationRequest(
+                    harm: .medium,
+                    title: "Remove the deployment of \(target)?",
+                    message:
+                        "The service stops in this environment. To start it again, select Redeploy.",
+                    actionTitle: "Remove deployment",
+                    isDestructive: true,
+                    environmentName: environmentName,
+                    perform: { await perform(action, on: deployment) }
+                )
+            }
+        appState.confirm(request)
+    }
+
+    private func perform(_ action: DeploymentAction, on deployment: Deployment) async {
+        busyDeploymentId = deployment.id
+        let success = await appState.perform(action, deploymentId: deployment.id)
+        busyDeploymentId = nil
+        // The list then shows the new status.
+        if success {
+            await loadDeployments()
+        }
     }
 
     private func loadDeployments() async {

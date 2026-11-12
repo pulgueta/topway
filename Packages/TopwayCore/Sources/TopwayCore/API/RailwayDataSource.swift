@@ -35,6 +35,15 @@ public protocol RailwayDataSource: Sendable {
     func redeployService(environmentId: String, serviceId: String, token: String)
         async throws -> Bool
 
+    /// Deploys an earlier deployment again.
+    func rollbackDeployment(deploymentId: String, token: String) async throws -> Bool
+
+    /// Stops a build or a deploy that is in progress.
+    func cancelDeployment(deploymentId: String, token: String) async throws -> Bool
+
+    /// Removes a deployment. The service then stops in the environment of the deployment.
+    func removeDeployment(deploymentId: String, token: String) async throws -> Bool
+
     /// Gives the CPU, memory and network samples of a service in one environment.
     func fetchMetrics(
         environmentId: String, serviceId: String, window: MetricWindow, token: String

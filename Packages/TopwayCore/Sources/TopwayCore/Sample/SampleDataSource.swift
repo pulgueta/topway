@@ -3,15 +3,16 @@ import Foundation
 /// Keeps sample Railway data in memory, so the app can run with no token.
 /// It sends no network requests. Actions change the data, and later reads show the change.
 public actor SampleDataSource: RailwayDataSource {
-    private let now: @Sendable () -> Date
+    let now: @Sendable () -> Date
     private let sleep: @Sendable (Duration) async throws -> Void
-    private var projects: [Project]
+    var projects: [Project]
     /// The deployments of each environment and service, newest first.
-    private var deployments: [String: [Deployment]] = [:]
-    private var deploymentCount = 0
+    var deployments: [String: [Deployment]] = [:]
+    var deploymentCount = 0
     private var serviceCount = 0
+    var environmentCount = 0
     /// The variables of each environment and service.
-    private var variables = seedVariables
+    var variables = seedVariables
 
     /// - Parameters:
     ///   - now: Gives the current date. The deployment and log dates come from it.
@@ -129,14 +130,7 @@ public actor SampleDataSource: RailwayDataSource {
 
     /// Adds a running deployment, dated now. The earlier running deployment becomes removed.
     public func redeployService(environmentId: String, serviceId: String, token: String) -> Bool {
-        let key = Self.key(environmentId, serviceId)
-        let earlier = (deployments[key] ?? []).map {
-            $0.status == "SUCCESS" ? Self.changing($0, to: "REMOVED") : $0
-        }
-        deploymentCount += 1
-        let deployment = Self.makeDeployment(
-            number: deploymentCount, status: "SUCCESS", createdAt: now())
-        deployments[key] = [deployment] + earlier
+        startDeployment(key: Self.key(environmentId, serviceId))
         return true
     }
 
@@ -222,6 +216,18 @@ public actor SampleDataSource: RailwayDataSource {
         return service.id
     }
 
+    /// Adds a running deployment, dated now. The deployment that ran becomes removed, and a
+    /// rollback to it is then possible.
+    func startDeployment(key: String) {
+        let earlier = (deployments[key] ?? []).map {
+            $0.status == "SUCCESS" ? Self.changing($0, to: "REMOVED", canRollback: true) : $0
+        }
+        deploymentCount += 1
+        let deployment = Self.makeDeployment(
+            number: deploymentCount, status: "SUCCESS", createdAt: now())
+        deployments[key] = [deployment] + earlier
+    }
+
     private func replaceServices(inProjectAt index: Int, with services: [Service]) {
         let project = projects[index]
         projects[index] = Project(
@@ -236,22 +242,25 @@ public actor SampleDataSource: RailwayDataSource {
         return String(last.split(separator: ":").first ?? last)
     }
 
-    private static func key(_ environmentId: String, _ serviceId: String) -> String {
+    static func key(_ environmentId: String, _ serviceId: String) -> String {
         "\(environmentId)/\(serviceId)"
     }
 
-    /// The sample deployments have no URL, so the app opens no unknown site.
+    /// The sample deployments have no URL, so the app opens no unknown site. A removed
+    /// sample deployment ran before, so a rollback to it is possible.
     private static func makeDeployment(number: Int, status: String, createdAt: Date)
         -> Deployment
     {
         Deployment(
             id: "deployment-\(number)", status: status, staticUrl: nil,
-            createdAt: createdAt.formatted(.iso8601))
+            createdAt: createdAt.formatted(.iso8601), canRollback: status == "REMOVED")
     }
 
-    private static func changing(_ deployment: Deployment, to status: String) -> Deployment {
+    static func changing(
+        _ deployment: Deployment, to status: String, canRollback: Bool = false
+    ) -> Deployment {
         Deployment(
             id: deployment.id, status: status, staticUrl: deployment.staticUrl,
-            createdAt: deployment.createdAt)
+            createdAt: deployment.createdAt, canRollback: canRollback)
     }
 }

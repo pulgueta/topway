@@ -365,6 +365,45 @@ class AppState {
         refreshFailureMessage = nil
     }
 
+    // MARK: - Control Panel
+
+    /// Runs one read or one action of the data source. Returns `nil` and shows the error
+    /// when it fails. A cancelled request shows no message. The extensions of `AppState`
+    /// use it, so each action reports its failure in the same way.
+    func run<Value>(
+        _ action: (_ source: any RailwayDataSource, _ token: String) async throws -> Value
+    ) async -> Value? {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return nil
+        }
+
+        errorMessage = nil
+
+        do {
+            return try await action(dataSource, railwayToken)
+        } catch let error as RailwayError {
+            show(error)
+            return nil
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// Runs an action that Railway answers with `true` or `false`. A `false` answer shows
+    /// `failure`.
+    func runAction(
+        failure: String,
+        _ action: (_ source: any RailwayDataSource, _ token: String) async throws -> Bool
+    ) async -> Bool {
+        guard let didSucceed = await run(action) else { return false }
+        if !didSucceed {
+            errorMessage = failure
+        }
+        return didSucceed
+    }
+
     // MARK: - Sample Mode
 
     func enterSampleMode() {
