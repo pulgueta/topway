@@ -11,6 +11,8 @@ extension View {
         onCancel: @escaping () -> Void
     ) -> some View {
         disabled(request != nil)
+            // VoiceOver and Voice Control must not get to the content behind the dialog.
+            .accessibilityHidden(request != nil)
             .overlay {
                 if let request {
                     GlassConfirmationDialog(

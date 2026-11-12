@@ -29,6 +29,10 @@ struct ErrorBanner: View {
         .padding(.top, 6)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Error")
+        // The banner shows below the content, so VoiceOver must say it.
+        .task(id: message) {
+            AccessibilityNotification.Announcement("Error: \(message)").post()
+        }
     }
 
     private var messageRow: some View {

@@ -16,6 +16,7 @@ struct GlassConfirmationDialog: View {
 
     @State private var typedText = ""
     @FocusState private var isNameFieldFocused: Bool
+    @AccessibilityFocusState private var isTitleFocused: Bool
 
     private var canConfirm: Bool {
         request.harm.canConfirm(typedText: typedText, targetName: request.targetName)
@@ -42,6 +43,9 @@ struct GlassConfirmationDialog: View {
         }
         .task {
             isNameFieldFocused = request.harm.needsTypedName
+            // VoiceOver goes to the name field with the keyboard focus. With no field,
+            // it goes to the title.
+            isTitleFocused = !request.harm.needsTypedName
         }
     }
 
@@ -60,6 +64,7 @@ struct GlassConfirmationDialog: View {
             }
             .font(.headline)
             .accessibilityAddTraits(.isHeader)
+            .accessibilityFocused($isTitleFocused)
 
             Text(request.message)
                 .font(.callout)
@@ -127,6 +132,7 @@ struct GlassConfirmationDialog: View {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
+                        .accessibilityHidden(true)
                 }
                 Text(request.actionTitle)
             }

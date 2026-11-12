@@ -13,12 +13,10 @@ struct ErrorStateView: View {
 
     var body: some View {
         let actions = appState.recoveryActions
+        let shownTitle = appState.isTokenRejected ? "Railway did not accept your token" : title
 
         ContentUnavailableView {
-            Label(
-                appState.isTokenRejected ? "Railway did not accept your token" : title,
-                systemImage: "exclamationmark.triangle"
-            )
+            Label(shownTitle, systemImage: "exclamationmark.triangle")
         } description: {
             Text(
                 appState.isTokenRejected
@@ -31,5 +29,9 @@ struct ErrorStateView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The error replaces the content, so VoiceOver must say it.
+        .task(id: shownTitle) {
+            AccessibilityNotification.Announcement(shownTitle).post()
+        }
     }
 }
