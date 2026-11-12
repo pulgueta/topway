@@ -52,7 +52,7 @@ struct ServiceLinksView: View {
                     Task { await load() }
                 }
                 .buttonStyle(.glass)
-                .disabled(isLoading)
+                .disabled(isLoading || environmentId == nil)
                 .help("Load the links again.")
             }
         }
@@ -61,6 +61,10 @@ struct ServiceLinksView: View {
             // The links of the earlier environment must not show for the new one.
             graph = nil
             await load()
+        }
+        // A reload can remove the selected environment, for example after a delete.
+        .onChange(of: environments.map(\.id)) { _, ids in
+            selectAvailableEnvironment(in: ids)
         }
         // Escape goes back one step.
         .onExitCommand { onDismiss() }
@@ -96,7 +100,14 @@ struct ServiceLinksView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let graph {
+        if environmentId == nil {
+            ContentUnavailableView(
+                "No environments",
+                systemImage: "square.stack.3d.up",
+                description: Text(
+                    "This project has no environments. Add one in Manage > Environments.")
+            )
+        } else if let graph {
             if graph.services.isEmpty {
                 ContentUnavailableView(
                     "No services",
@@ -130,6 +141,17 @@ struct ServiceLinksView: View {
                 Task { await load() }
             }
         }
+    }
+
+    /// When the selected environment is gone, the links and the load of that environment
+    /// stop, and the first available environment loads.
+    private func selectAvailableEnvironment(in ids: [String]) {
+        let selection = EnvironmentSelection.reconciled(environmentId, available: ids)
+        guard selection != environmentId else { return }
+        // A load that is in progress belongs to the earlier environment.
+        latestLoadID = UUID()
+        graph = nil
+        environmentId = selection
     }
 
     private func load() async {
