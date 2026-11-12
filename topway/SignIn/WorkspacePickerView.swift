@@ -5,6 +5,8 @@ import TopwayCore
 /// workspace of the projects list. Settings can change it later.
 struct WorkspacePickerView: View {
     @Environment(AppState.self) private var appState
+    /// `false` while the window is closed. A closed window must not speak.
+    @Environment(\.appearsActive) private var appearsActive
 
     var body: some View {
         content
@@ -104,6 +106,12 @@ struct WorkspacePickerView: View {
         } actions: {
             SignInButton(title: "Sign in again")
                 .buttonStyle(.glassProminent)
+        }
+        // The sign-in window takes the focus, so the menu bar window can close. When it opens
+        // again, VoiceOver says the error of the failed sign-in.
+        .task(id: appearsActive ? appState.errorMessage : nil) {
+            guard appearsActive, let error = appState.errorMessage else { return }
+            AccessibilityNotification.Announcement("Error: \(error)").post()
         }
     }
 }
