@@ -15,10 +15,10 @@ struct ErrorStateView: View {
 
     var body: some View {
         let actions = appState.recoveryActions
-        let shownTitle = appState.isTokenRejected ? "Railway did not accept your token" : title
+        let shownTitle = appState.isTokenRejected ? "Railway did not accept your sign-in" : title
         let shownMessage =
             appState.isTokenRejected
-            ? "The token is expired or not correct, or it has no access to this workspace. Check the token and the Workspace ID in Settings, or use sample data."
+            ? "The sign-in has no access to this workspace, or Railway ended it. Sign in again and select the workspace on the Railway page, or use sample data."
             : message
 
         ContentUnavailableView {

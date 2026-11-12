@@ -1,0 +1,131 @@
+import SwiftUI
+import TopwayCore
+
+/// The Account setting: the signed-in user, the workspace and **Sign out…**. The sign-out
+/// confirmation stays in this window. A separate dialog is not necessary.
+struct AccountSettingsSection: View {
+    @Environment(AppState.self) private var appState
+
+    @State private var loadError: String?
+    @State private var isConfirmingSignOut = false
+    @State private var signOutError: String?
+
+    var body: some View {
+        Section {
+            if appState.isSignedIn {
+                signedInRows
+            } else if appState.canSignIn {
+                LabeledContent {
+                    SignInButton()
+                        .buttonStyle(.glassProminent)
+                } label: {
+                    Text("You are not signed in.")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("This build has no Railway OAuth client ID, so it cannot sign in.")
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Account")
+        } footer: {
+            Text(
+                "Topway keeps the sign-in in the Keychain of this Mac. Sign out removes it from this Mac. To remove the access of Topway on Railway, open your Railway account settings and select Apps."
+            )
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .task(id: appState.isSignedIn) {
+            guard appState.isSignedIn, appState.account == nil else { return }
+            loadError = await appState.loadAccount()
+        }
+    }
+
+    // MARK: - Signed In
+
+    @ViewBuilder
+    private var signedInRows: some View {
+        LabeledContent("Signed in as") {
+            if let account = appState.account {
+                Text(account.name.map { "\($0) (\(account.email))" } ?? account.email)
+                    .textSelection(.enabled)
+            } else if loadError == nil {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityLabel("Loading the account")
+            }
+        }
+
+        if let loadError {
+            LabeledContent {
+                Button("Try again") {
+                    Task { self.loadError = await appState.loadAccount() }
+                }
+            } label: {
+                Label(loadError, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+            }
+        }
+
+        if let workspaces = appState.account?.workspaces, !workspaces.isEmpty {
+            Picker(
+                "Workspace",
+                selection: Binding(
+                    get: { appState.workspaceId },
+                    set: { appState.selectWorkspace($0) })
+            ) {
+                if appState.workspaceId.isEmpty {
+                    Text("Choose a workspace").tag("")
+                }
+                ForEach(workspaces) { workspace in
+                    Text(workspace.name).tag(workspace.id)
+                }
+            }
+            .help("Select the workspace of the projects list.")
+        }
+
+        signOutRows
+    }
+
+    // MARK: - Sign Out
+
+    @ViewBuilder
+    private var signOutRows: some View {
+        if isConfirmingSignOut {
+            LabeledContent {
+                Button("Cancel") { isConfirmingSignOut = false }
+                Button("Sign out", role: .destructive) { signOut() }
+                    .foregroundStyle(.red)
+            } label: {
+                Text("Sign out of Railway on this Mac?")
+                Text("Topway then shows the start screen. To connect again, sign in.")
+            }
+        } else {
+            LabeledContent {
+                Button("Sign out…", role: .destructive) { isConfirmingSignOut = true }
+                    .foregroundStyle(.red)
+                    .help("Remove the sign-in from the Keychain of this Mac.")
+            } label: {
+                Text("Sign out removes the sign-in from this Mac.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        if let signOutError {
+            Label(signOutError, systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
+    }
+
+    private func signOut() {
+        isConfirmingSignOut = false
+        if appState.signOut() {
+            signOutError = nil
+            loadError = nil
+        } else {
+            signOutError = "Topway cannot remove the sign-in from the Keychain. Try again."
+        }
+    }
+}

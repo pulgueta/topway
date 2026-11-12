@@ -38,7 +38,7 @@ struct TopwayApp: App {
                 }
                 .keyboardShortcut("r", modifiers: .command)
                 // A rejected token fails again on each refresh. The error screen offers
-                // Open Settings and sample data, as the Refresh button of the projects does.
+                // Sign in again and sample data, as the Refresh button of the projects does.
                 .disabled(!appState.isConfigured || appState.isTokenRejected || appState.isLoading)
             }
         }

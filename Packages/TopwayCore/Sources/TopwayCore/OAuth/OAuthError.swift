@@ -17,6 +17,8 @@ public enum OAuthError: LocalizedError, Equatable {
     case networkError(String)
     /// The answer of Railway has no access token.
     case invalidResponse
+    /// The system did not open the sign-in window.
+    case cannotOpenWindow
 
     public var errorDescription: String? {
         switch self {
@@ -36,6 +38,8 @@ public enum OAuthError: LocalizedError, Equatable {
             "Topway cannot connect to Railway. \(description)"
         case .invalidResponse:
             "Topway cannot read the sign-in answer from Railway. Try again."
+        case .cannotOpenWindow:
+            "Topway cannot open the sign-in window. Try again."
         }
     }
 }

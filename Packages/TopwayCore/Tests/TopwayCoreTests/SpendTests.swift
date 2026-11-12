@@ -112,7 +112,7 @@ struct SpendTests {
     func unauthorizedMessage() {
         #expect(
             Spend.failureMessage(for: .unauthorized)
-                == "Your token cannot read the billing of this workspace. Use the token of a member with billing access."
+                == "Your Railway account cannot read the billing of this workspace. Railway shows the billing only to workspace admins."
         )
     }
 

@@ -24,51 +24,36 @@ class AppState {
     /// first check.
     private(set) var incident: PlatformIncident?
 
-    // MARK: - Persisted Properties
+    // MARK: - Sign-in
 
-    private static let tokenKey = "railwayToken"
+    /// The client ID of the Railway OAuth app, from the build. `nil` in a build with no
+    /// client ID: Topway then offers only sample data.
+    let oauthClientID = RailwayOAuth.clientID(
+        fromInfoValue: Bundle.main.object(forInfoDictionaryKey: RailwayOAuth.clientIDInfoKey))
+    /// `true` while the sign-in window is open or the code exchange runs.
+    private(set) var isSigningIn = false
+    /// Why the last sign-in failed. The start screen shows it with **Try again**.
+    private(set) var signInError: String?
+    /// Why the start screen shows after a sign-in ended, for example a refresh token that
+    /// Railway does not accept.
+    private(set) var sessionNotice: String?
+    /// The signed-in user and the workspaces that the user shared. `nil` until it loads.
+    private(set) var account: RailwayAccount?
 
-    /// In-memory mirror of the Keychain-backed token. Loaded once in `init` so
-    /// the frequently-read `railwayToken` accessor never hits the Keychain on
-    /// the hot path, and so SwiftUI can observe changes to it.
-    private var tokenStorage: String = ""
+    private static let tokensKey = "railwayOAuth"
+    /// The Keychain item and the `UserDefaults` key of the API token of earlier builds.
+    private static let legacyTokenKey = "railwayToken"
+    static let notConnectedMessage = "Sign in with Railway and select a workspace first."
 
-    /// Railway API token. Persisted securely in the Keychain (never in
-    /// UserDefaults, which is cleartext on disk).
-    var railwayToken: String {
-        get { tokenStorage }
-        set { _ = updateToken(newValue) }
-    }
-
-    /// Updates the in-memory token and persists it to the Keychain.
-    /// - Returns: whether the Keychain write succeeded, so callers can surface
-    ///   a failure instead of silently dropping the token.
-    @discardableResult
-    func updateToken(_ value: String) -> Bool {
-        tokenStorage = value
-        return KeychainStore.save(value, for: Self.tokenKey)
-    }
-
-    /// Removes the saved token from this Mac. With no token, the app shows the start screen.
-    /// Sample mode stays on, because it does not use the token.
-    /// - Returns: `false` when the Keychain did not delete the token. The token then stays.
-    @discardableResult
-    func removeToken() -> Bool {
-        guard KeychainStore.delete(Self.tokenKey) else { return false }
-        // An earlier build kept the token here. A copy that stays comes back at the next launch.
-        UserDefaults.standard.removeObject(forKey: Self.tokenKey)
-        tokenStorage = ""
-        guard !isSampleMode else { return true }
-        latestProjectLoad += 1
-        alertSnapshot = nil
-        clearIncident()
-        projects = []
-        isLoading = false
-        pendingConfirmation = nil
-        clearError()
-        stopAutoRefresh()
-        return true
-    }
+    /// In-memory copy of the Keychain item, so a request does not read the Keychain.
+    private var tokens: OAuthTokens?
+    /// The refresh that runs. Other requests wait for it, so Topway never sends one refresh
+    /// token two times: Railway ends the whole authorization when it gets a rotated refresh
+    /// token.
+    private var tokenRefresh: Task<OAuthTokens, any Error>?
+    private let oauthClient = RailwayOAuthClient()
+    /// The account query is not in `RailwayDataSource`, because sample mode has no account.
+    private let accountClient = RailwayClient()
 
     /// Persisted in `UserDefaults`, but held as a stored property so `@Observable`
     /// tracks it. A computed accessor that read `UserDefaults` directly would not
@@ -149,25 +134,40 @@ class AppState {
     // MARK: - Init
 
     init() {
-        // Load the token from the Keychain, migrating any legacy token that an
-        // earlier build stored in cleartext UserDefaults.
-        if let stored = KeychainStore.read(Self.tokenKey) {
-            tokenStorage = stored
-        } else if let legacy = UserDefaults.standard.string(forKey: Self.tokenKey),
-            !legacy.isEmpty
-        {
-            // Only drop the cleartext copy once it's safely in the Keychain.
-            if KeychainStore.save(legacy, for: Self.tokenKey) {
-                UserDefaults.standard.removeObject(forKey: Self.tokenKey)
-            }
-            tokenStorage = legacy
+        // Sign in with Railway replaced the API token. Topway does not use a token of an
+        // earlier build: it removes the token, and the user sees the start screen.
+        KeychainStore.delete(Self.legacyTokenKey)
+        UserDefaults.standard.removeObject(forKey: Self.legacyTokenKey)
+
+        if oauthClientID != nil, let saved = KeychainStore.read(Self.tokensKey) {
+            tokens = OAuthTokens(keychainValue: saved)
+        }
+        // With no sign-in, a saved workspace belongs to nobody. This also removes the
+        // Workspace ID that an earlier build saved with its API token.
+        if tokens == nil {
+            UserDefaults.standard.removeObject(forKey: "workspaceId")
+            workspaceId = ""
         }
     }
 
     // MARK: - Computed Properties
 
+    var isSignedIn: Bool {
+        tokens != nil
+    }
+
+    /// `false` in a build with no client ID.
+    var canSignIn: Bool {
+        oauthClientID != nil
+    }
+
     var isConfigured: Bool {
-        isSampleMode || (!railwayToken.isEmpty && !workspaceId.isEmpty)
+        isSampleMode || (isSignedIn && !workspaceId.isEmpty)
+    }
+
+    /// Signed in, but the user must choose a workspace first.
+    var needsWorkspace: Bool {
+        !isSampleMode && isSignedIn && workspaceId.isEmpty
     }
 
     var hasError: Bool {
@@ -192,7 +192,7 @@ class AppState {
 
     func loadProjects(keepingError: Bool = false) async {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return
         }
 
@@ -206,10 +206,12 @@ class AppState {
         latestProjectLoad += 1
         let load = latestProjectLoad
         do {
-            let fetchedProjects = try await dataSource.fetchProjects(
-                workspaceId: workspaceId,
-                token: railwayToken
-            )
+            let fetchedProjects = try await withAccessToken { source, token in
+                try await source.fetchProjects(
+                    workspaceId: workspaceId,
+                    token: token
+                )
+            }
             guard load == latestProjectLoad else { return }
             projects = fetchedProjects
             sendAlerts(for: fetchedProjects)
@@ -235,7 +237,7 @@ class AppState {
 
     func createService(projectId: String, repo: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
@@ -243,11 +245,13 @@ class AppState {
         errorMessage = nil
 
         do {
-            _ = try await dataSource.createService(
-                projectId: projectId,
-                repo: repo,
-                token: railwayToken
-            )
+            _ = try await withAccessToken { source, token in
+                try await source.createService(
+                    projectId: projectId,
+                    repo: repo,
+                    token: token
+                )
+            }
             // Refresh projects to show the new service
             await loadProjects()
             return true
@@ -264,7 +268,7 @@ class AppState {
 
     func createServiceWithImage(projectId: String, image: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
@@ -272,11 +276,13 @@ class AppState {
         errorMessage = nil
 
         do {
-            _ = try await dataSource.createServiceWithImage(
-                projectId: projectId,
-                image: image,
-                token: railwayToken
-            )
+            _ = try await withAccessToken { source, token in
+                try await source.createServiceWithImage(
+                    projectId: projectId,
+                    image: image,
+                    token: token
+                )
+            }
             // Refresh projects to show the new service
             await loadProjects()
             return true
@@ -296,19 +302,21 @@ class AppState {
         -> [EnvironmentVariable]?
     {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return nil
         }
 
         errorMessage = nil
 
         do {
-            let variables = try await dataSource.fetchVariables(
-                projectId: projectId,
-                environmentId: environmentId,
-                serviceId: serviceId,
-                token: railwayToken
-            )
+            let variables = try await withAccessToken { source, token in
+                try await source.fetchVariables(
+                    projectId: projectId,
+                    environmentId: environmentId,
+                    serviceId: serviceId,
+                    token: token
+                )
+            }
             return variables.map { EnvironmentVariable(name: $0.key, value: $0.value) }
                 .sorted { $0.name < $1.name }
         } catch let error as RailwayError {
@@ -322,7 +330,7 @@ class AppState {
 
     func deleteProject(projectId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
@@ -330,10 +338,12 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await dataSource.deleteProject(
-                projectId: projectId,
-                token: railwayToken
-            )
+            let success = try await withAccessToken { source, token in
+                try await source.deleteProject(
+                    projectId: projectId,
+                    token: token
+                )
+            }
             // Reconcile with the server regardless of the result: a project that
             // was already deleted (or is mid-deletion) then drops out of the
             // refreshed list instead of lingering in the UI.
@@ -374,14 +384,14 @@ class AppState {
         _ action: (_ source: any RailwayDataSource, _ token: String) async throws -> Value
     ) async -> Value? {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return nil
         }
 
         errorMessage = nil
 
         do {
-            return try await action(dataSource, railwayToken)
+            return try await withAccessToken(action)
         } catch let error as RailwayError {
             show(error)
             return nil
@@ -404,9 +414,227 @@ class AppState {
         return didSucceed
     }
 
+    // MARK: - Sign In
+
+    /// Opens the Railway sign-in page, exchanges the code for tokens and loads the
+    /// workspaces. A closed sign-in window shows no message.
+    func signIn() async {
+        guard let clientID = oauthClientID, !isSigningIn else { return }
+        let request = AuthorizationRequest(clientID: clientID)
+        isSigningIn = true
+        signInError = nil
+        sessionNotice = nil
+        defer { isSigningIn = false }
+
+        do {
+            let callback = try await WebSignIn.callbackURL(for: request.url)
+            let code = try AuthorizationCallback.code(in: callback, state: request.state)
+            let newTokens = try await oauthClient.exchange(
+                code: code, verifier: request.pkce.verifier, clientID: clientID)
+            guard save(newTokens) else {
+                reportSignInFailure("Topway cannot save the sign-in to the Keychain. Try again.")
+                return
+            }
+            tokens = newTokens
+            // A rejected token of the earlier sign-in no longer applies.
+            clearError()
+            // A sign-in replaces the sample data.
+            exitSampleMode()
+            let previousWorkspace = workspaceId
+            await loadAccount()
+            // The same workspace: its projects load again with the new sign-in.
+            if isConfigured, workspaceId == previousWorkspace {
+                await loadProjects()
+            }
+        } catch let error as OAuthError {
+            reportSignInFailure(error.errorDescription)
+        } catch {
+            reportSignInFailure(error.localizedDescription)
+        }
+    }
+
+    /// The start screen shows the message. While an earlier sign-in stays, for example after
+    /// **Sign in again**, the start screen does not show, so the open screen shows it.
+    private func reportSignInFailure(_ message: String?) {
+        guard let message else { return }
+        if isSignedIn {
+            errorMessage = message
+        } else {
+            signInError = message
+        }
+    }
+
+    /// Loads the account and selects the workspace: the saved one when the account still has
+    /// it, or the only one. With several, the user chooses.
+    /// - Returns: The error message, or `nil` when the account loaded.
+    @discardableResult
+    func loadAccount() async -> String? {
+        guard isSignedIn, !isSampleMode else { return nil }
+        do {
+            let loaded = try await withAccessToken { _, token in
+                try await accountClient.fetchAccount(token: token)
+            }
+            account = loaded
+            let selection = WorkspaceChoice.selection(saved: workspaceId, in: loaded.workspaces)
+            if selection != workspaceId {
+                selectWorkspace(selection ?? "")
+            }
+            return nil
+        } catch let error as RailwayError {
+            show(error)
+            return errorMessage
+        } catch {
+            errorMessage = error.localizedDescription
+            return errorMessage
+        }
+    }
+
+    /// Shows the projects of a different workspace. An empty ID shows the workspace list.
+    func selectWorkspace(_ id: String) {
+        workspaceId = id
+        latestProjectLoad += 1
+        projects = []
+        isLoading = false
+        pendingConfirmation = nil
+        clearError()
+        restartAutoRefresh()
+        guard isConfigured else { return }
+        Task { await loadProjects() }
+    }
+
+    /// Removes the sign-in from this Mac. Railway has no revocation endpoint: the user removes
+    /// the access of Topway on the Apps page of the Railway account settings.
+    /// - Returns: `false` when the Keychain did not delete the tokens. The sign-in then stays.
+    @discardableResult
+    func signOut() -> Bool {
+        guard KeychainStore.delete(Self.tokensKey) else { return false }
+        endSession()
+        return true
+    }
+
+    /// Shows the start screen with no sign-in. Sample mode stays on, because it does not use
+    /// the token.
+    private func endSession(notice: String? = nil) {
+        tokens = nil
+        tokenRefresh?.cancel()
+        tokenRefresh = nil
+        account = nil
+        sessionNotice = notice
+        workspaceId = ""
+        guard !isSampleMode else { return }
+        latestProjectLoad += 1
+        clearIncident()
+        projects = []
+        isLoading = false
+        pendingConfirmation = nil
+        clearError()
+        stopAutoRefresh()
+    }
+
+    /// Writes the tokens to the Keychain as one item.
+    private func save(_ newTokens: OAuthTokens) -> Bool {
+        guard let value = newTokens.keychainValue else { return false }
+        return KeychainStore.save(value, for: Self.tokensKey)
+    }
+
+    /// Runs one request with an access token that is not expired. Sample mode has no token.
+    ///
+    /// When Railway does not accept the token, Topway refreshes it one time and sends the
+    /// request again. Railway does not run a request that it does not accept, so the second
+    /// request cannot repeat an action.
+    /// - Parameter retryingRejected: `false` when a Not Authorized answer is about access
+    ///   rights, so a new token cannot help.
+    private func withAccessToken<Value>(
+        retryingRejected: Bool = true,
+        _ request: (_ source: any RailwayDataSource, _ token: String) async throws -> Value
+    ) async throws -> Value {
+        let source = dataSource
+        guard !isSampleMode else { return try await request(source, "") }
+        let token = try await accessToken()
+        do {
+            return try await request(source, token)
+        } catch let error as RailwayError where error.isTokenRejected && retryingRejected {
+            let renewed = try await refreshedTokens(replacing: token)
+            return try await request(source, renewed.accessToken)
+        }
+    }
+
+    /// The access token for the next request. A token that expires in less than 5 minutes is
+    /// refreshed first.
+    private func accessToken() async throws -> String {
+        // A request that started before a sign-out shows no message.
+        guard let current = tokens else { throw RailwayError.cancelled }
+        guard current.needsRefresh(at: .now) else { return current.accessToken }
+        do {
+            return try await refreshedTokens(replacing: current.accessToken).accessToken
+        } catch let error as OAuthError {
+            // A network problem or a server error: the token works until it expires.
+            guard current.expiresAt > .now else { throw error }
+            return current.accessToken
+        }
+    }
+
+    /// Gives the log stream a token at each connect and each poll.
+    private func logToken() -> @Sendable () async throws -> String {
+        guard !isSampleMode else { return { "" } }
+        return { [weak self] in
+            guard let self else { throw RailwayError.cancelled }
+            return try await self.accessToken()
+        }
+    }
+
+    /// Gets new tokens after `usedToken`. A request that comes during a refresh waits for it,
+    /// and a request that comes after a refresh uses its tokens. When Railway does not accept
+    /// the refresh token, the sign-in ends and the start screen shows. A network error keeps
+    /// the sign-in.
+    private func refreshedTokens(replacing usedToken: String) async throws -> OAuthTokens {
+        if let tokenRefresh {
+            return try await tokenRefresh.value
+        }
+        guard let current = tokens, let clientID = oauthClientID else {
+            throw RailwayError.cancelled
+        }
+        if current.accessToken != usedToken, !current.needsRefresh(at: .now) {
+            return current
+        }
+
+        let client = oauthClient
+        let refresh = Task {
+            do {
+                let renewed = try await client.refresh(current, clientID: clientID)
+                // A sign-out or a new sign-in during the refresh replaced these tokens.
+                guard tokens == current else { throw RailwayError.cancelled }
+                tokens = renewed
+                // A failed write keeps the new tokens for this session. At the next launch,
+                // Railway does not accept the earlier refresh token, and the user signs in.
+                _ = save(renewed)
+                return renewed
+            } catch OAuthError.rejected {
+                if tokens == current {
+                    KeychainStore.delete(Self.tokensKey)
+                    endSession(
+                        notice: "Your Railway sign-in ended. Sign in again to see your projects.")
+                }
+                throw RailwayError.cancelled
+            } catch OAuthError.cancelled {
+                throw RailwayError.cancelled
+            }
+        }
+        tokenRefresh = refresh
+        defer {
+            if tokenRefresh == refresh {
+                tokenRefresh = nil
+            }
+        }
+        return try await refresh.value
+    }
+
     // MARK: - Sample Mode
 
     func enterSampleMode() {
+        // An earlier sign-in message must not show when sample mode ends.
+        signInError = nil
+        sessionNotice = nil
         switchDataSource(to: SampleDataSource(), isSampleMode: true)
     }
 
@@ -540,21 +768,23 @@ class AppState {
         projectId: String, environmentId: String, serviceId: String, name: String, value: String
     ) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
         errorMessage = nil
 
         do {
-            let success = try await dataSource.upsertVariable(
-                projectId: projectId,
-                environmentId: environmentId,
-                serviceId: serviceId,
-                name: name,
-                value: value,
-                token: railwayToken
-            )
+            let success = try await withAccessToken { source, token in
+                try await source.upsertVariable(
+                    projectId: projectId,
+                    environmentId: environmentId,
+                    serviceId: serviceId,
+                    name: name,
+                    value: value,
+                    token: token
+                )
+            }
             if !success {
                 errorMessage = "Railway did not save the variable. Try again."
             }
@@ -572,20 +802,22 @@ class AppState {
         async -> Bool
     {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
         errorMessage = nil
 
         do {
-            let success = try await dataSource.deleteVariable(
-                projectId: projectId,
-                environmentId: environmentId,
-                serviceId: serviceId,
-                name: name,
-                token: railwayToken
-            )
+            let success = try await withAccessToken { source, token in
+                try await source.deleteVariable(
+                    projectId: projectId,
+                    environmentId: environmentId,
+                    serviceId: serviceId,
+                    name: name,
+                    token: token
+                )
+            }
             if !success {
                 errorMessage = "Railway did not delete the variable. Try again."
             }
@@ -603,7 +835,7 @@ class AppState {
 
     func deleteService(serviceId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
@@ -611,10 +843,12 @@ class AppState {
         errorMessage = nil
 
         do {
-            let success = try await dataSource.deleteService(
-                serviceId: serviceId,
-                token: railwayToken
-            )
+            let success = try await withAccessToken { source, token in
+                try await source.deleteService(
+                    serviceId: serviceId,
+                    token: token
+                )
+            }
             if success {
                 await loadProjects()
             } else {
@@ -639,19 +873,21 @@ class AppState {
         -> [Deployment]?
     {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return nil
         }
 
         errorMessage = nil
 
         do {
-            let deployments = try await dataSource.fetchDeployments(
-                projectId: projectId,
-                environmentId: environmentId,
-                serviceId: serviceId,
-                token: railwayToken
-            )
+            let deployments = try await withAccessToken { source, token in
+                try await source.fetchDeployments(
+                    projectId: projectId,
+                    environmentId: environmentId,
+                    serviceId: serviceId,
+                    token: token
+                )
+            }
             return deployments
         } catch let error as RailwayError {
             show(error)
@@ -664,17 +900,19 @@ class AppState {
 
     func restartDeployment(deploymentId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
         errorMessage = nil
 
         do {
-            let success = try await dataSource.restartDeployment(
-                deploymentId: deploymentId,
-                token: railwayToken
-            )
+            let success = try await withAccessToken { source, token in
+                try await source.restartDeployment(
+                    deploymentId: deploymentId,
+                    token: token
+                )
+            }
             if !success {
                 errorMessage = "Railway did not restart the deployment. Try again."
             }
@@ -690,18 +928,20 @@ class AppState {
 
     func redeployService(environmentId: String, serviceId: String) async -> Bool {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
         errorMessage = nil
 
         do {
-            let success = try await dataSource.redeployService(
-                environmentId: environmentId,
-                serviceId: serviceId,
-                token: railwayToken
-            )
+            let success = try await withAccessToken { source, token in
+                try await source.redeployService(
+                    environmentId: environmentId,
+                    serviceId: serviceId,
+                    token: token
+                )
+            }
             if !success {
                 errorMessage = "Railway did not start the redeploy. Try again."
             }
@@ -723,7 +963,7 @@ class AppState {
         -> ServiceMetrics?
     {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return nil
         }
 
@@ -732,12 +972,14 @@ class AppState {
         latestMetricsLoad += 1
         let load = latestMetricsLoad
         do {
-            return try await dataSource.fetchMetrics(
-                environmentId: environmentId,
-                serviceId: serviceId,
-                window: window,
-                token: railwayToken
-            )
+            return try await withAccessToken { source, token in
+                try await source.fetchMetrics(
+                    environmentId: environmentId,
+                    serviceId: serviceId,
+                    window: window,
+                    token: token
+                )
+            }
         } catch let error as RailwayError {
             guard load == latestMetricsLoad, !Task.isCancelled else { return nil }
             show(error)
@@ -754,7 +996,7 @@ class AppState {
     /// Returns `nil` when the fetch fails or is cancelled.
     func fetchSpend() async -> Spend? {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return nil
         }
 
@@ -769,8 +1011,10 @@ class AppState {
         }
 
         do {
-            let spend = try await dataSource.fetchSpend(
-                workspaceId: requestedWorkspaceId, token: railwayToken)
+            // A Not Authorized answer here is about billing access, so a new token cannot help.
+            let spend = try await withAccessToken(retryingRejected: false) { source, token in
+                try await source.fetchSpend(workspaceId: requestedWorkspaceId, token: token)
+            }
             return isCurrent() ? spend : nil
         } catch let error as RailwayError {
             // Not `show(_:)`: a Not Authorized answer here is about billing access, and the
@@ -795,15 +1039,17 @@ class AppState {
         -> Bool
     {
         guard isConfigured else {
-            errorMessage = "Add your API token and Workspace ID in Settings."
+            errorMessage = Self.notConnectedMessage
             return false
         }
 
         errorMessage = nil
 
         do {
+            // The stream asks for the token at each connect and each poll, so a reconnect after
+            // a refresh sends the new token.
             for try await event in dataSource.logs(
-                kind, deploymentId: deploymentId, token: railwayToken)
+                kind, deploymentId: deploymentId, token: logToken())
             {
                 // An event of a cancelled stream must not reach the next tab.
                 guard !Task.isCancelled else { break }

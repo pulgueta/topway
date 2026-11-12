@@ -3,11 +3,11 @@ import Testing
 import TopwayCore
 
 struct RecoveryRulesTests {
-    @Test("A rejected token offers Settings first, then sample data, and no retry")
+    @Test("A rejected token offers Sign in again first, then sample data, and no retry")
     func rejectedToken() {
         let actions = RecoveryRules.actions(isTokenRejected: true, isSampleMode: false)
 
-        #expect(actions == [.openSettings, .useSampleData])
+        #expect(actions == [.signIn, .useSampleData])
     }
 
     @Test("Other failures offer a retry first, then Settings")

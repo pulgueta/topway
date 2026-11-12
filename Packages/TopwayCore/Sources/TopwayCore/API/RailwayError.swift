@@ -47,7 +47,7 @@ public enum RailwayError: LocalizedError {
         case .graphQLError(let message):
             return "Railway sent an error: \(message)"
         case .unauthorized:
-            return "Railway did not accept your token."
+            return "Railway did not accept your sign-in."
         case .rateLimited(let retryAfter):
             guard let seconds = retryAfter.flatMap({ Int($0) }) else {
                 return "Railway got too many requests. Try again later."

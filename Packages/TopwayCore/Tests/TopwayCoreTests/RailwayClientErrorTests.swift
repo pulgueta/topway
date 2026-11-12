@@ -152,7 +152,8 @@ struct RailwayClientErrorTests {
 
     @Test("Each HTTP error has a message for the user")
     func errorMessages() {
-        #expect(RailwayError.unauthorized.errorDescription == "Railway did not accept your token.")
+        #expect(
+            RailwayError.unauthorized.errorDescription == "Railway did not accept your sign-in.")
         #expect(
             RailwayError.rateLimited(retryAfter: "30").errorDescription
                 == "Railway got too many requests. Try again in 30 seconds.")

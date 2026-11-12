@@ -25,6 +25,8 @@ struct RecoveryButton: View {
             Button("Try again") { onRetry() }
         case .openSettings:
             Button("Open Settings") { openAppSettings(fallback: openSettings) }
+        case .signIn:
+            SignInButton(title: "Sign in again")
         case .useSampleData:
             Button("Try with sample data") { appState.enterSampleMode() }
                 .help("Show sample projects. Topway does not connect to Railway.")
