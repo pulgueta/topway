@@ -96,6 +96,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - Never put glass on a list row, on a form field or on a panel of content.
 - Put the glass buttons of one bar in one `GlassEffectContainer`. The system then draws them in one pass. See [GlassEffectContainer](https://developer.apple.com/documentation/swiftui/glasseffectcontainer).
 - Do not put glass on glass. The buttons in the dialog card use `.bordered` and `.borderedProminent`.
+- With Reduce Transparency, the dialog card is opaque. The system changes the glass of its own button styles.
 - The bars use `safeAreaBar`. Content scrolls under a bar, and the system scroll edge effect keeps the bar readable. The logs use the hard edge style, because dense text under a bar is hard to read. See [safeAreaBar](https://developer.apple.com/documentation/swiftui/view/safeareabar(edge:alignment:spacing:content:)) and [scrollEdgeEffectStyle](https://developer.apple.com/documentation/swiftui/view/scrolledgeeffectstyle(_:for:)).
 - For the rules of the effect, see [Applying Liquid Glass to custom views](https://developer.apple.com/documentation/swiftui/applying-liquid-glass-to-custom-views).
 
@@ -105,6 +106,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - Use `.fontWeight(.medium)` only for the main text of a row.
 - Use the hierarchical styles `.secondary` and `.tertiary` for less important text and icons. Do not set an opacity on text.
 - Color has a meaning: orange for sample data and warnings, red for errors, destructive buttons and destructive confirmations, green, yellow, red, purple and gray for the deployment status, and the accent color for the prominent button. A color is never the only sign: a text or a symbol is always with it.
+- Do not put orange text on a tint, and do not put white text on a system color. The system colors change with Increase Contrast, and such text is then hard to read. Color the symbol, or use red text with a symbol.
 - Icons in rows are monochrome.
 - Use the constants of `Layout` for padding and spacing.
 
@@ -112,6 +114,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 
 - One animation: `Animation.screenChange` (ease in and out, 0.2 seconds). It is for a change of screen, a project that opens or closes, and the dialog.
 - A screen one level down moves in from the trailing edge. With Reduce Motion, it only fades (`AnyTransition.screen(reduceMotion:)`).
+- Each custom animation and transition reads `accessibilityReduceMotion`. With Reduce Motion, a project opens and closes with no animation, and the dialog only fades.
 - No animation on hover. No animation that repeats. The only timer is the 2 seconds of `CopyButton`.
 
 ## States
@@ -136,7 +139,11 @@ When Railway does not accept the token, `ErrorStateView` shows **Open Settings**
 
 ## Accessibility and keyboard
 
-- Each control has a text label, so VoiceOver and Voice Control can use it. A row is a container with the name of its item, and its buttons have labels such as "Show value".
+- Each control has a text label, so VoiceOver and Voice Control can use it. A row is a container with the name of its item. A button that shows in each row names its item in the accessibility label, for example "Copy value of DATABASE_URL".
+- When the accessibility label has more words than the visible text, add `accessibilityInputLabels` with the visible text first, so Voice Control accepts the text that the user sees.
+- Post an `AccessibilityNotification.Announcement` for a result that shows away from the control. `ErrorBanner`, `ErrorStateView` and `CopyButton` do this.
+- The dialog hides the content behind it from assistive technologies, and moves the VoiceOver focus into the card.
+- [docs/accessibility.md](docs/accessibility.md) has the evaluation for the App Store labels and the manual checks. Do the evaluation again when you change a screen.
 - Symbols that only decorate are hidden from VoiceOver. A hidden value reads as "Hidden value".
 - The system controls support Full Keyboard Access, Increase Contrast and Reduce Transparency.
 - Escape goes back. Return adds a service from its text field. Command-Return saves a variable. Command-R refreshes the projects.

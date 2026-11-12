@@ -32,6 +32,12 @@ Topway has no Dock icon (`LSUIElement`). The icon shows in Finder, in Apps, in t
 
 The app declares the same in `topway/PrivacyInfo.xcprivacy`. The export compliance answer is in the build (`ITSAppUsesNonExemptEncryption` is `NO`), because Topway uses only HTTPS and secure WebSockets from the system.
 
+### 4. Accessibility
+
+1. Do the manual checks in [accessibility.md](accessibility.md).
+2. In App Store Connect, add the Accessibility Nutrition Labels for Mac that [accessibility.md](accessibility.md) recommends. Declare a label only when its check passes. Do not select Captions or Audio Descriptions. Apple gives the steps in [Manage Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels).
+3. For the accessibility URL, enter `https://github.com/pulgueta/topway/blob/main/docs/accessibility.md`.
+
 ## For each upload
 
 1. Increase `CURRENT_PROJECT_VERSION` (target **General > Identity > Build**). App Store Connect accepts each build number only one time for a version.

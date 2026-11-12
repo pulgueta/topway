@@ -75,6 +75,10 @@ You can use Topway with no Railway token. On the start screen, select **Try with
 - Sample mode can send alerts. Each sample notification shows **Sample data**.
 - To go back to the start screen, select **Exit sample data**. If you save a token in Settings, Topway also exits sample mode.
 
+## Accessibility
+
+Topway is made to work with VoiceOver, Voice Control, the keyboard, the dark appearance, Increase Contrast, Reduce Motion and Reduce Transparency. A color is never the only sign of a status. [docs/accessibility.md](docs/accessibility.md) gives the details, the evaluation for the App Store labels and the manual checks.
+
 ## Report a Problem
 
 Topway collects no data and sends no crash reports. To tell us about a problem, open an issue on GitHub.
