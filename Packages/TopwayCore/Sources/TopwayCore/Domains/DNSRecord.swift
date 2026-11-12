@@ -9,7 +9,9 @@ public struct DNSRecord: Identifiable, Hashable, Sendable {
     /// Railway sees the value in the DNS.
     public let isSet: Bool
 
-    public var id: String { "\(type) \(name)" }
+    /// Two records can have the same type and name, for example two A records, so the
+    /// value is part of the id.
+    public var id: String { "\(type) \(name) \(value)" }
 
     public init(type: String, name: String, value: String, isSet: Bool) {
         self.type = type

@@ -6,6 +6,8 @@ struct CustomDomainNode: Decodable {
     var model: Domain {
         Domain(
             id: id, name: domain, kind: .custom, records: status.records,
-            hasCertificate: status.certificateStatus == "CERTIFICATE_STATUS_TYPE_VALID")
+            hasCertificate: status.certificateStatus == "CERTIFICATE_STATUS_TYPE_VALID",
+            didCertificateFail: status.certificateStatus
+                == "CERTIFICATE_STATUS_TYPE_ISSUE_FAILED")
     }
 }

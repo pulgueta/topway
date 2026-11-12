@@ -89,6 +89,35 @@ struct DomainListTests {
         #expect(domains[1].status == .ready)
     }
 
+    @Test("A certificate that failed has its own status and tells the user what to check")
+    func certificateFailed() throws {
+        let domains = try decode(
+            records: record("shop", "CNAME", "abc.up.railway.app", "PROPAGATED"),
+            certificate: "ISSUE_FAILED", verified: true)
+
+        #expect(domains[1].status == .certificateFailed)
+        #expect(DomainStatus.certificateFailed.title == "Certificate failed")
+        #expect(DomainStatus.certificateFailed.advice?.contains("CAA record") == true)
+        #expect(DomainStatus.waitingForCertificate.advice == nil)
+    }
+
+    @Test("With records that are not set, a failed certificate still asks for the records")
+    func certificateFailedWithoutRecords() throws {
+        let domains = try decode(
+            records: record("shop", "CNAME", "abc.up.railway.app", "REQUIRES_UPDATE"),
+            certificate: "ISSUE_FAILED", verified: true)
+
+        #expect(domains[1].status == .needsRecords)
+    }
+
+    @Test("Two records with the same type and name have different ids")
+    func recordIds() {
+        let first = DNSRecord(type: "A", name: "@", value: "203.0.113.7", isSet: true)
+        let second = DNSRecord(type: "A", name: "@", value: "203.0.113.8", isSet: true)
+
+        #expect(first.id != second.id)
+    }
+
     @Test("A domain that is not verified and has no token shows only its records")
     func noToken() throws {
         let domains = try decode(

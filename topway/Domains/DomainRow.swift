@@ -13,6 +13,7 @@ struct DomainRow: View {
         switch domain.status {
         case .ready: "checkmark.circle"
         case .waitingForCertificate: "clock"
+        case .certificateFailed: "xmark.octagon"
         case .needsRecords, nil: "exclamationmark.triangle"
         }
     }
@@ -35,6 +36,12 @@ struct DomainRow: View {
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
+
+            if let advice = domain.status?.advice {
+                Text(advice)
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if !domain.records.isEmpty {
                 Text("Set these records at your DNS provider:")

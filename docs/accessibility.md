@@ -137,7 +137,7 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 
 **E18. Form messages.** A problem with a typed value shows as text below its field, with a warning triangle, for example "This project has an environment with this name. Use a different name." The button of the form is then not available. The symbol is orange, and the text is in the primary color.
 
-**E19. Domain status.** A custom domain shows its status as text with a symbol: "Set the DNS records" (triangle), "Railway makes the certificate" (clock) or "Ready" (check mark). A DNS record shows "Set" (check mark) or "Not set" (clock). No status uses a color.
+**E19. Domain status.** A custom domain shows its status as text with a symbol: "Set the DNS records" (triangle), "Railway makes the certificate" (clock), "Certificate failed" (octagon with a cross, and a text that says what to check) or "Ready" (check mark). A DNS record shows "Set" (check mark) or "Not set" (clock). No status uses a color.
 
 ### Known limits
 

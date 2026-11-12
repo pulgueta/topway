@@ -28,7 +28,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - In the **Manage** menu of a service, select **Domains**. The screen shows the Railway domain and the custom domains of the service in the selected environment.
 - **Add Railway domain**: Railway makes a public address on `up.railway.app`. A service gets one Railway domain in an environment.
 - **Add custom domain**: Enter a domain that you own, for example `app.example.com`. The list then shows the DNS records that you must set at your DNS provider, with **Copy value** for each record. Each record shows **Set** or **Not set**.
-- A custom domain shows its status: **Set the DNS records**, **Railway makes the certificate** or **Ready**.
+- A custom domain shows its status: **Set the DNS records**, **Railway makes the certificate**, **Certificate failed** or **Ready**. **Certificate failed** shows what to check.
 - **Copy** copies the domain name. **Delete…** removes the domain from the service.
 
 ### Environment Variables
