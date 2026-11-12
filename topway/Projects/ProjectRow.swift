@@ -6,6 +6,8 @@ struct ProjectRow: View {
     let project: Project
     var isMuted = false
     let onAddService: () -> Void
+    let onOpenEnvironments: () -> Void
+    let onOpenServiceLinks: () -> Void
     let onRequestDelete: () -> Void
     let onServiceTap: (Service) -> Void
     /// `nil` removes the mute action, for example when alerts are off.
@@ -23,6 +25,8 @@ struct ProjectRow: View {
                     projectName: project.name,
                     isMuted: isMuted,
                     onAddService: onAddService,
+                    onOpenEnvironments: onOpenEnvironments,
+                    onOpenServiceLinks: onOpenServiceLinks,
                     onToggleMute: onToggleMute,
                     onRequestDelete: onRequestDelete
                 )
@@ -112,6 +116,8 @@ struct ProjectRow: View {
         project: project,
         isMuted: true,
         onAddService: {},
+        onOpenEnvironments: {},
+        onOpenServiceLinks: {},
         onRequestDelete: {},
         onServiceTap: { _ in },
         onToggleMute: {}

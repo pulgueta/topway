@@ -15,6 +15,15 @@ struct MainView: View {
                 SampleDataBanner { appState.exitSampleMode() }
             }
 
+            // No animation, so the banner needs no Reduce Motion rule.
+            if let incident = appState.visibleIncident {
+                IncidentBanner(
+                    incident: incident,
+                    onHide: { appState.hideIncident() },
+                    shouldAnnounce: { appState.shouldAnnounceIncident(id: incident.id) }
+                )
+            }
+
             ZStack {
                 switch destination {
                 case .main:
@@ -22,11 +31,31 @@ struct MainView: View {
                         onAddService: { project in
                             show(.addService(projectId: project.id, projectName: project.name))
                         },
+                        onOpenEnvironments: { project in
+                            appState.clearError()
+                            show(.environments(projectId: project.id, projectName: project.name))
+                        },
+                        onOpenServiceLinks: { project in
+                            appState.clearError()
+                            show(.serviceLinks(project: project))
+                        },
                         onOpenService: { service, project in
                             show(.service(service: service, project: project))
+                        },
+                        onOpenUsage: {
+                            appState.clearError()
+                            show(.usage)
                         }
                     )
                     .transition(.opacity)
+                case .usage:
+                    SpendView(
+                        onDismiss: {
+                            appState.clearError()
+                            show(.main)
+                        }
+                    )
+                    .transition(.screen(reduceMotion: reduceMotion))
                 case .addService(let projectId, let projectName):
                     AddServiceView(
                         projectId: projectId,
@@ -34,10 +63,33 @@ struct MainView: View {
                         onDismiss: { show(.main) }
                     )
                     .transition(.screen(reduceMotion: reduceMotion))
+                case .environments(let projectId, let projectName):
+                    EnvironmentsView(
+                        projectId: projectId,
+                        projectName: projectName,
+                        onDismiss: {
+                            appState.clearError()
+                            show(.main)
+                        }
+                    )
+                    .transition(.screen(reduceMotion: reduceMotion))
+                case .serviceLinks(let project):
+                    // The loaded project has the new services and environments.
+                    ServiceLinksView(
+                        project: appState.projects.first { $0.id == project.id } ?? project,
+                        onDismiss: {
+                            appState.clearError()
+                            show(.main)
+                        }
+                    )
+                    .transition(.screen(reduceMotion: reduceMotion))
                 case .service(let service, let project):
+                    // The loaded project has the new name of a service and the new
+                    // environments. The opened values stay while the projects load again.
+                    let loaded = appState.projects.first { $0.id == project.id }
                     ServiceView(
-                        service: service,
-                        project: project,
+                        service: loaded?.serviceList.first { $0.id == service.id } ?? service,
+                        project: loaded ?? project,
                         onDismiss: {
                             appState.clearError()
                             show(.main)
@@ -65,6 +117,10 @@ struct MainView: View {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
             }
+        }
+        // Runs each time the window opens. A project load does not always run then.
+        .task {
+            await appState.refreshIncident()
         }
         // Screens of the earlier data source show items that the new source does not have.
         .onChange(of: appState.isSampleMode) {

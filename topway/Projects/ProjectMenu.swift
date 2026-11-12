@@ -6,6 +6,8 @@ struct ProjectMenu: View {
     let projectName: String
     let isMuted: Bool
     let onAddService: () -> Void
+    let onOpenEnvironments: () -> Void
+    let onOpenServiceLinks: () -> Void
     /// `nil` removes the mute action, for example when alerts are off.
     let onToggleMute: (() -> Void)?
     let onRequestDelete: () -> Void
@@ -13,6 +15,10 @@ struct ProjectMenu: View {
     var body: some View {
         Menu("Manage") {
             Button("Add service", systemImage: "plus") { onAddService() }
+
+            Button("Environments", systemImage: "square.stack.3d.up") { onOpenEnvironments() }
+
+            Button("Service links", systemImage: "link") { onOpenServiceLinks() }
 
             if let onToggleMute {
                 Button(
@@ -32,7 +38,10 @@ struct ProjectMenu: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .fixedSize()
-        .help("Add a service, mute alerts or delete \(projectName).")
+        .help(
+            "Add a service, change the environments, see the service links, mute alerts or "
+                + "delete \(projectName)."
+        )
         .accessibilityLabel("Manage \(projectName)")
         .accessibilityInputLabels(["Manage", "Manage \(projectName)"])
     }

@@ -13,6 +13,9 @@ struct ScreenLayout<Top: View, Content: View, Bottom: View>: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The soft edge lets rows show through a bar on macOS. The hard edge keeps the
+            // text of a bar clear of the rows that scroll under it.
+            .scrollEdgeEffectStyle(.hard, for: [.top, .bottom])
             .safeAreaBar(edge: .top, spacing: 0) {
                 VStack(spacing: 0) { top }
             }

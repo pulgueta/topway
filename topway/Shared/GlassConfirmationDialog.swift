@@ -120,7 +120,7 @@ struct GlassConfirmationDialog: View {
 
     private var buttons: some View {
         HStack(spacing: 10) {
-            Button("Cancel") { onCancel() }
+            Button(request.cancelTitle) { onCancel() }
                 .buttonStyle(.bordered)
                 .keyboardShortcut(.cancelAction)
                 .disabled(isLoading)

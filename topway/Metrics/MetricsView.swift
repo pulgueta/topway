@@ -1,0 +1,134 @@
+import SwiftUI
+import TopwayCore
+
+/// The Metrics tab of the service screen: one chart for each metric, and the time range.
+struct MetricsView: View {
+    @Environment(AppState.self) private var appState
+
+    let service: Service
+    let environmentId: String
+
+    /// `nil` until a load gives metrics. A failed reload keeps the earlier metrics.
+    @State private var metrics: ServiceMetrics?
+    /// The time range of `metrics`. After a failed load of a new range, it is not `window`.
+    @State private var loadedWindow = MetricWindow.hour
+    @State private var window = MetricWindow.hour
+    @State private var isLoading = true
+    @State private var latestLoadID = UUID()
+
+    var body: some View {
+        ScreenLayout {
+            content
+        } top: {
+            EmptyView()
+        } bottom: {
+            // With charts on the screen, the error belongs to a reload, not to the first load.
+            if let error = appState.errorMessage, metrics != nil {
+                ErrorBanner(message: error) { appState.clearError() }
+            }
+            footer
+        }
+        // Runs at the start and for each new time range.
+        .task(id: window) {
+            await loadMetrics()
+        }
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private var content: some View {
+        if let metrics, !metrics.isEmpty {
+            // The charts stay while a reload runs, so the screen does not flash.
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // The picker shows the selected range, so say which range the charts show.
+                    if loadedWindow != window {
+                        Text("The charts show the \(loadedWindow.title.lowercased()).")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, Layout.contentInset)
+                            .padding(.vertical, Layout.controlSpacing)
+                    }
+
+                    ForEach(metrics.series) { series in
+                        MetricCard(series: series)
+                    }
+                }
+            }
+        } else if isLoading {
+            LoadingStateView(title: "Loading metrics…")
+        } else if metrics == nil {
+            // The error can be gone, for example after a new token, but the metrics did not load.
+            ErrorStateView(
+                title: "Metrics did not load",
+                message: appState.errorMessage ?? "Select Try again to load the metrics."
+            ) {
+                Task { await loadMetrics() }
+            }
+        } else {
+            ContentUnavailableView(
+                "No metrics",
+                systemImage: "chart.xyaxis.line",
+                description: Text(
+                    "Railway has no metrics for this service in this time range. Select a longer time range, or deploy the service."
+                )
+            )
+        }
+    }
+
+    // MARK: - Footer
+
+    private var footer: some View {
+        ActionBar {
+            if isLoading && metrics != nil {
+                Text("Loading metrics…")
+            }
+        } actions: {
+            Picker("Time range", selection: $window) {
+                ForEach(MetricWindow.allCases) { window in
+                    Text(window.title).tag(window)
+                }
+            }
+            // The selected value is the visible text. The label stays for VoiceOver.
+            .labelsHidden()
+            .fixedSize()
+            .help("Select the time range of the charts.")
+
+            Button("Refresh", systemImage: "arrow.clockwise") {
+                Task { await loadMetrics() }
+            }
+            .buttonStyle(.glass)
+            .disabled(isLoading)
+            .help("Load the metrics of \(service.name) again.")
+        }
+    }
+
+    // MARK: - Actions
+
+    private func loadMetrics() async {
+        let loadID = UUID()
+        latestLoadID = loadID
+        isLoading = true
+        let requestedWindow = window
+        let fetched = await appState.fetchMetrics(
+            environmentId: environmentId, serviceId: service.id, window: requestedWindow)
+        // Only the latest call may update the screen.
+        guard loadID == latestLoadID else { return }
+        // A cancelled load is not a failure, so it changes nothing and shows no message.
+        guard !Task.isCancelled else { return }
+        isLoading = false
+        // After a failed reload, the charts stay and the banner shows the error.
+        if let fetched {
+            metrics = fetched
+            loadedWindow = requestedWindow
+        }
+    }
+}
+
+#Preview {
+    MetricsView(service: Service(id: "1", name: "web-app"), environmentId: "env1")
+        .environment(AppState())
+        .frame(width: Layout.windowWidth, height: Layout.windowHeight)
+}

@@ -2,11 +2,16 @@ import SwiftUI
 import TopwayCore
 
 /// One deployment: its status, its date and its actions.
-/// All actions are always visible and have a text label.
+/// The actions that the user does most are always visible and have a text label. The rare
+/// actions that a deployment permits are in its **Manage** menu.
 struct DeploymentRow: View {
     let deployment: Deployment
     let isRestarting: Bool
+    /// An action of the Manage menu runs for this deployment.
+    var isBusy = false
     let onRestart: () -> Void
+    /// The actions of the Manage menu: rollback, cancel and remove.
+    var onAction: (DeploymentAction) -> Void = { _ in }
     let onOpenURL: () -> Void
     let onViewLogs: () -> Void
 
@@ -62,6 +67,8 @@ struct DeploymentRow: View {
                     .help("Stop this deployment and start it again.")
                     .accessibilityLabel("\(isRestarting ? "Restarting" : "Restart"), \(name)")
                     .accessibilityInputLabels(["Restart"])
+
+                manageMenu(name: name)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -75,5 +82,41 @@ struct DeploymentRow: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(name)
+    }
+
+    /// Shows only the actions that the deployment permits. With no action, it does not show.
+    @ViewBuilder
+    private func manageMenu(name: String) -> some View {
+        let actions = deployment.availableActions
+        if !actions.isEmpty {
+            Menu(isBusy ? "Working…" : "Manage") {
+                if actions.contains(.rollback) {
+                    Button("Roll back…", systemImage: "arrow.uturn.backward") {
+                        onAction(.rollback)
+                    }
+                }
+
+                if actions.contains(.cancel) {
+                    Button("Cancel deployment…", systemImage: "xmark.circle") {
+                        onAction(.cancel)
+                    }
+                }
+
+                if actions.contains(.remove) {
+                    if actions.count > 1 {
+                        Divider()
+                    }
+
+                    Button("Remove deployment…", systemImage: "trash", role: .destructive) {
+                        onAction(.remove)
+                    }
+                }
+            }
+            .fixedSize()
+            .disabled(isBusy)
+            .help("Roll back, cancel or remove this deployment.")
+            .accessibilityLabel("\(isBusy ? "Working" : "Manage"), \(name)")
+            .accessibilityInputLabels(["Manage"])
+        }
     }
 }

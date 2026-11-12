@@ -8,7 +8,10 @@ struct ProjectsScreen: View {
     @Environment(\.openSettings) private var openSettings
 
     let onAddService: (Project) -> Void
+    let onOpenEnvironments: (Project) -> Void
+    let onOpenServiceLinks: (Project) -> Void
     let onOpenService: (Service, Project) -> Void
+    let onOpenUsage: () -> Void
 
     private var projectCount: String {
         let count = appState.projects.count
@@ -56,11 +59,16 @@ struct ProjectsScreen: View {
     private var projectList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 4) {
+                // The usage belongs to the workspace, not to one project.
+                SpendRow { onOpenUsage() }
+
                 ForEach(appState.projects) { project in
                     ProjectRow(
                         project: project,
                         isMuted: appState.mutedProjectIds.contains(project.id),
                         onAddService: { onAddService(project) },
+                        onOpenEnvironments: { onOpenEnvironments(project) },
+                        onOpenServiceLinks: { onOpenServiceLinks(project) },
                         onRequestDelete: { confirmDelete(of: project) },
                         onServiceTap: { service in onOpenService(service, project) },
                         onToggleMute: appState.alertsEnabled
@@ -74,6 +82,16 @@ struct ProjectsScreen: View {
     }
 
     private var emptyView: some View {
+        VStack(spacing: 0) {
+            // A workspace with no projects can still have costs in the billing period.
+            SpendRow { onOpenUsage() }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+            emptyMessage
+        }
+    }
+
+    private var emptyMessage: some View {
         ContentUnavailableView {
             Label("No projects", systemImage: "folder")
         } description: {
@@ -142,7 +160,11 @@ struct ProjectsScreen: View {
 }
 
 #Preview {
-    ProjectsScreen(onAddService: { _ in }, onOpenService: { _, _ in })
-        .environment(AppState())
-        .frame(width: Layout.windowWidth, height: Layout.windowHeight)
+    ProjectsScreen(
+        onAddService: { _ in }, onOpenEnvironments: { _ in }, onOpenServiceLinks: { _ in },
+        onOpenService: { _, _ in },
+        onOpenUsage: {}
+    )
+    .environment(AppState())
+    .frame(width: Layout.windowWidth, height: Layout.windowHeight)
 }

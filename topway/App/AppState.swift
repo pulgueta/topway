@@ -20,6 +20,9 @@ class AppState {
     /// Sample mode shows the data of `SampleDataSource`. It never reads or writes the
     /// Keychain token, and it ends when the app quits.
     private(set) var isSampleMode = false
+    /// The open incident that Railway reports. `nil` with no incident and before the
+    /// first check.
+    private(set) var incident: PlatformIncident?
 
     // MARK: - Persisted Properties
 
@@ -58,6 +61,7 @@ class AppState {
         guard !isSampleMode else { return true }
         latestProjectLoad += 1
         alertSnapshot = nil
+        clearIncident()
         projects = []
         isLoading = false
         pendingConfirmation = nil
@@ -128,9 +132,19 @@ class AppState {
     /// Only the latest project load may change the screen. A data source switch also
     /// increases it, so a load from the earlier source is dropped.
     private var latestProjectLoad = 0
+    /// Only the latest metrics load may show an error. A newer load replaces an earlier one.
+    private var latestMetricsLoad = 0
+    private var latestSpendLoad = 0
     /// The last settled state of each service. It is `nil` before the first load of a data
     /// source or a workspace, so that load gives no alerts.
     private var alertSnapshot: AlertSnapshot?
+    private var lastIncidentCheck: Date?
+    /// A data source switch increases it, so an answer of the earlier source is dropped.
+    private var incidentGeneration = 0
+    /// The incident that the user hid. A different incident shows again.
+    private var hiddenIncidentId: String?
+    /// The incident that VoiceOver said last. No view reads it.
+    @ObservationIgnored private var announcedIncidentId: String?
 
     // MARK: - Init
 
@@ -169,6 +183,11 @@ class AppState {
         HealthSummary(projects: projects)
     }
 
+    /// The incident for the banner. `nil` when the user hid this incident.
+    var visibleIncident: PlatformIncident? {
+        incident?.id == hiddenIncidentId ? nil : incident
+    }
+
     // MARK: - Public Methods
 
     func loadProjects(keepingError: Bool = false) async {
@@ -181,6 +200,8 @@ class AppState {
         if !keepingError {
             errorMessage = nil
         }
+        // Not awaited, so a slow status answer does not delay the projects.
+        Task { await checkIncident() }
 
         latestProjectLoad += 1
         let load = latestProjectLoad
@@ -344,6 +365,45 @@ class AppState {
         refreshFailureMessage = nil
     }
 
+    // MARK: - Control Panel
+
+    /// Runs one read or one action of the data source. Returns `nil` and shows the error
+    /// when it fails. A cancelled request shows no message. The extensions of `AppState`
+    /// use it, so each action reports its failure in the same way.
+    func run<Value>(
+        _ action: (_ source: any RailwayDataSource, _ token: String) async throws -> Value
+    ) async -> Value? {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return nil
+        }
+
+        errorMessage = nil
+
+        do {
+            return try await action(dataSource, railwayToken)
+        } catch let error as RailwayError {
+            show(error)
+            return nil
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
+    /// Runs an action that Railway answers with `true` or `false`. A `false` answer shows
+    /// `failure`.
+    func runAction(
+        failure: String,
+        _ action: (_ source: any RailwayDataSource, _ token: String) async throws -> Bool
+    ) async -> Bool {
+        guard let didSucceed = await run(action) else { return false }
+        if !didSucceed {
+            errorMessage = failure
+        }
+        return didSucceed
+    }
+
     // MARK: - Sample Mode
 
     func enterSampleMode() {
@@ -360,12 +420,60 @@ class AppState {
         dataSource = source
         latestProjectLoad += 1
         alertSnapshot = nil
+        clearIncident()
         self.isSampleMode = isSampleMode
         projects = []
         isLoading = false
         pendingConfirmation = nil
         clearError()
         restartAutoRefresh()
+    }
+
+    // MARK: - Incident
+
+    /// Asks Railway for its platform status, at most one time in 5 minutes. The request has
+    /// no token. Sample mode sends no request and shows a sample incident. A failed check
+    /// keeps the last answer, because a network problem does not end an incident.
+    private func checkIncident() async {
+        guard IncidentCheck.isDue(lastCheck: lastIncidentCheck, now: .now) else { return }
+        lastIncidentCheck = .now
+        let generation = incidentGeneration
+        do {
+            let found = try await dataSource.fetchOpenIncident()
+            // An answer of the earlier data source must not show for the new one.
+            guard generation == incidentGeneration else { return }
+            incident = found
+        } catch {
+            // The banner is extra information, so a failed check shows no error.
+        }
+    }
+
+    /// Runs when the menu bar window opens. With auto refresh off, no project load runs
+    /// then, and the banner must not show an old answer. `checkIncident()` keeps the limit
+    /// of one request in 5 minutes.
+    func refreshIncident() async {
+        guard isConfigured else { return }
+        await checkIncident()
+    }
+
+    func hideIncident() {
+        hiddenIncidentId = incident?.id
+    }
+
+    /// `true` one time for each incident, so VoiceOver does not say the same incident each
+    /// time the menu bar window opens.
+    func shouldAnnounceIncident(id: String) -> Bool {
+        guard announcedIncidentId != id else { return false }
+        announcedIncidentId = id
+        return true
+    }
+
+    private func clearIncident() {
+        incidentGeneration += 1
+        incident = nil
+        lastIncidentCheck = nil
+        hiddenIncidentId = nil
+        announcedIncidentId = nil
     }
 
     // MARK: - Alerts
@@ -604,6 +712,78 @@ class AppState {
         } catch {
             errorMessage = error.localizedDescription
             return false
+        }
+    }
+
+    // MARK: - Metrics
+
+    /// Returns `nil` when the fetch fails or is cancelled. A cancelled load, or a load that a
+    /// newer load replaced, shows no error, so an earlier failure cannot show over new charts.
+    func fetchMetrics(environmentId: String, serviceId: String, window: MetricWindow) async
+        -> ServiceMetrics?
+    {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return nil
+        }
+
+        errorMessage = nil
+
+        latestMetricsLoad += 1
+        let load = latestMetricsLoad
+        do {
+            return try await dataSource.fetchMetrics(
+                environmentId: environmentId,
+                serviceId: serviceId,
+                window: window,
+                token: railwayToken
+            )
+        } catch let error as RailwayError {
+            guard load == latestMetricsLoad, !Task.isCancelled else { return nil }
+            show(error)
+            return nil
+        } catch {
+            guard load == latestMetricsLoad, !Task.isCancelled else { return nil }
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
+    // MARK: - Spend
+
+    /// Returns `nil` when the fetch fails or is cancelled.
+    func fetchSpend() async -> Spend? {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return nil
+        }
+
+        errorMessage = nil
+        latestSpendLoad += 1
+        let load = latestSpendLoad
+        let requestedWorkspaceId = workspaceId
+
+        // A newer load, a cancelled load or a different workspace publishes no error.
+        func isCurrent() -> Bool {
+            load == latestSpendLoad && !Task.isCancelled && workspaceId == requestedWorkspaceId
+        }
+
+        do {
+            let spend = try await dataSource.fetchSpend(
+                workspaceId: requestedWorkspaceId, token: railwayToken)
+            return isCurrent() ? spend : nil
+        } catch let error as RailwayError {
+            // Not `show(_:)`: a Not Authorized answer here is about billing access, and the
+            // token is not rejected. A cancelled load has no message.
+            if isCurrent(), let message = Spend.failureMessage(for: error) {
+                errorMessage = message
+            }
+            return nil
+        } catch {
+            if isCurrent() {
+                errorMessage = error.localizedDescription
+            }
+            return nil
         }
     }
 

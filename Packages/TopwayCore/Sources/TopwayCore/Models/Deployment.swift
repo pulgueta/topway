@@ -5,6 +5,20 @@ public struct Deployment: Identifiable, Decodable, Hashable, Sendable {
     let status: String
     public let staticUrl: String?
     let createdAt: String
+    /// Railway says if a rollback to this deployment is possible. `nil` when the request
+    /// did not ask for it.
+    let canRollback: Bool?
+
+    init(
+        id: String, status: String, staticUrl: String?, createdAt: String,
+        canRollback: Bool? = nil
+    ) {
+        self.id = id
+        self.status = status
+        self.staticUrl = staticUrl
+        self.createdAt = createdAt
+        self.canRollback = canRollback
+    }
 
     public var statusDisplay: String {
         switch status.lowercased() {
@@ -44,6 +58,22 @@ public struct Deployment: Identifiable, Decodable, Hashable, Sendable {
         switch status.uppercased() {
         case "BUILDING", "QUEUED", "WAITING", "INITIALIZING", "NEEDS_APPROVAL": true
         default: false
+        }
+    }
+
+    /// The actions of the Manage menu of this deployment. A build or a deploy in progress
+    /// has only Cancel. Rollback shows when Railway says that it is possible. Remove shows
+    /// for a deployment that holds the service: it runs, it crashed or it sleeps.
+    public var availableActions: [DeploymentAction] {
+        switch status.uppercased() {
+        case "BUILDING", "DEPLOYING", "QUEUED", "WAITING", "INITIALIZING", "NEEDS_APPROVAL":
+            return [.cancel]
+        case "REMOVING":
+            return []
+        case "SUCCESS", "CRASHED", "SLEEPING":
+            return canRollback == true ? [.rollback, .remove] : [.remove]
+        default:
+            return canRollback == true ? [.rollback] : []
         }
     }
 

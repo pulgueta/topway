@@ -42,6 +42,14 @@ struct ClientCall: Sendable, CustomTestStringConvertible {
                     projectId: input, environmentId: input, serviceId: input, token: "token")
             }),
         ClientCall(
+            name: "fetchProjectVariables",
+            reply: #"{"data":{"shared":{},"s0":{}}}"#,
+            variableNames: ["projectId", "environmentId", "s0"],
+            run: { client, input in
+                _ = try await client.fetchProjectVariables(
+                    projectId: input, environmentId: input, serviceIds: [input], token: "token")
+            }),
+        ClientCall(
             name: "deleteProject",
             reply: #"{"data":{"projectDelete":true}}"#,
             variableNames: ["id"],
@@ -95,6 +103,85 @@ struct ClientCall: Sendable, CustomTestStringConvertible {
             run: { client, input in
                 _ = try await client.redeployService(
                     environmentId: input, serviceId: input, token: "token")
+            }),
+        ClientCall(
+            name: "createEnvironment",
+            reply: #"{"data":{"environmentCreate":{"id":"e1"}}}"#,
+            variableNames: ["projectId", "name", "sourceEnvironmentId"],
+            run: { client, input in
+                _ = try await client.createEnvironment(
+                    projectId: input, name: input, sourceEnvironmentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "deleteEnvironment",
+            reply: #"{"data":{"environmentDelete":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.deleteEnvironment(environmentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "rollbackDeployment",
+            reply: #"{"data":{"deploymentRollback":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.rollbackDeployment(deploymentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "cancelDeployment",
+            reply: #"{"data":{"deploymentCancel":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.cancelDeployment(deploymentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "removeDeployment",
+            reply: #"{"data":{"deploymentRemove":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.removeDeployment(deploymentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "fetchDomains",
+            reply: #"{"data":{"domains":{"serviceDomains":[],"customDomains":[]}}}"#,
+            variableNames: ["projectId", "environmentId", "serviceId"],
+            run: { client, input in
+                _ = try await client.fetchDomains(
+                    projectId: input, environmentId: input, serviceId: input, token: "token")
+            }),
+        ClientCall(
+            name: "createRailwayDomain",
+            reply: #"{"data":{"serviceDomainCreate":{"id":"d1","domain":"a.up.railway.app"}}}"#,
+            variableNames: ["environmentId", "serviceId"],
+            run: { client, input in
+                _ = try await client.createRailwayDomain(
+                    environmentId: input, serviceId: input, token: "token")
+            }),
+        ClientCall(
+            name: "createCustomDomain",
+            reply: """
+                {"data":{"customDomainCreate":{"id":"d1","domain":"a.example.com","status":{
+                  "dnsRecords":[],"certificateStatus":"CERTIFICATE_STATUS_TYPE_ISSUING",
+                  "verified":true}}}}
+                """,
+            variableNames: ["projectId", "environmentId", "serviceId", "domain"],
+            run: { client, input in
+                _ = try await client.createCustomDomain(
+                    projectId: input, environmentId: input, serviceId: input, name: input,
+                    token: "token")
+            }),
+        ClientCall(
+            name: "deleteRailwayDomain",
+            reply: #"{"data":{"serviceDomainDelete":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.deleteDomain(id: input, kind: .railway, token: "token")
+            }),
+        ClientCall(
+            name: "deleteCustomDomain",
+            reply: #"{"data":{"customDomainDelete":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.deleteDomain(id: input, kind: .custom, token: "token")
             }),
     ]
 }

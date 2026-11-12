@@ -13,11 +13,16 @@ struct EditVariableView: View {
     let existingVariable: EnvironmentVariable?
     /// The names of the variables in this environment. `nil` means the names are not known.
     let existingNames: Set<String>?
+    /// The services of the project, for the reference menu and the suggestions.
+    let services: [Service]
+    /// `nil` when the variables of the other services did not load.
+    let projectVariables: ProjectVariables?
     let onDismiss: () -> Void
     let onSave: () -> Void
 
     @State private var name: String = ""
     @State private var value: String = ""
+    @State private var selection: TextSelection?
     @State private var isSaving = false
     @State private var isDeleting = false
     @FocusState private var focusedField: Field?
@@ -33,6 +38,31 @@ struct EditVariableView: View {
 
     private var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// The variables that the value can reference. The variable itself is left out.
+    private var referenceGroups: [ReferenceGroup] {
+        projectVariables?.referenceGroups(
+            for: serviceId, services: services,
+            excluding: name.trimmingCharacters(in: .whitespaces)) ?? []
+    }
+
+    /// The selection of the value, or `nil` when it is not a range of the current value.
+    private var selectedRange: Range<String.Index>? {
+        guard let selection, case .selection(let range) = selection.indices,
+            range.lowerBound >= value.startIndex, range.upperBound <= value.endIndex
+        else { return nil }
+        return range
+    }
+
+    /// The reference that the user types at the cursor.
+    private var completion: ReferenceCompletion? {
+        guard let range = selectedRange, range.isEmpty else { return nil }
+        return ReferenceCompletion(text: value, cursor: range.upperBound)
+    }
+
+    private var suggestions: [ReferenceTarget] {
+        completion?.matches(in: referenceGroups.flatMap(\.targets)) ?? []
     }
 
     var body: some View {
@@ -96,7 +126,7 @@ struct EditVariableView: View {
                         .font(.callout.weight(.medium))
 
                     // A text editor keeps the line breaks of a value with many lines.
-                    TextEditor(text: $value)
+                    TextEditor(text: $value, selection: $selection)
                         .font(.body.monospaced())
                         .autocorrectionDisabled()
                         .scrollContentBackground(.hidden)
@@ -109,6 +139,22 @@ struct EditVariableView: View {
                         }
                         .focused($focusedField, equals: .value)
                         .accessibilityLabel("Value")
+
+                    if !suggestions.isEmpty {
+                        ReferenceSuggestions(targets: suggestions) { target in
+                            complete(with: target)
+                        }
+                    }
+
+                    HStack(spacing: Layout.controlSpacing) {
+                        ReferenceMenu(
+                            groups: referenceGroups, isLoaded: projectVariables != nil,
+                            onInsert: { target in insert(target) })
+
+                        Text("Or type ${{ in the value.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
 
                     Text("The service uses the value after the next deploy.")
                         .font(.subheadline)
@@ -144,6 +190,23 @@ struct EditVariableView: View {
     }
 
     // MARK: - Actions
+
+    /// Puts the reference in place of the selection, or at the end of the value.
+    private func insert(_ target: ReferenceTarget) {
+        let range = selectedRange ?? value.endIndex..<value.endIndex
+        let result = target.insert(into: value, replacing: range)
+        value = result.text
+        selection = TextSelection(insertionPoint: result.cursor)
+        focusedField = .value
+    }
+
+    private func complete(with target: ReferenceTarget) {
+        guard let completion else { return }
+        let result = completion.insert(target, into: value)
+        value = result.text
+        selection = TextSelection(insertionPoint: result.cursor)
+        focusedField = .value
+    }
 
     // Only a user exit clears the error. A failed refresh must stay visible.
     private func cancelEditing() {
@@ -231,6 +294,9 @@ struct EditVariableView: View {
         environmentName: "production",
         existingVariable: nil,
         existingNames: [],
+        services: [Service(id: "svc2", name: "postgres")],
+        projectVariables: ProjectVariables(
+            shared: ["LOG_LEVEL": "info"], byService: ["svc2": ["DATABASE_URL": "postgresql://db"]]),
         onDismiss: {},
         onSave: {}
     )

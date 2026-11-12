@@ -9,22 +9,64 @@ Each action in Topway has a text label. No action shows only when the pointer is
 ### Projects and Services
 - The first screen shows all your Railway projects and their services.
 - **Refresh** and **Settings** are at the top. **New project** opens Railway in your browser. **Quit Topway** is at the bottom.
-- **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image.
-- **Manage**: Each project has a **Manage** menu, with **Add service**, **Mute alerts** and **Delete project…**.
-- Select a service to see its variables and deployments. The **Manage** menu of the service has **Redeploy** and **Delete service…**.
+- **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image, or add a database.
+- **Database**: In **Add service**, select **Database**, then PostgreSQL, MySQL, Redis or MongoDB, and the environment. Railway adds the database from its template, with a volume and the connection variables, and starts it. Railway bills its usage. While Railway makes the database, the screen shows **Railway adds the database…**. **Close** goes back to the projects, and Railway continues. If Topway does not see the result in 60 seconds, select **Refresh** later to see the database. Do not add it again.
+- **Manage**: Each project has a **Manage** menu, with **Add service**, **Environments**, **Mute alerts** and **Delete project…**.
+- Select a service to see its variables, deployments and metrics. The **Manage** menu of the service has **Settings**, **Domains**, **Redeploy** and **Delete service…**.
 - To delete a project or a service, you must type its name.
+
+### Service links
+- In the **Manage** menu of a project, select **Service links**. For each service, the screen shows the services that it uses (**Uses**) and the services that use it (**Used by**), with the names of the variables that have the references. The shared variables show when a service uses them.
+- A reference to a service that the project does not have shows **Service not found**.
+- The screen shows one environment. If the project has more than one environment, select the environment at the top. **Refresh** loads the links again. The screen does not change a variable.
+
+### Environments
+- In the **Manage** menu of a project, select **Environments**. The screen shows the environments of the project.
+- **New environment**: Enter a name. The environment is empty, or a copy of an environment that you select in **Copy from**. A copy gets the services, the variables and the settings, and its services deploy.
+- **Delete…**: To delete an environment, you must type its name. Railway removes the deployments, the variables and the data of all services in that environment.
+
+### Service settings
+- In the **Manage** menu of a service, select **Settings**. The screen shows the name of the service, its source, and these settings of the selected environment: build command, start command, root directory and healthcheck path.
+- **Save changes** sends only the settings that you changed. A new name applies to all environments. The other settings apply to the next deployment in the selected environment.
+- Railway uses its default for an empty field. Topway does not change the source of a service.
+
+### Domains
+- In the **Manage** menu of a service, select **Domains**. The screen shows the Railway domain and the custom domains of the service in the selected environment.
+- **Add Railway domain**: Railway makes a public address on `up.railway.app`. A service gets one Railway domain in an environment.
+- **Add custom domain**: Enter a domain that you own, for example `app.example.com`. The list then shows the DNS records that you must set at your DNS provider, with **Copy value** for each record. Each record shows **Set** or **Not set**.
+- A custom domain shows its status: **Set the DNS records**, **Railway makes the certificate**, **Certificate failed** or **Ready**. **Certificate failed** shows what to check.
+- **Copy** copies the domain name. **Delete…** removes the domain from the service.
 
 ### Environment Variables
 - The **Variables** tab of a service shows its variables in one environment.
 - **Environment**: If the project has more than one environment, select the environment at the top.
 - **Show**, **Copy** and **Edit**: Each variable has these buttons. Values are hidden until you select **Show**.
+- **References**: A value can use the variable of a different service (`${{ postgres.DATABASE_URL }}`), a shared variable (`${{ shared.LOG_LEVEL }}`) or a variable of the same service (`${{ PORT }}`). Below the value, the row shows each target and its status: **Found**, **Service not found**, **Variable not found**, **Set by Railway** (a `RAILWAY_` variable, which Topway cannot check) or **Not checked** (the other variables did not load). **Show**, **Copy** and **Copy all** give the reference, not the value that Railway makes from it.
 - **Copy all** copies all variables as `NAME=value` lines. A value with a line break or a double quotation mark is put in double quotation marks, as in a `.env` file.
 - **Add variable** is at the bottom. To delete a variable, select **Edit**, then **Delete variable…**.
+- **Insert reference**: In the editor, select a service (or **This service** or **Shared variables**), then a variable. Topway puts `${{service.VARIABLE}}` at the cursor. You can also type `${{` in the value: **Suggestions** shows the variables that match the text after it. Select one to complete the reference.
 
 ### Deployments
 - The **Deployments** tab of a service shows its latest deployments and their status, for example Running, Failed or Building.
 - **View logs**, **Open URL** and **Restart**: Each deployment has these buttons. **Open URL** shows only when the deployment has a URL.
 - **Redeploy** builds and starts a new deployment of the service.
+- **Manage**: A deployment has this menu when it permits one of these actions. **Cancel deployment…** stops a build or a deploy that is in progress. **Roll back…** deploys an earlier deployment again, when Railway permits it. **Remove deployment…** stops the service in the environment. Each action asks for a confirmation.
+
+### Railway incidents
+- When Railway reports an open incident, a banner **Railway incident** shows at the top of each screen, with the status and the title of the incident.
+- **Open status page** opens the Railway status page in your browser. **Hide** hides the banner until Railway reports a different incident.
+- Topway asks Railway for the platform status at most one time in 5 minutes, when it loads the projects or when you open the window. This request has no token.
+
+### Usage and cost
+- On the projects screen, select **Usage and cost**. The screen shows the cost of the usage in the current billing period of the workspace, the dates of the period and the days that are left.
+- Railway gives the cost. Topway calculates no price. The cost can be some minutes old, and it is not your invoice.
+- The screen shows the email alert and the hard limit of the workspace, when they are set.
+- The screen shows the use of CPU, memory, network egress and volumes in the period.
+
+### Metrics
+- The **Metrics** tab of a service shows CPU, memory, network in and network out in one environment.
+- Each metric shows its latest value, its highest value and a chart.
+- **Time range**: Select **Last hour**, **Last 6 hours** or **Last 24 hours**. **Refresh** loads the metrics again.
 
 ### Logs
 - **Live logs**: On a deployment row, select **View logs**. The logs screen has the tabs **Build** and **Deploy**. It opens on **Build** when the deployment builds, waits to deploy or failed.
@@ -44,7 +86,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 ## Limitations
 
 - **Project Creation**: Creating new projects is not currently supported via the Public API endpoints available to this application. The app provides a shortcut to the Railway Dashboard for this action.
-- **Service Creation**: You can create services from **GitHub repositories** and **Docker images**. Other sources (like databases) are not implemented.
+- **Service Creation**: You can create services from **GitHub repositories**, **Docker images** and the four **database** templates (PostgreSQL, MySQL, Redis, MongoDB). Other templates are not available in Topway.
 - **Authentication**: Requires a valid Railway API Token and Workspace ID to function. Sample mode needs no token.
 
 ## Getting Started
@@ -69,9 +111,10 @@ To remove the saved token from your Mac, select **Settings > Credentials > Remov
 
 You can use Topway with no Railway token. On the start screen, select **Try with sample data**. The same button shows when Railway does not accept your token.
 
-- Topway shows sample projects, services, deployments, variables and logs. The label **Sample data** shows at the top of each screen.
+- Topway shows sample projects, services, deployments, variables, metrics, usage and logs. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
+- Sample mode shows a sample incident banner. Its text starts with "Sample incident".
 - Sample mode can send alerts. Each sample notification shows **Sample data**.
 - To go back to the start screen, select **Exit sample data**. If you save a token in Settings, Topway also exits sample mode.
 

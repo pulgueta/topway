@@ -52,15 +52,25 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Start screen, **Try with sample data**, **Exit sample data** | E1, E5 | E1 | E10 | E11b | E12a | E13a |
 | Settings: token, Workspace ID, **Save** | E1, E7 | E1 | E10 | E11g | E12, check 4 | E13e |
 | See the projects, open or close a project, **Refresh** | E1, E3, E4, E6 | E1, E3 | E10 | E11c | E12 | E13b |
+| **Usage and cost**: cost, period, limits, **Refresh** | E1, E3, E4, E16 | E1 | E10 | E16 | E12 | E13a |
 | Open a service, change the environment, change the tab | E1, E3, E4, E9 | E1, E3, check 2 | E10 | — | E12 | E13a |
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
+| Variables: the targets of references and their status | E3 | — | E10 | E11i | E12 | — |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
+| Variable editor: **Insert reference**, **Suggestions** | E1, E3, E7 | E1, E3 | E10 | — | E12 | — |
+| Service settings: name, commands, paths, **Save changes** | E1, E4, E7, E8, E9 | E1, E8 | E10 | E11g, E18 | E12, check 4 | E13a, E13c |
+| Domains: list, DNS records, **Copy**, **Copy value**, **Add Railway domain**, **Add custom domain**, **Delete…** | E1, E3, E4, E7, E8, E9 | E1, E3, E8 | E10 | E11f, E18, E19 | E12, check 4 | E13a, E13c, E13d |
 | Deployments: list, **View logs**, **Open URL**, **Restart**, **Redeploy** | E3, E5, E8 | E3, E8 | E10 | E11d | E12 | E13c |
+| Deployment **Manage** menu: **Roll back…**, **Cancel deployment…**, **Remove deployment…** | E1, E3, E8 | E1, E3, E8 | E10 | E11f | E12, check 4 | E13c |
+| Metrics: charts, **Time range**, **Refresh** | E1, E15 | E1 | E10 | E15 | E12 | E13f |
 | Logs: tabs, follow, **Copy logs**, **Retry** | E1, E4, E6, E7 | E1, check 2 | E10 | E11e | E12b, check 4 | E13d |
-| Add a service | E1, E4, E6 | E1 | E10 | — | E12 | E13a |
+| Add a service or a database | E1, E4, E6, E8 | E1, E8 | E10 | — | E12 | E13a, E13c |
 | Delete a project or a service (type the name) | E8, check 1 | E8, check 2 | E10, E14, check 8 | E11f | E12c, check 4 | E13c |
+| Service links: list, **Environment**, **Refresh** | E1, E3, E4, E9 | E1 | E10 | E11i | E12 | E13a |
+| Environments: list, **New environment**, **Delete…** (type the name) | E1, E3, E4, E8, E9 | E1, E3, E8 | E10 | E11f, E18 | E12, check 4 | E13a, E13c |
 | Mute alerts | E1, E3 | E1, E3 | E10 | E11c | E12 | — |
 | Settings: auto refresh, alerts, launch at login, **Remove token…**, Help | E1 | E1 | E10 | E11f, E11g | E12, check 4 | E13e |
+| Railway incident banner: **Open status page**, **Hide** | E1, E17 | E1, E17 | E10 | E17 | E12a | E13g |
 | Error and empty states | E1, E7 | E1 | E10 | E11g | E12 | — |
 | Notifications | System | System | System | E11h | System | System |
 | **Quit Topway** | E1 | E1 | E10 | — | E12 | — |
@@ -74,9 +84,14 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 **E3. Rows.**
 - `ProjectRow`: the label is the project name, the value is "Expanded" or "Collapsed", with "alerts muted" for a muted project. **Add service** has the label "Add service to" and the project name.
 - `ServiceRow`: the label is the service name, not the names of its symbols.
-- `ProjectMenu` and `ServiceMenu`: the label is "Manage" and the name of the item.
+- `ProjectMenu` and `ServiceMenu`: the label is "Manage" and the name of the item. The **Manage** menu of `DeploymentRow` has the label "Manage" and the status and date of the deployment.
+- `EnvironmentRow`: the row is a group with the name of the environment. **Delete…** has the label "Delete" and the name of the environment.
+- `DomainRow`: the row is a group with the domain name. **Copy** and **Delete…** name the domain. `DNSRecordRow` is a group with the label "CNAME record shop", and **Copy value** has the label "Copy value of CNAME record shop".
 - `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
-- Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", and the name on the back button.
+- `ReferenceSuggestions`: a group with the label "Suggestions". Each button has the label "Insert reference to postgres.DATABASE_URL", and `accessibilityInputLabels` gives Voice Control the visible text. **Insert reference** is a standard `Menu` with a submenu for each service.
+- `ServiceLinkSection`: a group with the name of the service, or "Shared variables". Each link is one item with a sentence that has names only, for example "worker uses billing in BILLING_URL. The project has no service with this name." (`ServiceGraph.sentence(for:)`, tested). The arrow symbols are not read.
+- `ReferenceLinkRow`: one item for each target of a reference, with the label "Reference to postgres.DATABASE_URL: Found" (`ReferenceLink.accessibilityDescription`, tested). It has names only, never a value, so it does not show a hidden value.
+- Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", "Delete", "Copy value", and the name on the back button.
 
 **E4. Headers and back.** The title of each screen and of the dialog has the header trait (`ProjectsHeader`, `ScreenHeader`, `GlassConfirmationDialog`). The back button has the label "Back to" and the name of the screen.
 
@@ -84,11 +99,11 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E6. Status in words.** `LogLineRow` reads a line as "Warning:" or "Error:" and the message. `LogConnectionLabel` reads as "Connection: Live". Each progress indicator has a label, for example "Loading projects".
 
-**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error.
+**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved". The variable editor posts "Suggestions are below the value." when reference suggestions show.
 
 **E8. Confirmation dialog.** `destructiveConfirmation` disables the content behind the dialog and hides it from assistive technologies. The card has the modal trait. The keyboard focus goes to the name field. With no name field, the VoiceOver focus goes to the title. **Cancel** has the cancel shortcut (Escape). Return confirms only an action that is not destructive. The name field is a standard `TextField`, so Voice Control can dictate into it.
 
-**E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView` and `AddServiceView` goes back one step. Command-Return saves a variable. Command-R refreshes the projects.
+**E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView`, `AddServiceView`, `EnvironmentsView`, `NewEnvironmentView`, `NewDomainView` and `ServiceLinksView` goes back one step. Command-Return saves a variable or the service settings. Command-R refreshes the projects.
 
 **E10. Dark Interface.** All colors are system colors (`.red`, `.orange`, `.green`), hierarchical styles (`.secondary`, `.tertiary`), the tint and system materials. The only fixed color is the black backdrop of the dialog at 30 % opacity, which is dark. No view sets `preferredColorScheme`. Settings is a system `Form`.
 
@@ -101,6 +116,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - f. Destructive actions: the red text has the word "Delete" or "Remove". The production label has the text "Production environment" and an octagon.
 - g. Errors and results: a symbol and a text ("Saved", the error message).
 - h. Notifications: the title says the result, for example "Deployment failed".
+- i. Reference status: each status has a text and a different symbol: "Found" (check mark), "Service not found" and "Variable not found" (triangle), "Set by Railway" (circle with "i") and "Not checked" (question mark). Only the triangle is orange. The text is in the primary color. In **Service links**, a missing service shows the text "Service not found" with the triangle, and the direction of a link is in the words **Uses** and **Used by**, not only in the arrow.
 
 **E12. Sufficient Contrast.** Text uses the system text styles and the system colors, which change with Increase Contrast. Primary text is the default for names, values and log lines of the info level.
 - a. `SampleDataBanner`: the text is in the primary color. Only the symbol is orange.
@@ -113,10 +129,22 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - c. The dialog (`destructiveConfirmation`): with Reduce Motion, it only fades and does not change size.
 - d. Logs and copy: the scroll to the newest line has no animation. The "Copied" text changes with no animation.
 - e. System motion: the menu bar window, the Settings window, the progress indicators and the glass buttons are system components. The system controls their motion.
+- f. Charts: `MetricCard` has no animation. New samples replace the old samples with no motion.
+- g. Incident banner: `IncidentBanner` shows and hides with no animation.
 
 Topway has no parallax, no symbol effect, no animation that repeats and no content that moves by itself, apart from new log lines. The user stops that with a scroll up.
 
 **E14. Reduce Transparency.** With Reduce Transparency, the dialog card is opaque (`GlassConfirmationDialog`). All other glass comes from the system button styles.
+
+**E15. Charts.** `MetricCard` shows the name, the latest value and the highest value of a metric as text, and VoiceOver reads them as one item. The chart is hidden from assistive technologies, because it only shows the trend of the same values. A chart has one series, so no value depends on a color.
+
+**E16. Usage.** `SpendRow` has the label "Usage and cost". `SpendSummary` reads the cost, its period and the days left as one item. The progress bar of the limit has the limit amounts as its label and "50 percent of the limit" as its value. A cost above the limit shows as red text with an octagon and the words "The usage is above the limit."
+
+**E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` one time for each incident, because it shows with no user action. It does not say the same incident again when the window opens again. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
+
+**E18. Form messages.** A problem with a typed value shows as text below its field, with a warning triangle, for example "This project has an environment with this name. Use a different name." The button of the form is then not available. The symbol is orange, and the text is in the primary color.
+
+**E19. Domain status.** A custom domain shows its status as text with a symbol: "Set the DNS records" (triangle), "Railway makes the certificate" (clock), "Certificate failed" (octagon with a cross, and a text that says what to check) or "Ready" (check mark). A DNS record shows "Set" (check mark) or "Not set" (clock). No status uses a color.
 
 ### Known limits
 

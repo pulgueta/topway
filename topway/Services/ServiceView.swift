@@ -1,7 +1,8 @@
 import SwiftUI
 import TopwayCore
 
-/// One service in one environment. The Variables and Deployments tabs are always visible.
+/// One service in one environment. The Variables, Deployments and Metrics tabs are always
+/// visible.
 /// This view owns the steps below the projects list: the tabs, the variable editor and the logs.
 struct ServiceView: View {
     @Environment(AppState.self) private var appState
@@ -16,6 +17,8 @@ struct ServiceView: View {
     @State private var tab: ServiceTab = .variables
     @State private var selectedEnvironmentId: String?
     @State private var variables: [EnvironmentVariable] = []
+    /// The variables of all services and the shared variables, to check references.
+    @State private var projectVariables: ProjectVariables?
     @State private var isLoading = true
     @State private var areVariablesKnown = false
     @State private var latestLoadID = UUID()
@@ -59,6 +62,8 @@ struct ServiceView: View {
                     environmentName: selectedEnvironmentName,
                     existingVariable: variable,
                     existingNames: areVariablesKnown ? Set(variables.map(\.name)) : nil,
+                    services: project.serviceList,
+                    projectVariables: projectVariables,
                     onDismiss: { show(.overview) },
                     onSave: {
                         Task { await loadVariables() }
@@ -75,12 +80,36 @@ struct ServiceView: View {
                     }
                 )
                 .transition(.screen(reduceMotion: reduceMotion))
+            case .settings:
+                ServiceSettingsView(
+                    service: service,
+                    environmentId: selectedEnvironmentId ?? "",
+                    environmentName: selectedEnvironmentName,
+                    onDismiss: {
+                        appState.clearError()
+                        show(.overview)
+                    }
+                )
+                .transition(.screen(reduceMotion: reduceMotion))
+            case .domains:
+                DomainsView(
+                    service: service,
+                    projectId: project.id,
+                    environmentId: selectedEnvironmentId ?? "",
+                    environmentName: selectedEnvironmentName,
+                    onDismiss: {
+                        appState.clearError()
+                        show(.overview)
+                    }
+                )
+                .transition(.screen(reduceMotion: reduceMotion))
             }
         }
         // Runs at the start and for each new environment.
         .task(id: selectedEnvironmentId) {
             // The variables of the earlier environment must not show for the new one.
             variables = []
+            projectVariables = nil
             await loadVariables()
         }
         // Escape goes back one step.
@@ -104,6 +133,9 @@ struct ServiceView: View {
             case .variables:
                 VariablesTab(
                     variables: variables,
+                    serviceId: service.id,
+                    services: project.serviceList,
+                    projectVariables: projectVariables,
                     isLoading: isLoading,
                     areVariablesKnown: areVariablesKnown,
                     onRetry: {
@@ -125,6 +157,10 @@ struct ServiceView: View {
                 )
                 // The deployments of the earlier environment must not show for the new one.
                 .id(selectedEnvironmentId)
+            case .metrics:
+                MetricsView(service: service, environmentId: selectedEnvironmentId ?? "")
+                    // The metrics of the earlier environment must not show for the new one.
+                    .id(selectedEnvironmentId)
             }
         }
         .safeAreaBar(edge: .top, spacing: 0) {
@@ -133,6 +169,14 @@ struct ServiceView: View {
                     ServiceMenu(
                         serviceName: service.name,
                         isRedeploying: isRedeploying,
+                        onShowSettings: {
+                            appState.clearError()
+                            show(.settings)
+                        },
+                        onShowDomains: {
+                            appState.clearError()
+                            show(.domains)
+                        },
                         onRedeploy: { confirmRedeploy() },
                         onRequestDelete: { confirmDeleteService() }
                     )
@@ -184,6 +228,17 @@ struct ServiceView: View {
         variables = fetched ?? []
         areVariablesKnown = fetched != nil
         isLoading = false
+        guard fetched != nil else { return }
+
+        // The targets of the references. The list stays if this load fails.
+        var serviceIds = project.serviceList(in: environmentId).map(\.id)
+        if !serviceIds.contains(service.id) {
+            serviceIds.append(service.id)
+        }
+        let loadedProjectVariables = await appState.fetchProjectVariables(
+            projectId: project.id, environmentId: environmentId, serviceIds: serviceIds)
+        guard loadID == latestLoadID else { return }
+        projectVariables = loadedProjectVariables
     }
 
     private func confirmRedeploy() {

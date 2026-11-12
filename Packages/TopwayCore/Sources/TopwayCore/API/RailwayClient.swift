@@ -3,27 +3,33 @@ import Foundation
 public struct RailwayClient: RailwayDataSource {
     private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
-    private let sleep: @Sendable (Duration) async throws -> Void
+    let sleep: @Sendable (Duration) async throws -> Void
     private let socket: GraphQLWebSocket
+    let now: @Sendable () -> Date
 
-    /// - Parameter sleep: Waits between polls and before a reconnect. Tests replace it.
+    /// - Parameters:
+    ///   - sleep: Waits between polls and before a reconnect. Tests replace it.
+    ///   - now: Gives the current date. The start of a metrics time range comes from it.
     public init(
         session: URLSession = .shared,
         sleep: @escaping @Sendable (Duration) async throws -> Void = {
             try await Task.sleep(for: $0)
-        }
+        },
+        now: @escaping @Sendable () -> Date = { .now }
     ) {
-        self.init(session: session, sleep: sleep, socket: GraphQLWebSocket(session: session))
+        self.init(
+            session: session, sleep: sleep, socket: GraphQLWebSocket(session: session), now: now)
     }
 
     /// Tests pass a socket with scripted frames.
     init(
         session: URLSession, sleep: @escaping @Sendable (Duration) async throws -> Void,
-        socket: GraphQLWebSocket
+        socket: GraphQLWebSocket, now: @escaping @Sendable () -> Date = { .now }
     ) {
         self.session = session
         self.sleep = sleep
         self.socket = socket
+        self.now = now
     }
 
     // MARK: - Fetch Projects
@@ -127,12 +133,19 @@ public struct RailwayClient: RailwayDataSource {
 
     // MARK: - Fetch Variables for a Service
 
+    /// With `unrendered: true`, a reference keeps its template, as in the Railway CLI.
+    /// The editor then saves the reference, not the value that Railway rendered from it.
     public func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
     ) async throws -> [String: String] {
         let query = """
             query Variables($projectId: String!, $environmentId: String!, $serviceId: String!) {
-              variables(projectId: $projectId, environmentId: $environmentId, serviceId: $serviceId)
+              variables(
+                projectId: $projectId
+                environmentId: $environmentId
+                serviceId: $serviceId
+                unrendered: true
+              )
             }
             """
 
@@ -275,6 +288,7 @@ public struct RailwayClient: RailwayDataSource {
                     status
                     staticUrl
                     createdAt
+                    canRollback
                   }
                 }
               }
@@ -329,6 +343,121 @@ public struct RailwayClient: RailwayDataSource {
         return data.serviceInstanceRedeploy
     }
 
+    // MARK: - Metrics
+
+    public func fetchMetrics(
+        environmentId: String, serviceId: String, window: MetricWindow, token: String
+    ) async throws -> ServiceMetrics {
+        // The measurements and the sample rate are constants of Topway, not user input.
+        let measurements = MetricKind.allCases.map(\.rawValue).joined(separator: ", ")
+        let query = """
+            query Metrics($environmentId: String!, $serviceId: String!, $startDate: DateTime!) {
+              metrics(
+                environmentId: $environmentId
+                serviceId: $serviceId
+                startDate: $startDate
+                measurements: [\(measurements)]
+                sampleRateSeconds: \(window.sampleRateSeconds)
+              ) {
+                measurement
+                values {
+                  ts
+                  value
+                }
+              }
+            }
+            """
+
+        let data: MetricsData = try await execute(
+            query: query,
+            variables: [
+                "environmentId": environmentId,
+                "serviceId": serviceId,
+                "startDate": window.startDate(now: now()).formatted(.iso8601),
+            ],
+            token: token
+        )
+        return ServiceMetrics(results: data.metrics)
+    }
+
+    // MARK: - Spend
+
+    /// Sends two requests: the usage query needs the dates of the billing period, and the
+    /// first answer gives them.
+    public func fetchSpend(workspaceId: String, token: String) async throws -> Spend {
+        let customerQuery = """
+            query Spend($workspaceId: String!) {
+              workspace(workspaceId: $workspaceId) {
+                customer {
+                  currentUsage
+                  billingPeriod {
+                    start
+                    end
+                  }
+                  usageLimit {
+                    softLimit
+                    hardLimit
+                    isOverLimit
+                  }
+                }
+              }
+            }
+            """
+        let spendData: SpendData = try await execute(
+            query: customerQuery, variables: ["workspaceId": workspaceId], token: token)
+        let customer = spendData.workspace.customer
+
+        // The measurements are constants of Topway, not user input. `includeDeleted` adds
+        // the deleted projects and services, which the cost of Railway also includes.
+        let measurements = UsageKind.allCases.map(\.rawValue).joined(separator: ", ")
+        let usageQuery = """
+            query Usage($workspaceId: String!, $startDate: DateTime!, $endDate: DateTime!) {
+              usage(
+                workspaceId: $workspaceId
+                startDate: $startDate
+                endDate: $endDate
+                measurements: [\(measurements)]
+                includeDeleted: true
+              ) {
+                measurement
+                value
+              }
+            }
+            """
+        let usageData: UsageData = try await execute(
+            query: usageQuery,
+            variables: [
+                "workspaceId": workspaceId,
+                "startDate": customer.billingPeriod.start.formatted(.iso8601),
+                "endDate": min(now(), customer.billingPeriod.end).formatted(.iso8601),
+            ],
+            token: token
+        )
+        return Spend(customer: customer, usage: usageData.usage)
+    }
+
+    // MARK: - Platform Status
+
+    /// Railway answers this query with no token, so the request has no `Authorization`
+    /// header. It tells Railway nothing about the user.
+    public func fetchOpenIncident() async throws -> PlatformIncident? {
+        let query = """
+            query PlatformStatus {
+              platformStatus {
+                incident {
+                  id
+                  message
+                  status
+                  url
+                }
+              }
+            }
+            """
+
+        let data: PlatformStatusData = try await execute(query: query, variables: [:], token: nil)
+        return data.platformStatus.openIncident
+    }
+
     // MARK: - Logs
 
     private static let pollInterval = Duration.seconds(5)
@@ -373,7 +502,8 @@ public struct RailwayClient: RailwayDataSource {
         }
 
         let subscription = GraphQLRequest(
-            query: Self.logsDocument(kind, operation: "subscription"), variables: variables)
+            query: Self.logsDocument(kind, operation: "subscription"),
+            variables: variables.mapValues(JSONValue.string))
         let query = Self.logsDocument(kind, operation: "query")
         var recovery = LogRecovery()
         while true {
@@ -452,8 +582,22 @@ public struct RailwayClient: RailwayDataSource {
 
     // MARK: - Private Methods
 
-    private func execute<T: Decodable>(
-        query: String, variables: [String: String], token: String
+    /// - Parameter token: `nil` sends no `Authorization` header.
+    func execute<T: Decodable>(
+        query: String, variables: [String: String], token: String?
+    ) async throws -> T {
+        try await execute(
+            query: query, json: variables.mapValues(JSONValue.string), token: token)
+    }
+
+    /// For variables that are not all text.
+    /// - Parameters:
+    ///   - token: `nil` sends no `Authorization` header.
+    ///   - timeout: The seconds that the request can wait for data. `nil` keeps the
+    ///     default of the system.
+    func execute<T: Decodable>(
+        query: String, json variables: [String: JSONValue], token: String?,
+        timeout: TimeInterval? = nil
     ) async throws -> T {
         guard let url = URL(string: baseURL) else {
             throw RailwayError.invalidURL
@@ -461,8 +605,13 @@ public struct RailwayClient: RailwayDataSource {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        if let timeout {
+            request.timeoutInterval = timeout
+        }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try JSONEncoder().encode(
             GraphQLRequest(query: query, variables: variables))
 

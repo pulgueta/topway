@@ -8,6 +8,9 @@ struct ConfirmationRequest: Identifiable {
     let title: String
     let message: String
     let actionTitle: String
+    /// The button that closes the dialog with no action. Change it when `actionTitle` has
+    /// the word "Cancel", so the two buttons are clear.
+    var cancelTitle = "Cancel"
     var isDestructive = false
     /// The text that the user must type when `harm` is `.high`.
     var targetName = ""
