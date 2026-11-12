@@ -15,6 +15,8 @@ struct ServiceLinksView: View {
     @State private var graph: ServiceGraph?
     @State private var isLoading = true
     @State private var latestLoadID = UUID()
+    /// Goes up after Refresh loads the projects, so the links load from the new project.
+    @State private var refreshCount = 0
 
     init(project: Project, onDismiss: @escaping () -> Void) {
         self.project = project
@@ -49,7 +51,12 @@ struct ServiceLinksView: View {
                 }
             } actions: {
                 Button("Refresh", systemImage: "arrow.clockwise") {
-                    Task { await load() }
+                    Task {
+                        // New or renamed services must be in the links.
+                        isLoading = true
+                        await appState.loadProjects(keepingError: true)
+                        refreshCount += 1
+                    }
                 }
                 .buttonStyle(.glass)
                 .disabled(isLoading || environmentId == nil)
@@ -60,6 +67,11 @@ struct ServiceLinksView: View {
         .task(id: environmentId) {
             // The links of the earlier environment must not show for the new one.
             graph = nil
+            await load()
+        }
+        // Runs after Refresh. The view then has the project that loaded last.
+        .task(id: refreshCount) {
+            guard refreshCount > 0 else { return }
             await load()
         }
         // A reload can remove the selected environment, for example after a delete.
