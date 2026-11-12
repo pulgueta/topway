@@ -67,7 +67,7 @@ Projects (start screen with no token)
 3. Put the actions of a screen in the bottom bar. At most one is prominent (`.glassProminent`). It is the action that the user does most.
 4. Put the actions of a row in the row, as small bordered buttons.
 5. Use a menu only for the rare actions of one item, and give the menu a text label. The label is **Manage**. The project menu has Add service, Mute alerts and Delete project. The service menu has Redeploy and Delete service. The primary action is also visible outside the menu.
-6. Put a destructive action last, after a divider. Its label ends with "…" when a confirmation follows.
+6. Put a destructive action last, after a divider. Its label ends with "…" when a confirmation follows. Its text is red. A menu item gets red text from `role: .destructive`. A bordered button needs `.foregroundStyle(.red)` too, because the role alone does not change its color on macOS.
 7. Each action that changes data goes through `appState.confirm`. `GlassConfirmationDialog` shows in the window. Do not use `alert`, `confirmationDialog` or a sheet, because they close the menu bar window.
 8. In a dialog, Return confirms only an action that is not destructive.
 
@@ -104,7 +104,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - Use the system text styles: `.headline` for a screen title, `.body` for a row title, `.callout` for context and messages, `.subheadline` for a status or a date. Use a monospaced design for variable names, variable values and log lines.
 - Use `.fontWeight(.medium)` only for the main text of a row.
 - Use the hierarchical styles `.secondary` and `.tertiary` for less important text and icons. Do not set an opacity on text.
-- Color has a meaning: orange for sample data and warnings, red for errors and destructive confirmations, green, yellow, red, purple and gray for the deployment status, and the accent color for the prominent button. A color is never the only sign: a text or a symbol is always with it.
+- Color has a meaning: orange for sample data and warnings, red for errors, destructive buttons and destructive confirmations, green, yellow, red, purple and gray for the deployment status, and the accent color for the prominent button. A color is never the only sign: a text or a symbol is always with it.
 - Icons in rows are monochrome.
 - Use the constants of `Layout` for padding and spacing.
 

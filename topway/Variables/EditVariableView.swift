@@ -127,6 +127,7 @@ struct EditVariableView: View {
             if isEditing {
                 Button("Delete variable…", role: .destructive) { confirmDelete() }
                     .buttonStyle(.bordered)
+                    .foregroundStyle(.red)
                     .disabled(isDeleting || isSaving)
                     .help("Remove this variable from \(serviceName) in \(environmentName).")
             }

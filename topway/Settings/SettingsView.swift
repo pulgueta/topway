@@ -131,6 +131,7 @@ struct SettingsView: View {
             LabeledContent {
                 Button("Cancel") { isConfirmingRemoval = false }
                 Button("Remove token", role: .destructive) { removeToken() }
+                    .foregroundStyle(.red)
             } label: {
                 Text("Remove the token from this Mac?")
                 Text("Topway then shows the start screen. To connect again, add a token.")
@@ -138,6 +139,7 @@ struct SettingsView: View {
         } else {
             LabeledContent {
                 Button("Remove token…", role: .destructive) { isConfirmingRemoval = true }
+                    .foregroundStyle(.red)
                     .help("Delete the saved token from the Keychain of this Mac.")
             } label: {
                 Text("A token is saved on this Mac.")
