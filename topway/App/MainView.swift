@@ -31,6 +31,10 @@ struct MainView: View {
                         onAddService: { project in
                             show(.addService(projectId: project.id, projectName: project.name))
                         },
+                        onOpenEnvironments: { project in
+                            appState.clearError()
+                            show(.environments(projectId: project.id, projectName: project.name))
+                        },
                         onOpenService: { service, project in
                             show(.service(service: service, project: project))
                         },
@@ -53,6 +57,16 @@ struct MainView: View {
                         projectId: projectId,
                         projectName: projectName,
                         onDismiss: { show(.main) }
+                    )
+                    .transition(.screen(reduceMotion: reduceMotion))
+                case .environments(let projectId, let projectName):
+                    EnvironmentsView(
+                        projectId: projectId,
+                        projectName: projectName,
+                        onDismiss: {
+                            appState.clearError()
+                            show(.main)
+                        }
                     )
                     .transition(.screen(reduceMotion: reduceMotion))
                 case .service(let service, let project):

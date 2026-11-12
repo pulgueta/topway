@@ -97,6 +97,21 @@ struct ClientCall: Sendable, CustomTestStringConvertible {
                     environmentId: input, serviceId: input, token: "token")
             }),
         ClientCall(
+            name: "createEnvironment",
+            reply: #"{"data":{"environmentCreate":{"id":"e1"}}}"#,
+            variableNames: ["projectId", "name", "sourceEnvironmentId"],
+            run: { client, input in
+                _ = try await client.createEnvironment(
+                    projectId: input, name: input, sourceEnvironmentId: input, token: "token")
+            }),
+        ClientCall(
+            name: "deleteEnvironment",
+            reply: #"{"data":{"environmentDelete":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.deleteEnvironment(environmentId: input, token: "token")
+            }),
+        ClientCall(
             name: "rollbackDeployment",
             reply: #"{"data":{"deploymentRollback":true}}"#,
             variableNames: ["id"],

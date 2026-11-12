@@ -35,6 +35,14 @@ public protocol RailwayDataSource: Sendable {
     func redeployService(environmentId: String, serviceId: String, token: String)
         async throws -> Bool
 
+    /// Makes an environment in a project and gives its ID. With `sourceEnvironmentId`,
+    /// Railway copies the services, the variables and the settings of that environment.
+    func createEnvironment(
+        projectId: String, name: String, sourceEnvironmentId: String?, token: String
+    ) async throws -> String
+
+    func deleteEnvironment(environmentId: String, token: String) async throws -> Bool
+
     /// Deploys an earlier deployment again.
     func rollbackDeployment(deploymentId: String, token: String) async throws -> Bool
 

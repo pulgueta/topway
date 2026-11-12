@@ -62,6 +62,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Logs: tabs, follow, **Copy logs**, **Retry** | E1, E4, E6, E7 | E1, check 2 | E10 | E11e | E12b, check 4 | E13d |
 | Add a service | E1, E4, E6 | E1 | E10 | — | E12 | E13a |
 | Delete a project or a service (type the name) | E8, check 1 | E8, check 2 | E10, E14, check 8 | E11f | E12c, check 4 | E13c |
+| Environments: list, **New environment**, **Delete…** (type the name) | E1, E3, E4, E8, E9 | E1, E3, E8 | E10 | E11f, E18 | E12, check 4 | E13a, E13c |
 | Mute alerts | E1, E3 | E1, E3 | E10 | E11c | E12 | — |
 | Settings: auto refresh, alerts, launch at login, **Remove token…**, Help | E1 | E1 | E10 | E11f, E11g | E12, check 4 | E13e |
 | Railway incident banner: **Open status page**, **Hide** | E1, E17 | E1, E17 | E10 | E17 | E12a | E13g |
@@ -79,8 +80,9 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - `ProjectRow`: the label is the project name, the value is "Expanded" or "Collapsed", with "alerts muted" for a muted project. **Add service** has the label "Add service to" and the project name.
 - `ServiceRow`: the label is the service name, not the names of its symbols.
 - `ProjectMenu` and `ServiceMenu`: the label is "Manage" and the name of the item. The **Manage** menu of `DeploymentRow` has the label "Manage" and the status and date of the deployment.
+- `EnvironmentRow`: the row is a group with the name of the environment. **Delete…** has the label "Delete" and the name of the environment.
 - `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
-- Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", and the name on the back button.
+- Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", "Delete", and the name on the back button.
 
 **E4. Headers and back.** The title of each screen and of the dialog has the header trait (`ProjectsHeader`, `ScreenHeader`, `GlassConfirmationDialog`). The back button has the label "Back to" and the name of the screen.
 
@@ -129,6 +131,8 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 **E16. Usage.** `SpendRow` has the label "Usage and cost". `SpendSummary` reads the cost, its period and the days left as one item. The progress bar of the limit has the limit amounts as its label and "50 percent of the limit" as its value. A cost above the limit shows as red text with an octagon and the words "The usage is above the limit."
 
 **E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` one time for each incident, because it shows with no user action. It does not say the same incident again when the window opens again. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
+
+**E18. Form messages.** A problem with a typed value shows as text below its field, with a warning triangle, for example "This project has an environment with this name. Use a different name." The button of the form is then not available. The symbol is orange, and the text is in the primary color.
 
 ### Known limits
 

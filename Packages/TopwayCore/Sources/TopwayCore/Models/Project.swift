@@ -24,8 +24,9 @@ public struct Project: Identifiable, Decodable, Hashable, Sendable {
         services.edges.map { $0.node }
     }
 
+    /// The environments of the project, without the environments that Railway deleted.
     public var environmentList: [RailwayEnvironment] {
-        environments.edges.map { $0.node }
+        environments.edges.map { $0.node }.filter { $0.deletedAt == nil }
     }
 
     /// The latest deployment status of each service in each environment.
@@ -34,7 +35,7 @@ public struct Project: Identifiable, Decodable, Hashable, Sendable {
     public var serviceStatuses: [ServiceStatus] {
         let serviceNames = Dictionary(
             serviceList.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
-        return environmentList.filter { $0.deletedAt == nil }.flatMap { environment in
+        return environmentList.flatMap { environment in
             environment.instanceList.compactMap { instance in
                 guard instance.deletedAt == nil, let deployment = instance.latestDeployment,
                     let serviceName = serviceNames[instance.serviceId]
