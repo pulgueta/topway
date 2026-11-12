@@ -56,6 +56,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
 | Deployments: list, **View logs**, **Open URL**, **Restart**, **Redeploy** | E3, E5, E8 | E3, E8 | E10 | E11d | E12 | E13c |
+| Metrics: charts, **Time range**, **Refresh** | E1, E15 | E1 | E10 | E15 | E12 | E13f |
 | Logs: tabs, follow, **Copy logs**, **Retry** | E1, E4, E6, E7 | E1, check 2 | E10 | E11e | E12b, check 4 | E13d |
 | Add a service | E1, E4, E6 | E1 | E10 | — | E12 | E13a |
 | Delete a project or a service (type the name) | E8, check 1 | E8, check 2 | E10, E14, check 8 | E11f | E12c, check 4 | E13c |
@@ -113,10 +114,13 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - c. The dialog (`destructiveConfirmation`): with Reduce Motion, it only fades and does not change size.
 - d. Logs and copy: the scroll to the newest line has no animation. The "Copied" text changes with no animation.
 - e. System motion: the menu bar window, the Settings window, the progress indicators and the glass buttons are system components. The system controls their motion.
+- f. Charts: `MetricCard` has no animation. New samples replace the old samples with no motion.
 
 Topway has no parallax, no symbol effect, no animation that repeats and no content that moves by itself, apart from new log lines. The user stops that with a scroll up.
 
 **E14. Reduce Transparency.** With Reduce Transparency, the dialog card is opaque (`GlassConfirmationDialog`). All other glass comes from the system button styles.
+
+**E15. Charts.** `MetricCard` shows the name, the latest value and the highest value of a metric as text, and VoiceOver reads them as one item. The chart is hidden from assistive technologies, because it only shows the trend of the same values. A chart has one series, so no value depends on a color.
 
 ### Known limits
 

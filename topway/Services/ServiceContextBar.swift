@@ -26,7 +26,8 @@ struct ServiceContextBar: View {
                         }
                     }
                     .fixedSize()
-                    .help("The variables and deployments below belong to this environment.")
+                    .help(
+                        "The variables, deployments and metrics below belong to this environment.")
                 } else if let environment = environments.first {
                     Text("Environment: \(environment.name)")
                         .foregroundStyle(.secondary)
@@ -38,6 +39,7 @@ struct ServiceContextBar: View {
             Picker("List", selection: $tab) {
                 Text("Variables").tag(ServiceTab.variables)
                 Text("Deployments").tag(ServiceTab.deployments)
+                Text("Metrics").tag(ServiceTab.metrics)
             }
             .pickerStyle(.segmented)
             .labelsHidden()

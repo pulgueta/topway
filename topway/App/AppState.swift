@@ -607,6 +607,35 @@ class AppState {
         }
     }
 
+    // MARK: - Metrics
+
+    /// Returns `nil` when the fetch fails or is cancelled.
+    func fetchMetrics(environmentId: String, serviceId: String, window: MetricWindow) async
+        -> ServiceMetrics?
+    {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return nil
+        }
+
+        errorMessage = nil
+
+        do {
+            return try await dataSource.fetchMetrics(
+                environmentId: environmentId,
+                serviceId: serviceId,
+                window: window,
+                token: railwayToken
+            )
+        } catch let error as RailwayError {
+            show(error)
+            return nil
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
     // MARK: - Logs
 
     /// Gives each log event to `onEvent` until the stream ends or the task is cancelled.

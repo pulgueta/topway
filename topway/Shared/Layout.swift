@@ -17,4 +17,6 @@ enum Layout {
     static let rowCornerRadius: CGFloat = 8
     /// The width that each side of a screen header keeps, so the title stays in the center.
     static let headerSideWidth: CGFloat = 112
+    /// The height of the chart of one metric. Four metrics fit with a short scroll.
+    static let chartHeight: CGFloat = 44
 }

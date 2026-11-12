@@ -11,7 +11,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - **Refresh** and **Settings** are at the top. **New project** opens Railway in your browser. **Quit Topway** is at the bottom.
 - **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image.
 - **Manage**: Each project has a **Manage** menu, with **Add service**, **Mute alerts** and **Delete project…**.
-- Select a service to see its variables and deployments. The **Manage** menu of the service has **Redeploy** and **Delete service…**.
+- Select a service to see its variables, deployments and metrics. The **Manage** menu of the service has **Redeploy** and **Delete service…**.
 - To delete a project or a service, you must type its name.
 
 ### Environment Variables
@@ -25,6 +25,11 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - The **Deployments** tab of a service shows its latest deployments and their status, for example Running, Failed or Building.
 - **View logs**, **Open URL** and **Restart**: Each deployment has these buttons. **Open URL** shows only when the deployment has a URL.
 - **Redeploy** builds and starts a new deployment of the service.
+
+### Metrics
+- The **Metrics** tab of a service shows CPU, memory, network in and network out in one environment.
+- Each metric shows its latest value, its highest value and a chart.
+- **Time range**: Select **Last hour**, **Last 6 hours** or **Last 24 hours**. **Refresh** loads the metrics again.
 
 ### Logs
 - **Live logs**: On a deployment row, select **View logs**. The logs screen has the tabs **Build** and **Deploy**. It opens on **Build** when the deployment builds, waits to deploy or failed.
@@ -69,7 +74,7 @@ To remove the saved token from your Mac, select **Settings > Credentials > Remov
 
 You can use Topway with no Railway token. On the start screen, select **Try with sample data**. The same button shows when Railway does not accept your token.
 
-- Topway shows sample projects, services, deployments, variables and logs. The label **Sample data** shows at the top of each screen.
+- Topway shows sample projects, services, deployments, variables, metrics and logs. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
 - Sample mode can send alerts. Each sample notification shows **Sample data**.

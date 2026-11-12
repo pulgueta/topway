@@ -50,12 +50,12 @@ There is no `NavigationStack`. `MainView` and `ServiceView` each hold an enum of
 ```text
 Projects (start screen with no token)
 ├── Add service
-└── Service: tabs Variables | Deployments
+└── Service: tabs Variables | Deployments | Metrics
     ├── Add variable / Edit variable
     └── Logs: tabs Build | Deploy
 ```
 
-- The Variables and Deployments lists are tabs of one service screen. A list must not be in a menu.
+- Variables, Deployments and Metrics are tabs of one service screen. A tab must not be in a menu.
 - The back button shows where it goes, for example **Projects**.
 - Escape goes back one step. In a dialog, Escape cancels.
 - The service screen keeps the selected tab when the user comes back from the editor or the logs.
@@ -88,7 +88,7 @@ All shared components are in `topway/Shared`.
 | `ErrorBanner` | A failed action. |
 | `GlassConfirmationDialog` | A confirmation, through `destructiveConfirmation(...)`. |
 
-Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 tabs, menu for a list of environments), `Toggle`, `TextField`, `ContentUnavailableView` for an empty state, and `Form` in Settings.
+Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 or 3 tabs, menu for a list of environments or time ranges), `Toggle`, `TextField`, `ContentUnavailableView` for an empty state, and `Form` in Settings.
 
 ## Liquid Glass
 
@@ -108,6 +108,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - Color has a meaning: orange for sample data and warnings, red for errors, destructive buttons and destructive confirmations, green, yellow, red, purple and gray for the deployment status, and the accent color for the prominent button. A color is never the only sign: a text or a symbol is always with it.
 - Do not put orange text on a tint, and do not put white text on a system color. The system colors change with Increase Contrast, and such text is then hard to read. Color the symbol, or use red text with a symbol.
 - Icons in rows are monochrome.
+- A chart (`MetricCard`, Swift Charts) is content: it has no glass, no axis and one series in the tint color. The values that matter are text next to the chart, so the chart is never the only way to read a value. The chart height is `Layout.chartHeight`.
 - Use the constants of `Layout` for padding and spacing.
 
 ## Motion
@@ -168,10 +169,11 @@ Tradeoffs:
 |---|---|---|
 | Projects | "+" and trash icons on each project, a gear, a "+" in the section header. | **Refresh** and **Settings** in the top bar. **Manage** menu and an **Add service** row in each project. **New project** and **Quit Topway** in the bottom bar. |
 | Start | Shows only with no token. | The same screen. A rejected token now has a way back to it. |
-| Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables** and **Deployments**. **Manage** menu for Redeploy and Delete service. |
+| Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Redeploy and Delete service. |
 | Variables | Edit, show and copy icons that show on hover. | **Show**, **Copy** and **Edit** buttons in each row. **Copy all** and **Add variable** in the bottom bar. |
 | Edit variable | Trash icon in the top bar. | **Delete variable…**, **Cancel** and **Save changes** in the bottom bar. |
 | Deployments | Logs and restart icons that show on hover. | **View logs**, **Open URL** and **Restart** buttons in each row. **Refresh** and **Redeploy** in the bottom bar. |
+| Metrics | No metrics. | One chart for each metric, with the latest and the highest value as text. A **Time range** menu and **Refresh** in the bottom bar. |
 | Logs | Back icon. | Back button **Deployments**. The connection state and **Copy logs** in the bottom bar. |
 | Add service | Custom source buttons. | A segmented control for the source. **Cancel** and **Add service** in the bottom bar. |
 | Settings | Save at the bottom of all sections. No way to remove a token. | **Save** in the Credentials section. **Remove token…** with a confirmation in the same window. |

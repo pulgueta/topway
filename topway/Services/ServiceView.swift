@@ -1,7 +1,8 @@
 import SwiftUI
 import TopwayCore
 
-/// One service in one environment. The Variables and Deployments tabs are always visible.
+/// One service in one environment. The Variables, Deployments and Metrics tabs are always
+/// visible.
 /// This view owns the steps below the projects list: the tabs, the variable editor and the logs.
 struct ServiceView: View {
     @Environment(AppState.self) private var appState
@@ -125,6 +126,10 @@ struct ServiceView: View {
                 )
                 // The deployments of the earlier environment must not show for the new one.
                 .id(selectedEnvironmentId)
+            case .metrics:
+                MetricsView(service: service, environmentId: selectedEnvironmentId ?? "")
+                    // The metrics of the earlier environment must not show for the new one.
+                    .id(selectedEnvironmentId)
             }
         }
         .safeAreaBar(edge: .top, spacing: 0) {
