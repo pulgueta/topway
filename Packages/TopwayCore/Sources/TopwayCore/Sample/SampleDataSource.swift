@@ -140,6 +140,13 @@ public actor SampleDataSource: RailwayDataSource {
         return true
     }
 
+    public func fetchMetrics(
+        environmentId: String, serviceId: String, window: MetricWindow, token: String
+    ) -> ServiceMetrics {
+        Self.sampleMetrics(
+            environmentId: environmentId, serviceId: serviceId, window: window, now: now())
+    }
+
     /// The same lines for each deployment. Build logs end after the build steps.
     /// Deploy logs give the start lines, then one line every 2 seconds until the stream stops.
     /// Each line is 1 second after the line before it.

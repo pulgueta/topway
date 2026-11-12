@@ -5,25 +5,31 @@ public struct RailwayClient: RailwayDataSource {
     private let session: URLSession
     private let sleep: @Sendable (Duration) async throws -> Void
     private let socket: GraphQLWebSocket
+    private let now: @Sendable () -> Date
 
-    /// - Parameter sleep: Waits between polls and before a reconnect. Tests replace it.
+    /// - Parameters:
+    ///   - sleep: Waits between polls and before a reconnect. Tests replace it.
+    ///   - now: Gives the current date. The start of a metrics time range comes from it.
     public init(
         session: URLSession = .shared,
         sleep: @escaping @Sendable (Duration) async throws -> Void = {
             try await Task.sleep(for: $0)
-        }
+        },
+        now: @escaping @Sendable () -> Date = { .now }
     ) {
-        self.init(session: session, sleep: sleep, socket: GraphQLWebSocket(session: session))
+        self.init(
+            session: session, sleep: sleep, socket: GraphQLWebSocket(session: session), now: now)
     }
 
     /// Tests pass a socket with scripted frames.
     init(
         session: URLSession, sleep: @escaping @Sendable (Duration) async throws -> Void,
-        socket: GraphQLWebSocket
+        socket: GraphQLWebSocket, now: @escaping @Sendable () -> Date = { .now }
     ) {
         self.session = session
         self.sleep = sleep
         self.socket = socket
+        self.now = now
     }
 
     // MARK: - Fetch Projects
@@ -327,6 +333,43 @@ public struct RailwayClient: RailwayDataSource {
             token: token
         )
         return data.serviceInstanceRedeploy
+    }
+
+    // MARK: - Metrics
+
+    public func fetchMetrics(
+        environmentId: String, serviceId: String, window: MetricWindow, token: String
+    ) async throws -> ServiceMetrics {
+        // The measurements and the sample rate are constants of Topway, not user input.
+        let measurements = MetricKind.allCases.map(\.rawValue).joined(separator: ", ")
+        let query = """
+            query Metrics($environmentId: String!, $serviceId: String!, $startDate: DateTime!) {
+              metrics(
+                environmentId: $environmentId
+                serviceId: $serviceId
+                startDate: $startDate
+                measurements: [\(measurements)]
+                sampleRateSeconds: \(window.sampleRateSeconds)
+              ) {
+                measurement
+                values {
+                  ts
+                  value
+                }
+              }
+            }
+            """
+
+        let data: MetricsData = try await execute(
+            query: query,
+            variables: [
+                "environmentId": environmentId,
+                "serviceId": serviceId,
+                "startDate": window.startDate(now: now()).formatted(.iso8601),
+            ],
+            token: token
+        )
+        return ServiceMetrics(results: data.metrics)
     }
 
     // MARK: - Logs

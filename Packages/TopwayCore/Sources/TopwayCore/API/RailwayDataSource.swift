@@ -35,6 +35,11 @@ public protocol RailwayDataSource: Sendable {
     func redeployService(environmentId: String, serviceId: String, token: String)
         async throws -> Bool
 
+    /// Gives the CPU, memory and network samples of a service in one environment.
+    func fetchMetrics(
+        environmentId: String, serviceId: String, window: MetricWindow, token: String
+    ) async throws -> ServiceMetrics
+
     /// Gives the latest lines, then new lines while they arrive.
     /// Cancel the consumer task to stop the stream.
     func logs(_ kind: LogKind, deploymentId: String, token: String)
