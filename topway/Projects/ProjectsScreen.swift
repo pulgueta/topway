@@ -9,6 +9,7 @@ struct ProjectsScreen: View {
 
     let onAddService: (Project) -> Void
     let onOpenService: (Service, Project) -> Void
+    let onOpenUsage: () -> Void
 
     private var projectCount: String {
         let count = appState.projects.count
@@ -56,6 +57,9 @@ struct ProjectsScreen: View {
     private var projectList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 4) {
+                // The usage belongs to the workspace, not to one project.
+                SpendRow { onOpenUsage() }
+
                 ForEach(appState.projects) { project in
                     ProjectRow(
                         project: project,
@@ -142,7 +146,7 @@ struct ProjectsScreen: View {
 }
 
 #Preview {
-    ProjectsScreen(onAddService: { _ in }, onOpenService: { _, _ in })
+    ProjectsScreen(onAddService: { _ in }, onOpenService: { _, _ in }, onOpenUsage: {})
         .environment(AppState())
         .frame(width: Layout.windowWidth, height: Layout.windowHeight)
 }

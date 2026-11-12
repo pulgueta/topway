@@ -24,9 +24,21 @@ struct MainView: View {
                         },
                         onOpenService: { service, project in
                             show(.service(service: service, project: project))
+                        },
+                        onOpenUsage: {
+                            appState.clearError()
+                            show(.usage)
                         }
                     )
                     .transition(.opacity)
+                case .usage:
+                    SpendView(
+                        onDismiss: {
+                            appState.clearError()
+                            show(.main)
+                        }
+                    )
+                    .transition(.screen(reduceMotion: reduceMotion))
                 case .addService(let projectId, let projectName):
                     AddServiceView(
                         projectId: projectId,

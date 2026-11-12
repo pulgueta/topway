@@ -643,6 +643,28 @@ class AppState {
         }
     }
 
+    // MARK: - Spend
+
+    /// Returns `nil` when the fetch fails or is cancelled.
+    func fetchSpend() async -> Spend? {
+        guard isConfigured else {
+            errorMessage = "Add your API token and Workspace ID in Settings."
+            return nil
+        }
+
+        errorMessage = nil
+
+        do {
+            return try await dataSource.fetchSpend(workspaceId: workspaceId, token: railwayToken)
+        } catch let error as RailwayError {
+            show(error)
+            return nil
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
     // MARK: - Logs
 
     /// Gives each log event to `onEvent` until the stream ends or the task is cancelled.

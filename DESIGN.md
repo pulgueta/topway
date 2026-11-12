@@ -49,6 +49,7 @@ There is no `NavigationStack`. `MainView` and `ServiceView` each hold an enum of
 
 ```text
 Projects (start screen with no token)
+├── Usage
 ├── Add service
 └── Service: tabs Variables | Deployments | Metrics
     ├── Add variable / Edit variable
@@ -104,6 +105,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 
 - Use the system text styles: `.headline` for a screen title, `.body` for a row title, `.callout` for context and messages, `.subheadline` for a status or a date. Use a monospaced design for variable names, variable values and log lines.
 - Use `.fontWeight(.medium)` only for the main text of a row.
+- Use `.title` with the semibold weight only for the one number that a screen is about, such as the cost on the usage screen.
 - Use the hierarchical styles `.secondary` and `.tertiary` for less important text and icons. Do not set an opacity on text.
 - Color has a meaning: orange for sample data and warnings, red for errors, destructive buttons and destructive confirmations, green, yellow, red, purple and gray for the deployment status, and the accent color for the prominent button. A color is never the only sign: a text or a symbol is always with it.
 - Do not put orange text on a tint, and do not put white text on a system color. The system colors change with Increase Contrast, and such text is then hard to read. Color the symbol, or use red text with a symbol.
@@ -168,6 +170,7 @@ Tradeoffs:
 | Screen | First design | This design |
 |---|---|---|
 | Projects | "+" and trash icons on each project, a gear, a "+" in the section header. | **Refresh** and **Settings** in the top bar. **Manage** menu and an **Add service** row in each project. **New project** and **Quit Topway** in the bottom bar. |
+| Usage | No usage. | The row **Usage and cost** is first in the projects list. The screen shows the cost that Railway gives, the billing period, the limits and the use of each resource. **Refresh** in the bottom bar. |
 | Start | Shows only with no token. | The same screen. A rejected token now has a way back to it. |
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Redeploy and Delete service. |
 | Variables | Edit, show and copy icons that show on hover. | **Show**, **Copy** and **Edit** buttons in each row. **Copy all** and **Add variable** in the bottom bar. |

@@ -26,6 +26,12 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - **View logs**, **Open URL** and **Restart**: Each deployment has these buttons. **Open URL** shows only when the deployment has a URL.
 - **Redeploy** builds and starts a new deployment of the service.
 
+### Usage and cost
+- On the projects screen, select **Usage and cost**. The screen shows the cost of the usage in the current billing period of the workspace, the dates of the period and the days that are left.
+- Railway gives the cost. Topway calculates no price. The cost can be some minutes old, and it is not your invoice.
+- The screen shows the email alert and the hard limit of the workspace, when they are set.
+- The screen shows the use of CPU, memory, network egress and volumes in the period.
+
 ### Metrics
 - The **Metrics** tab of a service shows CPU, memory, network in and network out in one environment.
 - Each metric shows its latest value, its highest value and a chart.
@@ -74,7 +80,7 @@ To remove the saved token from your Mac, select **Settings > Credentials > Remov
 
 You can use Topway with no Railway token. On the start screen, select **Try with sample data**. The same button shows when Railway does not accept your token.
 
-- Topway shows sample projects, services, deployments, variables, metrics and logs. The label **Sample data** shows at the top of each screen.
+- Topway shows sample projects, services, deployments, variables, metrics, usage and logs. The label **Sample data** shows at the top of each screen.
 - Topway does not connect to Railway. It does not read or save your token.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
 - Sample mode can send alerts. Each sample notification shows **Sample data**.

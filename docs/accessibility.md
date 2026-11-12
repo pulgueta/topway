@@ -52,6 +52,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Start screen, **Try with sample data**, **Exit sample data** | E1, E5 | E1 | E10 | E11b | E12a | E13a |
 | Settings: token, Workspace ID, **Save** | E1, E7 | E1 | E10 | E11g | E12, check 4 | E13e |
 | See the projects, open or close a project, **Refresh** | E1, E3, E4, E6 | E1, E3 | E10 | E11c | E12 | E13b |
+| **Usage and cost**: cost, period, limits, **Refresh** | E1, E3, E4, E16 | E1 | E10 | E16 | E12 | E13a |
 | Open a service, change the environment, change the tab | E1, E3, E4, E9 | E1, E3, check 2 | E10 | — | E12 | E13a |
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
@@ -121,6 +122,8 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 **E14. Reduce Transparency.** With Reduce Transparency, the dialog card is opaque (`GlassConfirmationDialog`). All other glass comes from the system button styles.
 
 **E15. Charts.** `MetricCard` shows the name, the latest value and the highest value of a metric as text, and VoiceOver reads them as one item. The chart is hidden from assistive technologies, because it only shows the trend of the same values. A chart has one series, so no value depends on a color.
+
+**E16. Usage.** `SpendRow` has the label "Usage and cost". `SpendSummary` reads the cost, its period and the days left as one item. The progress bar of the limit has the limit amounts as its label and "50 percent of the limit" as its value. A cost above the limit shows as red text with an octagon and the words "The usage is above the limit."
 
 ### Known limits
 
