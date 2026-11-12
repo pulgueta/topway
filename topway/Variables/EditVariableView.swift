@@ -13,6 +13,9 @@ struct EditVariableView: View {
     let existingVariable: EnvironmentVariable?
     /// The names of the variables in this environment. `nil` means the names are not known.
     let existingNames: Set<String>?
+    /// The names of the sealed variables in this environment. A save must not put an empty
+    /// value over one of them, also from Add variable.
+    let sealedNames: Set<String>
     /// The services of the project, for the reference menu and the suggestions.
     let services: [Service]
     /// `nil` when the variables of the other services did not load.
@@ -38,7 +41,17 @@ struct EditVariableView: View {
 
     private var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
-            && existingVariable?.accepts(value) ?? true
+            && EnvironmentVariable.permitsSave(of: value, as: name, sealedNames: allSealedNames)
+    }
+
+    /// The sealed names, with the edited variable when it is sealed.
+    private var allSealedNames: Set<String> {
+        guard let existingVariable, existingVariable.isSealed else { return sealedNames }
+        return sealedNames.union([existingVariable.name])
+    }
+
+    private var isSealedTarget: Bool {
+        allSealedNames.contains(name.trimmingCharacters(in: .whitespaces))
     }
 
     /// The variables that the value can reference. The variable itself is left out.
@@ -127,7 +140,7 @@ struct EditVariableView: View {
                     Text("Value")
                         .font(.callout.weight(.medium))
 
-                    if existingVariable?.isSealed == true {
+                    if isSealedTarget {
                         Label(
                             "This variable is sealed. Railway does not show its value. "
                                 + "Type a new value to replace it.",
@@ -306,6 +319,7 @@ struct EditVariableView: View {
         environmentName: "production",
         existingVariable: nil,
         existingNames: [],
+        sealedNames: [],
         services: [Service(id: "svc2", name: "postgres")],
         projectVariables: ProjectVariables(
             shared: ["LOG_LEVEL": "info"], byService: ["svc2": ["DATABASE_URL": "postgresql://db"]]),

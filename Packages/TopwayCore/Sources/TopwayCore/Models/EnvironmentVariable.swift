@@ -14,10 +14,16 @@ public struct EnvironmentVariable: Identifiable, Hashable, Sendable {
         value == nil
     }
 
-    /// Whether the editor can save `newValue`. The editor of a sealed variable starts empty,
-    /// so an empty value would replace the sealed value with nothing.
-    public func accepts(_ newValue: String) -> Bool {
-        !isSealed || !newValue.isEmpty
+    /// Whether the editor can save `value` as the variable `name`. Railway gives no value
+    /// for a sealed variable, so the editor starts empty, and an empty value would replace
+    /// the sealed value with nothing. This is also true when Add variable has the name of a
+    /// sealed variable.
+    /// - Parameter sealedNames: The names of the sealed variables of the service in the
+    ///   environment.
+    public static func permitsSave(of value: String, as name: String, sealedNames: Set<String>)
+        -> Bool
+    {
+        !value.isEmpty || !sealedNames.contains(name.trimmingCharacters(in: .whitespaces))
     }
 }
 

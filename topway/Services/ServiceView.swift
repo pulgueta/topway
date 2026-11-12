@@ -62,6 +62,7 @@ struct ServiceView: View {
                     environmentName: selectedEnvironmentName,
                     existingVariable: variable,
                     existingNames: areVariablesKnown ? Set(variables.map(\.name)) : nil,
+                    sealedNames: Set(variables.filter(\.isSealed).map(\.name)),
                     services: project.serviceList,
                     projectVariables: projectVariables,
                     onDismiss: { show(.overview) },

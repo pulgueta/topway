@@ -47,11 +47,20 @@ struct EnvironmentVariableTests {
 
     @Test("The editor cannot save an empty value over a sealed value")
     func sealedEmptyValue() {
-        let sealed = EnvironmentVariable(name: "STRIPE_KEY", value: nil)
-        let plain = EnvironmentVariable(name: "PORT", value: "8080")
+        let sealed: Set = ["STRIPE_KEY"]
 
-        #expect(!sealed.accepts(""))
-        #expect(sealed.accepts("sk_new"))
-        #expect(plain.accepts(""))
+        #expect(!EnvironmentVariable.permitsSave(of: "", as: "STRIPE_KEY", sealedNames: sealed))
+        #expect(
+            EnvironmentVariable.permitsSave(of: "sk_new", as: "STRIPE_KEY", sealedNames: sealed))
+        #expect(EnvironmentVariable.permitsSave(of: "", as: "PORT", sealedNames: sealed))
+    }
+
+    @Test("Add variable with the name of a sealed variable cannot save an empty value")
+    func addWithSealedName() {
+        let sealed: Set = ["STRIPE_KEY"]
+
+        // The editor trims the name before the save, so the match uses the trimmed name.
+        #expect(!EnvironmentVariable.permitsSave(of: "", as: " STRIPE_KEY ", sealedNames: sealed))
+        #expect(EnvironmentVariable.permitsSave(of: "", as: "STRIPE_KEY_2", sealedNames: sealed))
     }
 }
