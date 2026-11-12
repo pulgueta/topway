@@ -27,16 +27,21 @@ struct VariableRow: View {
                 HStack(spacing: 6) {
                     Button(isValueVisible ? "Hide" : "Show") { isValueVisible.toggle() }
                         .help(isValueVisible ? "Hide the value." : "Show the value.")
-                        .accessibilityLabel(isValueVisible ? "Hide value" : "Show value")
+                        .accessibilityLabel(
+                            "\(isValueVisible ? "Hide" : "Show") value of \(variable.name)"
+                        )
+                        .accessibilityInputLabels([isValueVisible ? "Hide" : "Show"])
 
                     CopyButton(title: "Copy") { NSPasteboard.general.setSecret(variable.value) }
                         .labelStyle(.titleOnly)
                         .help("Copy the value.")
-                        .accessibilityLabel("Copy value")
+                        .accessibilityLabel("Copy value of \(variable.name)")
+                        .accessibilityInputLabels(["Copy"])
 
                     Button("Edit") { onEdit() }
                         .help("Change or delete this variable.")
-                        .accessibilityLabel("Edit variable")
+                        .accessibilityLabel("Edit \(variable.name)")
+                        .accessibilityInputLabels(["Edit"])
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)

@@ -28,6 +28,7 @@ struct ServiceRow: View {
         }
         .buttonStyle(RowButtonStyle())
         .help("Show the variables and deployments of \(service.name).")
+        .accessibilityLabel(service.name)
         .accessibilityHint("Shows the variables and deployments.")
     }
 }

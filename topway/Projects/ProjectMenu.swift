@@ -34,5 +34,6 @@ struct ProjectMenu: View {
         .fixedSize()
         .help("Add a service, mute alerts or delete \(projectName).")
         .accessibilityLabel("Manage \(projectName)")
+        .accessibilityInputLabels(["Manage", "Manage \(projectName)"])
     }
 }
