@@ -23,6 +23,7 @@ The app imports the core. The core does not import the app.
 | `Logs` | `LogLine`, `LogKind`, `LogEvent`, `LogConnection`, `LogBuffer` and the fallback rules. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Recovery` | `RecoveryAction` and `RecoveryRules`, which give the actions after a failed load. |
+| `Reports` | `IssueReportLink`, which makes the link to a GitHub issue form with the `DeviceDetails` filled in. It sends no token and no project data. |
 | `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
 
 ### App folders
