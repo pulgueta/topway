@@ -78,6 +78,16 @@ struct ProjectsScreen: View {
     }
 
     private var emptyView: some View {
+        VStack(spacing: 0) {
+            // A workspace with no projects can still have costs in the billing period.
+            SpendRow { onOpenUsage() }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+            emptyMessage
+        }
+    }
+
+    private var emptyMessage: some View {
         ContentUnavailableView {
             Label("No projects", systemImage: "folder")
         } description: {
