@@ -27,6 +27,7 @@ struct AddServiceView: View {
             form
         } top: {
             ScreenHeader(title: "Add service", backTitle: "Projects", onBack: { cancel() })
+                .disabled(isCreating)
         } bottom: {
             if let error = appState.errorMessage {
                 ErrorBanner(message: error) { appState.clearError() }
@@ -36,6 +37,8 @@ struct AddServiceView: View {
         .onAppear {
             isSourceFocused = true
         }
+        // Escape obeys the same rule as Cancel.
+        .onExitCommand { cancel() }
     }
 
     // MARK: - Form
@@ -102,6 +105,7 @@ struct AddServiceView: View {
         } actions: {
             Button("Cancel") { cancel() }
                 .buttonStyle(.glass)
+                .disabled(isCreating)
 
             Button(isCreating ? "Adding…" : "Add service") { createService() }
                 .buttonStyle(.glassProminent)
@@ -112,7 +116,9 @@ struct AddServiceView: View {
     // MARK: - Actions
 
     // Only a user exit clears the error. A failed refresh must stay visible.
+    // The screen stays while Railway adds the service, so the result shows here.
     private func cancel() {
+        guard !isCreating else { return }
         appState.clearError()
         onDismiss()
     }
