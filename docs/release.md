@@ -6,13 +6,9 @@ This checklist is for the person who uploads a build. Do the steps in sequence. 
 
 ### 1. App icon
 
-App Store Connect rejects an upload that has no 1024 × 1024 pixel icon (512 pt @2x). The current `topway/Assets.xcassets/AppIcon.appiconset` has no such image, so the validation fails.
+Done. The app icon is `topway/Appicon.icon`, made in Icon Composer. The build setting `ASSETCATALOG_COMPILER_APPICON_NAME` is `Appicon`. If you rename the file, change the setting to the same name (Xcode: **General > App Icons and Launch Screen > App Icon**).
 
-1. Make `AppIcon.icon` in Icon Composer.
-2. Put `AppIcon.icon` in the `topway` folder. The folder is a synchronized group, so the file joins the target.
-3. Delete `topway/Assets.xcassets/AppIcon.appiconset`.
-4. In Xcode, select the `topway` target, then **General > App Icons and Launch Screen > App Icon**. Make sure that the value is `AppIcon`. This is the build setting `ASSETCATALOG_COMPILER_APPICON_NAME`.
-5. Build the app and make sure that the icon shows.
+Topway has no Dock icon (`LSUIElement`). The icon shows in Finder, in Launchpad, in the App Store and in notifications.
 
 ### 2. App record
 
