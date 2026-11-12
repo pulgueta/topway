@@ -9,12 +9,12 @@ Topway is a native **macOS menu bar app** (SwiftUI) for monitoring and managing 
 The app is an Xcode project with one local package, `Packages/TopwayCore`. There are no third-party packages. Open `topway.xcodeproj` in Xcode and run (scheme `topway`), or from the CLI:
 
 ```sh
-# Build
-xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug build
+# Build (with no signing; signing needs the certificate of team 7QNFW3929Z)
+xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
 
 # Build into a known location, then launch
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug \
-  -derivedDataPath build build
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath build build
 open build/Build/Products/Debug/topway.app
 
 # Test the core
