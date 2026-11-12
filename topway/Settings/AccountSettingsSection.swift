@@ -36,6 +36,12 @@ struct AccountSettingsSection: View {
             guard appState.isSignedIn, appState.account == nil else { return }
             loadError = await appState.loadAccount()
         }
+        // The error replaces the loading row, so VoiceOver must say it, also after a failed
+        // Try again, but only while this window is active.
+        .task(id: appearsActive ? loadError : nil) {
+            guard appearsActive, let loadError else { return }
+            AccessibilityNotification.Announcement("Error: \(loadError)").post()
+        }
         // The sign-in window takes the focus, so VoiceOver says the error when this window is
         // active again.
         .task(id: appearsActive ? appState.signInError : nil) {
