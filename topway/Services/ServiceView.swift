@@ -105,6 +105,7 @@ struct ServiceView: View {
                 VariablesTab(
                     variables: variables,
                     isLoading: isLoading,
+                    areVariablesKnown: areVariablesKnown,
                     onRetry: {
                         Task { await loadVariables() }
                     },

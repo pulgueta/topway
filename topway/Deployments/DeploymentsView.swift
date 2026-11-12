@@ -15,6 +15,8 @@ struct DeploymentsView: View {
 
     @State private var deployments: [Deployment] = []
     @State private var isLoading = true
+    /// `false` after a load that failed. An empty list is then not a fact.
+    @State private var areDeploymentsKnown = false
     @State private var isRedeploying = false
     @State private var restartingDeploymentId: String?
     @State private var latestLoadID = UUID()
@@ -66,6 +68,14 @@ struct DeploymentsView: View {
             LoadingStateView(title: "Loading deployments…")
         } else if let error = appState.errorMessage {
             ErrorStateView(title: "Deployments did not load", message: error) {
+                Task { await loadDeployments() }
+            }
+        } else if !areDeploymentsKnown {
+            // The error is gone, for example after a new token, but the list did not load.
+            ErrorStateView(
+                title: "Deployments did not load",
+                message: "Select Try again to load the deployments."
+            ) {
                 Task { await loadDeployments() }
             }
         } else {
@@ -144,7 +154,8 @@ struct DeploymentsView: View {
         )
         // Only the latest call may update the screen.
         guard loadID == latestLoadID else { return }
-        deployments = fetched
+        deployments = fetched ?? []
+        areDeploymentsKnown = fetched != nil
         isLoading = false
     }
 

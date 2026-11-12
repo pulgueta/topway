@@ -8,6 +8,8 @@ struct VariablesTab: View {
 
     let variables: [EnvironmentVariable]
     let isLoading: Bool
+    /// `false` after a load that failed. An empty list is then not a fact.
+    let areVariablesKnown: Bool
     let onRetry: () -> Void
     let onAdd: () -> Void
     let onEdit: (EnvironmentVariable) -> Void
@@ -58,6 +60,12 @@ struct VariablesTab: View {
             LoadingStateView(title: "Loading variables…")
         } else if let error = appState.errorMessage {
             ErrorStateView(title: "Variables did not load", message: error) { onRetry() }
+        } else if !areVariablesKnown {
+            // The error is gone, for example after a new token, but the list did not load.
+            ErrorStateView(
+                title: "Variables did not load",
+                message: "Select Try again to load the variables."
+            ) { onRetry() }
         } else {
             ContentUnavailableView(
                 "No variables",

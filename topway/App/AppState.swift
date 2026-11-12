@@ -528,11 +528,11 @@ class AppState {
     // MARK: - Deployment Management
 
     func fetchDeployments(projectId: String, environmentId: String, serviceId: String) async
-        -> [Deployment]
+        -> [Deployment]?
     {
         guard isConfigured else {
             errorMessage = "Add your API token and Workspace ID in Settings."
-            return []
+            return nil
         }
 
         errorMessage = nil
@@ -547,10 +547,10 @@ class AppState {
             return deployments
         } catch let error as RailwayError {
             show(error)
-            return []
+            return nil
         } catch {
             errorMessage = error.localizedDescription
-            return []
+            return nil
         }
     }
 
