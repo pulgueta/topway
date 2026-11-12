@@ -26,15 +26,15 @@ If a feature does not work for you, tell us: select **Settings > Help > Report a
 
 Apple permits a label only when the user can complete all common tasks with that feature. See the [overview of Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels).
 
-No person did the manual checks on a running app for this evaluation. The recommendations come from the code. Change this section when the manual checks are complete.
+The maintainer did the manual checks below on a running app on 2026-11-12, and all checks passed. The recommendations come from the code and from these checks.
 
 | Label (Mac) | Recommendation | Reason |
 |---|---|---|
-| VoiceOver | Declare after the manual check passes. | The code gives each control a name, a type and a value. Only a test with VoiceOver shows that the menu bar window, the row groups and the dialog work. |
-| Voice Control | Declare after the manual check passes. | Each action is a standard control with a name that includes the visible text. Only a test shows the names and the numbers. |
+| VoiceOver | Declare. | The code gives each control a name, a type and a value. Check 1 passed: the menu bar window, the row groups and the dialog work. |
+| Voice Control | Declare. | Each action is a standard control with a name that includes the visible text. Check 2 passed. |
 | Dark Interface | Declare. | The code has no fixed light color and no appearance override. Do check 6 to make sure. |
 | Differentiate Without Color Alone | Declare. | Each status has a text or a symbol with its color. Do check 7 to make sure. |
-| Sufficient Contrast | Declare after the manual check passes. | Some colored text is below 4.5 to 1 in the light appearance by default. See "Known limits". Apple permits the label when Increase Contrast gives sufficient contrast in an app that uses the Apple frameworks. A test must show that. |
+| Sufficient Contrast | Declare. | Some colored text is below 4.5 to 1 in the light appearance by default. See "Known limits". Apple permits the label when Increase Contrast gives sufficient contrast in an app that uses the Apple frameworks. Check 4 passed. |
 | Reduced Motion | Declare. | Each custom animation fades or stops with Reduce Motion. Do check 5 to make sure. |
 | Larger Text | Not available on Mac. | — |
 | Captions | Not applicable. Do not select it. | Topway has no video and no audio. |
@@ -128,7 +128,7 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 
 ## Manual checks
 
-Do each check in sample mode (**Try with sample data**) and go through all rows of the table above. A check passes when you can complete each task with only that feature.
+Do each check in sample mode (**Try with sample data**) and go through all rows of the table above. Sample mode ends when you save a token, so do the credential tasks (enter the token and the Workspace ID, **Save**, **Remove token…**, and the rejected token screen) again with a real token. A check passes when you can complete each task with only that feature.
 
 1. **VoiceOver.** Press Command-F5. Press VO-M two times to go to the status menus, find Topway and press VO-Space. Move with VO-Right and VO-Left. Go into a row group with VO-Shift-Down.
    - VoiceOver says the name, the type and the value of each control.
