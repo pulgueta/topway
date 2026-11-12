@@ -35,7 +35,8 @@ struct DeploymentsView: View {
         } top: {
             EmptyView()
         } bottom: {
-            if let error = appState.errorMessage, !deployments.isEmpty {
+            // With a known list, the error belongs to a different action, not to this load.
+            if let error = appState.errorMessage, !deployments.isEmpty || areDeploymentsKnown {
                 ErrorBanner(message: error) { appState.clearError() }
             }
             footer
@@ -66,15 +67,11 @@ struct DeploymentsView: View {
             }
         } else if isLoading {
             LoadingStateView(title: "Loading deployments…")
-        } else if let error = appState.errorMessage {
-            ErrorStateView(title: "Deployments did not load", message: error) {
-                Task { await loadDeployments() }
-            }
         } else if !areDeploymentsKnown {
-            // The error is gone, for example after a new token, but the list did not load.
+            // The error can be gone, for example after a new token, but the list did not load.
             ErrorStateView(
                 title: "Deployments did not load",
-                message: "Select Try again to load the deployments."
+                message: appState.errorMessage ?? "Select Try again to load the deployments."
             ) {
                 Task { await loadDeployments() }
             }
