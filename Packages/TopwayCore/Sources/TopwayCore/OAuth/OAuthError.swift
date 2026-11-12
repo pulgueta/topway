@@ -10,7 +10,8 @@ public enum OAuthError: LocalizedError, Equatable {
     case invalidCallback
     /// Railway sent an error in the callback, with its description when it has one.
     case authorizationFailed(String?)
-    /// Railway did not accept the code or the refresh token. Only a new sign-in can help.
+    /// Railway did not accept the code or the refresh token (`invalid_grant`). Only a new
+    /// sign-in can help.
     case rejected
     /// Railway sent a server error or a rate limit. The sign-in stays, because it can pass.
     case serverError(Int)
@@ -19,6 +20,9 @@ public enum OAuthError: LocalizedError, Equatable {
     case invalidResponse
     /// The system did not open the sign-in window.
     case cannotOpenWindow
+    /// Railway refused the token request with another error code, for example
+    /// `invalid_client`. The sign-in stays.
+    case requestRefused(String?)
 
     public var errorDescription: String? {
         switch self {
@@ -40,6 +44,10 @@ public enum OAuthError: LocalizedError, Equatable {
             "Topway cannot read the sign-in answer from Railway. Try again."
         case .cannotOpenWindow:
             "Topway cannot open the sign-in window. Try again."
+        case .requestRefused(let code):
+            "Railway did not accept the token request"
+                + (code.map { " (\($0))" } ?? "")
+                + ". Try again later. If the problem continues, sign out and sign in again."
         }
     }
 }

@@ -687,9 +687,14 @@ class AppState {
                 guard tokens == current else { throw RailwayError.cancelled }
                 tokens = renewed
                 sessionGeneration.record(.tokensRefreshed)
-                // A failed write keeps the new tokens for this session. At the next launch,
-                // Railway does not accept the earlier refresh token, and the user signs in.
-                _ = save(renewed)
+                // A Keychain write can fail for a short time, so Topway writes one more time.
+                // When both fail, the new tokens work until Topway quits. Railway can rotate the
+                // refresh token, so the saved one can fail at the next launch: the user is told.
+                if !save(renewed), !save(renewed) {
+                    errorMessage =
+                        "Topway cannot save the renewed sign-in to the Keychain. "
+                        + "When Topway starts again, it can be necessary to sign in again."
+                }
                 return renewed
             } catch let error as OAuthError {
                 // A refusal of an earlier session ends nothing: it must not close the window

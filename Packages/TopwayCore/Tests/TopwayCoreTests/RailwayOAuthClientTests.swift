@@ -66,17 +66,32 @@ struct RailwayOAuthClientTests {
         #expect(server.requests.isEmpty)
     }
 
-    @Test(
-        "Railway refuses the grant: the user must sign in again",
-        arguments: [
-            (400, #"{"error":"invalid_grant","error_description":"grant request is invalid"}"#),
-            (401, #"{"error":"invalid_client"}"#),
-        ])
-    func rejected(status: Int, body: String) async throws {
-        let server = StubServer(StubReply(status: status, body: body))
+    @Test("Railway refuses the grant (RFC 6749, 5.2): the user must sign in again")
+    func rejected() async throws {
+        let server = StubServer(
+            StubReply(
+                status: 400,
+                body: #"{"error":"invalid_grant","error_description":"grant request is invalid"}"#))
         let earlier = OAuthTokens(accessToken: "a1", refreshToken: "r1", expiresAt: now)
 
         await #expect(throws: OAuthError.rejected) {
+            try await client(server).refresh(earlier, clientID: "test-client-id")
+        }
+    }
+
+    @Test(
+        "Another refused token request keeps the sign-in and gives the error code",
+        arguments: [
+            (400, #"{"error":"invalid_request"}"#, "invalid_request"),
+            (401, #"{"error":"invalid_client"}"#, "invalid_client"),
+            (400, #"{"error":"unauthorized_client"}"#, "unauthorized_client"),
+            (400, "not json", nil),
+        ] as [(Int, String, String?)])
+    func refused(status: Int, body: String, code: String?) async throws {
+        let server = StubServer(StubReply(status: status, body: body))
+        let earlier = OAuthTokens(accessToken: "a1", refreshToken: "r1", expiresAt: now)
+
+        await #expect(throws: OAuthError.requestRefused(code)) {
             try await client(server).refresh(earlier, clientID: "test-client-id")
         }
     }

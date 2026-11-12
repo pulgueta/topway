@@ -72,10 +72,13 @@ public struct RailwayOAuthClient: Sendable {
             else { throw .invalidResponse }
             return answer
         case 400, 401:
-            // For example `invalid_grant`: the code or the refresh token is used, expired
-            // or revoked. Topway never sends the body to the user, because it can have details
-            // of the request.
-            throw .rejected
+            // Only `invalid_grant` ends the sign-in. Another code, for example
+            // `invalid_client`, keeps the tokens.
+            let answer = try? JSONDecoder().decode(TokenErrorResponse.self, from: data)
+            if answer?.isGrantRefused == true {
+                throw .rejected
+            }
+            throw .requestRefused(answer?.error)
         default:
             throw .serverError(status)
         }

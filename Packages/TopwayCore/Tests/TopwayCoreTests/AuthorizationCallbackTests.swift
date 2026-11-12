@@ -74,7 +74,7 @@ struct AuthorizationCallbackTests {
         #expect(OAuthError.cancelled.errorDescription == nil)
         let others: [OAuthError] = [
             .denied, .invalidCallback, .authorizationFailed(nil), .rejected, .serverError(500),
-            .networkError("Offline"), .invalidResponse, .cannotOpenWindow,
+            .networkError("Offline"), .invalidResponse, .cannotOpenWindow, .requestRefused(nil),
         ]
         for error in others {
             #expect(error.errorDescription != nil, "\(error)")
