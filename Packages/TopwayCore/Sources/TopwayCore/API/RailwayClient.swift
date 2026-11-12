@@ -543,9 +543,12 @@ public struct RailwayClient: RailwayDataSource {
             // Poll until the next socket try. One request each 5 seconds.
             continuation.yield(.connection(.polling))
             for _ in 0..<Self.pollsBeforeSocketTry {
+                // A failure to get a token ends the stream. Only the log request gets the
+                // network error rule below.
+                let pollToken = try await token()
                 do {
                     let data: LogsData = try await execute(
-                        query: query, variables: variables, token: try await token())
+                        query: query, variables: variables, token: pollToken)
                     yield(data.lines)
                     if let deployment = data.deployment, !deployment.isBuildRunning {
                         // A finished build log gets no more lines.

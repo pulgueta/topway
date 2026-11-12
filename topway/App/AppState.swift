@@ -649,7 +649,16 @@ class AppState {
 
     private func streamToken(startedIn generation: SessionGeneration) async throws -> String {
         guard generation == sessionGeneration else { throw RailwayError.cancelled }
-        return try await accessToken()
+        // The token can wait for a refresh. A sign-in that completed meanwhile belongs to
+        // another session, and the token or the error can belong to the earlier account.
+        do {
+            let token = try await accessToken()
+            guard generation == sessionGeneration else { throw RailwayError.cancelled }
+            return token
+        } catch {
+            guard generation == sessionGeneration else { throw RailwayError.cancelled }
+            throw error
+        }
     }
 
     /// Gets new tokens after `usedToken`. A request that comes during a refresh waits for it,

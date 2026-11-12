@@ -53,4 +53,36 @@ struct LogTokenTests {
         #expect(connector.authorizations == ["Bearer t1"])
         #expect(server.requests.map(\.authorization) == ["Bearer t2", "Bearer t3"])
     }
+
+    @Test("A failure to get the poll token ends the stream, also a network error")
+    func pollTokenFailureEndsStream() async throws {
+        let server = StubServer(StubReply(body: RailwayClientRecoveryTests.lines))
+        let connector = RecordingConnector()
+        let calls = TokenSource()
+        let client = RailwayClient(
+            session: server.session, sleep: StubSleep(stopAt: 3).sleep, socket: connector.socket)
+        // The socket gets a token; the first poll does not.
+        let token: @Sendable () async throws -> String = {
+            let next = calls.next()
+            guard next == "t1" else {
+                throw RailwayError.networkError(URLError(.notConnectedToInternet))
+            }
+            return next
+        }
+
+        var failure: (any Error)?
+        do {
+            for try await _ in client.logs(.deploy, deploymentId: "d1", token: token) {}
+        } catch {
+            failure = error
+        }
+
+        guard case .networkError = failure as? RailwayError else {
+            Issue.record(
+                "The stream did not end with the token error: \(String(describing: failure))"
+            )
+            return
+        }
+        #expect(server.requests.isEmpty)
+    }
 }
