@@ -1,0 +1,14 @@
+// Sign in with Railway.
+//
+// The client ID of a Railway OAuth app of the type Native (Public). It goes into the
+// Info.plist key RailwayOAuthClientID. With an empty value, the build offers only
+// sample data.
+//
+// Put your own value in Config/OAuth.local.xcconfig, which git ignores:
+//
+//     RAILWAY_OAUTH_CLIENT_ID = <your client ID>
+//
+// Do not write the value in this file.
+RAILWAY_OAUTH_CLIENT_ID =
+
+#include? "OAuth.local.xcconfig"
