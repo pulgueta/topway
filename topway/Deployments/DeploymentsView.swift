@@ -189,9 +189,11 @@ struct DeploymentsView: View {
         busyDeploymentId = deployment.id
         let success = await appState.perform(action, deploymentId: deployment.id)
         busyDeploymentId = nil
-        // The list then shows the new status.
+        // The list then shows the new status. The projects list and the menu bar health
+        // read the latest deployment from the projects, so they load again too.
         if success {
             await loadDeployments()
+            await appState.loadProjects(keepingError: true)
         }
     }
 
