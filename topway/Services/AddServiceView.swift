@@ -16,6 +16,8 @@ struct AddServiceView: View {
     @State private var database: DatabaseTemplate = .postgres
     /// The environment where the database starts.
     @State private var databaseEnvironmentId: String?
+    /// The wait for a database that Railway accepted. The user can stop it with Close.
+    @State private var waitTask: Task<Void, Never>?
     @State private var isCreating = false
     @FocusState private var isSourceFocused: Bool
 
@@ -29,6 +31,10 @@ struct AddServiceView: View {
 
     private var databaseEnvironment: RailwayEnvironment? {
         environments.first { $0.id == databaseEnvironmentId }
+    }
+
+    private var isWaitingForDatabase: Bool {
+        waitTask != nil
     }
 
     private var isInputValid: Bool {
@@ -57,6 +63,8 @@ struct AddServiceView: View {
                 (environments.first { ConfirmationRules.isProduction(environmentName: $0.name) }
                 ?? environments.first)?.id
         }
+        // The wait belongs to this screen. Railway continues without it.
+        .onDisappear { waitTask?.cancel() }
         // Escape obeys the same rule as Cancel.
         .onExitCommand {
             if appState.pendingConfirmation != nil {
@@ -99,6 +107,7 @@ struct AddServiceView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, Layout.controlSpacing)
+            .disabled(isCreating || isWaitingForDatabase)
         }
     }
 
@@ -175,23 +184,38 @@ struct AddServiceView: View {
 
     private var footer: some View {
         ActionBar {
-            if isCreating {
+            if isWaitingForDatabase {
+                HStack(spacing: Layout.controlSpacing) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityHidden(true)
+                    Text("Railway adds the database…")
+                }
+            } else if isCreating {
                 ProgressView()
                     .controlSize(.small)
                     .accessibilityLabel("Adding the service")
             }
         } actions: {
-            Button("Cancel") { cancel() }
-                .buttonStyle(.glass)
-                .disabled(isCreating)
+            if isWaitingForDatabase {
+                // Railway accepted the database, so a second add is not available.
+                Button("Close") { cancel() }
+                    .buttonStyle(.glass)
+                    .help("Go back to the projects. Railway continues to add the database.")
+            } else {
+                Button("Cancel") { cancel() }
+                    .buttonStyle(.glass)
+                    .disabled(isCreating)
 
-            Button(
-                isCreating ? "Adding…" : sourceType == .database ? "Add database" : "Add service"
-            ) {
-                createService()
+                Button(
+                    isCreating
+                        ? "Adding…" : sourceType == .database ? "Add database" : "Add service"
+                ) {
+                    createService()
+                }
+                .buttonStyle(.glassProminent)
+                .disabled(!isInputValid || isCreating)
             }
-            .buttonStyle(.glassProminent)
-            .disabled(!isInputValid || isCreating)
         }
     }
 
@@ -201,6 +225,13 @@ struct AddServiceView: View {
     // The screen stays while Railway adds the service, so the result shows here.
     private func cancel() {
         guard !isCreating else { return }
+        if let waitTask {
+            // Railway accepted the database. Only the wait stops, and the projects load
+            // again, so the database shows when Railway made it.
+            waitTask.cancel()
+            self.waitTask = nil
+            Task { await appState.loadProjects() }
+        }
         appState.clearError()
         onDismiss()
     }
@@ -219,16 +250,23 @@ struct AddServiceView: View {
                     + "Railway bills its usage.",
                 actionTitle: "Add database",
                 environmentName: environment.name,
-                perform: { await addDatabase(template, environmentId: environment.id) }
+                perform: { await startDatabase(template, environmentId: environment.id) }
             ))
     }
 
-    private func addDatabase(_ template: DatabaseTemplate, environmentId: String) async {
+    /// Runs in the dialog only until Railway answers the deploy request. The wait for
+    /// the workflow then runs in this screen, where **Close** can stop it.
+    private func startDatabase(_ template: DatabaseTemplate, environmentId: String) async {
         isCreating = true
-        let didAdd = await appState.deployDatabase(
+        let start = await appState.startDatabase(
             template, projectId: projectId, environmentId: environmentId)
         isCreating = false
-        if didAdd {
+        guard start.isAccepted else { return }
+        waitTask = Task {
+            await appState.finishDatabase(template, workflowId: start.workflowId)
+            // After Close, the screen is gone and must not change the navigation.
+            guard !Task.isCancelled else { return }
+            waitTask = nil
             onDismiss()
         }
     }

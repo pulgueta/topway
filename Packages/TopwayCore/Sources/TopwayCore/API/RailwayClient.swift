@@ -5,7 +5,7 @@ public struct RailwayClient: RailwayDataSource {
     private let session: URLSession
     let sleep: @Sendable (Duration) async throws -> Void
     private let socket: GraphQLWebSocket
-    private let now: @Sendable () -> Date
+    let now: @Sendable () -> Date
 
     /// - Parameters:
     ///   - sleep: Waits between polls and before a reconnect. Tests replace it.
@@ -584,9 +584,13 @@ public struct RailwayClient: RailwayDataSource {
     }
 
     /// For variables that are not all text.
-    /// - Parameter token: `nil` sends no `Authorization` header.
+    /// - Parameters:
+    ///   - token: `nil` sends no `Authorization` header.
+    ///   - timeout: The seconds that the request can wait for data. `nil` keeps the
+    ///     default of the system.
     func execute<T: Decodable>(
-        query: String, json variables: [String: JSONValue], token: String?
+        query: String, json variables: [String: JSONValue], token: String?,
+        timeout: TimeInterval? = nil
     ) async throws -> T {
         guard let url = URL(string: baseURL) else {
             throw RailwayError.invalidURL
@@ -594,6 +598,9 @@ public struct RailwayClient: RailwayDataSource {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        if let timeout {
+            request.timeoutInterval = timeout
+        }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")

@@ -11,10 +11,11 @@ struct SampleDataSourceDatabaseTests {
     func deploy() async throws {
         let source = SampleDataSource(now: { [now] in now })
 
-        let isComplete = try await source.deployDatabase(
+        let workflowId = try await source.deployDatabase(
             .mongo, projectId: "docs", environmentId: "docs-staging", token: "")
 
-        #expect(isComplete)
+        #expect(workflowId == nil)
+        #expect(source.waitForDatabase(workflowId: "none", token: "") == .complete)
         let docs = try #require(
             await source.fetchProjects(workspaceId: "", token: "").first { $0.id == "docs" })
         #expect(docs.serviceList.map(\.name) == ["site", "MongoDB"])

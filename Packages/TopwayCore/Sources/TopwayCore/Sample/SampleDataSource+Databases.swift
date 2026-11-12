@@ -2,10 +2,11 @@
 extension SampleDataSource {
     /// Adds a service with the name of the database, a running deployment in the
     /// environment, and sample connection variables. Throws when the project or the
-    /// environment does not exist.
+    /// environment does not exist. The sample database is complete at once, so it has no
+    /// workflow.
     public func deployDatabase(
         _ template: DatabaseTemplate, projectId: String, environmentId: String, token: String
-    ) throws -> Bool {
+    ) throws -> String? {
         guard let project = projects.first(where: { $0.id == projectId }),
             project.environmentList.contains(where: { $0.id == environmentId })
         else { throw RailwayError.graphQLError("Project or environment not found.") }
@@ -19,7 +20,14 @@ extension SampleDataSource {
         variables[key] = seed.variables
         settings[key] = ServiceSettings(name: name, source: seed.image)
         startDeployment(key: key)
-        return true
+        return nil
+    }
+
+    /// The sample data has no workflow, so each database is complete.
+    public nonisolated func waitForDatabase(workflowId: String, token: String)
+        -> DatabaseDeployResult
+    {
+        .complete
     }
 
     private static func seedDatabase(_ template: DatabaseTemplate)

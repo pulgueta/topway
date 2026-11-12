@@ -4,6 +4,7 @@ struct CapturedRequest: Sendable {
     let url: URL?
     let method: String?
     let authorization: String?
+    let timeout: TimeInterval
     /// `nil` when the body is missing or is not valid JSON with this field.
     let query: String?
     /// `nil` when the body is missing or is not valid JSON with this field.
@@ -15,6 +16,7 @@ struct CapturedRequest: Sendable {
         url = request.url
         method = request.httpMethod
         authorization = request.value(forHTTPHeaderField: "Authorization")
+        timeout = request.timeoutInterval
 
         let json = Self.readBody(of: request).flatMap {
             try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
