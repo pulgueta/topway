@@ -54,6 +54,11 @@ class AppState {
     private let oauthClient = RailwayOAuthClient()
     /// The account query is not in `RailwayDataSource`, because sample mode has no account.
     private let accountClient = RailwayClient()
+    /// Changes on a new sign-in, a sign-out and sample mode. A late result of an earlier
+    /// sign-in or account load then changes nothing.
+    private var sessionGeneration = SessionGeneration()
+    /// The open sign-in window. A sign-out or sample data closes it.
+    private var webSignIn: WebSignIn?
 
     /// Persisted in `UserDefaults`, but held as a stored property so `@Observable`
     /// tracks it. A computed accessor that read `UserDefaults` directly would not
@@ -421,16 +426,29 @@ class AppState {
     func signIn() async {
         guard let clientID = oauthClientID, !isSigningIn else { return }
         let request = AuthorizationRequest(clientID: clientID)
+        sessionGeneration.record(.signInStarted)
+        let generation = sessionGeneration
+        let web = WebSignIn()
+        webSignIn = web
         isSigningIn = true
         signInError = nil
         sessionNotice = nil
-        defer { isSigningIn = false }
+        defer {
+            // A sign-out or sample data during the sign-in already reset these.
+            if generation == sessionGeneration {
+                isSigningIn = false
+                webSignIn = nil
+            }
+        }
 
         do {
-            let callback = try await WebSignIn.callbackURL(for: request.url)
+            let callback = try await web.callbackURL(for: request.url)
+            // After each wait: a sign-out or sample data replaced this sign-in.
+            guard generation == sessionGeneration else { return }
             let code = try AuthorizationCallback.code(in: callback, state: request.state)
             let newTokens = try await oauthClient.exchange(
                 code: code, verifier: request.pkce.verifier, clientID: clientID)
+            guard generation == sessionGeneration else { return }
             guard save(newTokens) else {
                 reportSignInFailure("Topway cannot save the sign-in to the Keychain. Try again.")
                 return
@@ -443,14 +461,25 @@ class AppState {
             let previousWorkspace = workspaceId
             await loadAccount()
             // The same workspace: its projects load again with the new sign-in.
-            if isConfigured, workspaceId == previousWorkspace {
+            if generation == sessionGeneration, isConfigured, workspaceId == previousWorkspace {
                 await loadProjects()
             }
         } catch let error as OAuthError {
+            guard generation == sessionGeneration else { return }
             reportSignInFailure(error.errorDescription)
         } catch {
+            guard generation == sessionGeneration else { return }
             reportSignInFailure(error.localizedDescription)
         }
+    }
+
+    /// Closes the sign-in window and drops the late results of the earlier sign-in and of
+    /// its account loads.
+    private func invalidateSession(_ event: SessionGeneration.Event) {
+        sessionGeneration.record(event)
+        webSignIn?.cancel()
+        webSignIn = nil
+        isSigningIn = false
     }
 
     /// The start screen shows the message. While an earlier sign-in stays, for example after
@@ -470,10 +499,14 @@ class AppState {
     @discardableResult
     func loadAccount() async -> String? {
         guard isSignedIn, !isSampleMode else { return nil }
+        let generation = sessionGeneration
         do {
             let loaded = try await withAccessToken { _, token in
                 try await accountClient.fetchAccount(token: token)
             }
+            // A sign-out, a new sign-in or sample data during the request: the answer belongs
+            // to an earlier session.
+            guard generation == sessionGeneration else { return nil }
             account = loaded
             let selection = WorkspaceChoice.selection(saved: workspaceId, in: loaded.workspaces)
             if selection != workspaceId {
@@ -481,9 +514,11 @@ class AppState {
             }
             return nil
         } catch let error as RailwayError {
+            guard generation == sessionGeneration else { return nil }
             show(error)
             return errorMessage
         } catch {
+            guard generation == sessionGeneration else { return nil }
             errorMessage = error.localizedDescription
             return errorMessage
         }
@@ -515,6 +550,7 @@ class AppState {
     /// Shows the start screen with no sign-in. Sample mode stays on, because it does not use
     /// the token.
     private func endSession(notice: String? = nil) {
+        invalidateSession(.signedOut)
         tokens = nil
         tokenRefresh?.cancel()
         tokenRefresh = nil
@@ -605,6 +641,7 @@ class AppState {
                 // A sign-out or a new sign-in during the refresh replaced these tokens.
                 guard tokens == current else { throw RailwayError.cancelled }
                 tokens = renewed
+                sessionGeneration.record(.tokensRefreshed)
                 // A failed write keeps the new tokens for this session. At the next launch,
                 // Railway does not accept the earlier refresh token, and the user signs in.
                 _ = save(renewed)
@@ -632,6 +669,7 @@ class AppState {
     // MARK: - Sample Mode
 
     func enterSampleMode() {
+        invalidateSession(.sampleModeStarted)
         // An earlier sign-in message must not show when sample mode ends.
         signInError = nil
         sessionNotice = nil

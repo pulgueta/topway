@@ -14,42 +14,56 @@ import TopwayCore
 final class WebSignIn: NSObject, ASWebAuthenticationPresentationContextProviding {
     private let anchor: ASPresentationAnchor
     private var session: ASWebAuthenticationSession?
+    /// The waiting sign-in. `finish` resumes it one time: from the session, or from `cancel`.
+    private var continuation: CheckedContinuation<URL, any Error>?
 
-    private init(anchor: ASPresentationAnchor) {
-        self.anchor = anchor
+    /// Uses the window of the control that starts the sign-in: the menu bar window or
+    /// Settings.
+    override init() {
+        anchor = NSApp.keyWindow ?? ASPresentationAnchor()
     }
 
-    /// - Throws: `OAuthError.cancelled` when the user closes the window.
-    static func callbackURL(for url: URL) async throws -> URL {
-        // The window of the control that started the sign-in: the menu bar window or Settings.
-        let signIn = WebSignIn(anchor: NSApp.keyWindow ?? ASPresentationAnchor())
+    /// - Throws: `OAuthError.cancelled` when the user closes the window or `cancel()` runs.
+    func callbackURL(for url: URL) async throws -> URL {
         // The menu bar window is a panel that does not activate the app, so the sign-in
         // window could open behind other windows.
         NSApp.activate()
-        return try await signIn.start(url)
-    }
-
-    private func start(_ url: URL) async throws -> URL {
-        try await withCheckedThrowingContinuation { continuation in
+        return try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
             let session = ASWebAuthenticationSession(
                 url: url, callback: .customScheme(RailwayOAuth.callbackScheme)
             ) { @Sendable callbackURL, error in
+                let result: Result<URL, any Error>
                 if let callbackURL {
-                    continuation.resume(returning: callbackURL)
+                    result = .success(callbackURL)
                 } else if (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin {
-                    continuation.resume(throwing: OAuthError.cancelled)
+                    result = .failure(OAuthError.cancelled)
                 } else {
-                    continuation.resume(throwing: error ?? OAuthError.invalidCallback)
+                    result = .failure(error ?? OAuthError.invalidCallback)
                 }
+                Task { @MainActor in self.finish(result) }
             }
             session.presentationContextProvider = self
             session.prefersEphemeralWebBrowserSession = false
             self.session = session
             // When the session does not start, it does not call the completion handler.
             if !session.start() {
-                continuation.resume(throwing: OAuthError.cannotOpenWindow)
+                finish(.failure(OAuthError.cannotOpenWindow))
             }
         }
+    }
+
+    /// Closes the sign-in window, for example after a sign-out or a selection of sample data.
+    func cancel() {
+        session?.cancel()
+        finish(.failure(OAuthError.cancelled))
+    }
+
+    private func finish(_ result: Result<URL, any Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        session = nil
+        continuation.resume(with: result)
     }
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
