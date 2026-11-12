@@ -41,13 +41,21 @@ struct SpendView: View {
                     SpendSummary(spend: spend, now: .now)
 
                     ForEach(spend.usage) { total in
-                        LabeledContent(total.kind.title, value: total.kind.formatted(total.value))
-                            .padding(.horizontal, Layout.contentInset)
-                            .padding(.vertical, Layout.controlSpacing)
-                            .overlay(alignment: .bottom) {
-                                Divider()
-                                    .padding(.leading, Layout.contentInset)
-                            }
+                        // The label is on the leading side and the value on the trailing side.
+                        HStack(spacing: Layout.controlSpacing) {
+                            Text(total.kind.title)
+                            Spacer(minLength: Layout.controlSpacing)
+                            Text(total.kind.formatted(total.value))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .padding(.horizontal, Layout.contentInset)
+                        .padding(.vertical, Layout.controlSpacing)
+                        .overlay(alignment: .bottom) {
+                            Divider()
+                                .padding(.leading, Layout.contentInset)
+                        }
                     }
 
                     Text(
