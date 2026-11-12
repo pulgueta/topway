@@ -9,7 +9,8 @@ Each action in Topway has a text label. No action shows only when the pointer is
 ### Projects and Services
 - The first screen shows all your Railway projects and their services.
 - **Refresh** and **Settings** are at the top. **New project** opens Railway in your browser. **Quit Topway** is at the bottom.
-- **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image.
+- **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image, or add a database.
+- **Database**: In **Add service**, select **Database**, then PostgreSQL, MySQL, Redis or MongoDB, and the environment. Railway adds the database from its template, with a volume and the connection variables, and starts it. Railway bills its usage. If Railway does not finish in 60 seconds, select **Refresh** later to see the database.
 - **Manage**: Each project has a **Manage** menu, with **Add service**, **Environments**, **Mute alerts** and **Delete project…**.
 - Select a service to see its variables, deployments and metrics. The **Manage** menu of the service has **Settings**, **Domains**, **Redeploy** and **Delete service…**.
 - To delete a project or a service, you must type its name.
@@ -78,7 +79,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 ## Limitations
 
 - **Project Creation**: Creating new projects is not currently supported via the Public API endpoints available to this application. The app provides a shortcut to the Railway Dashboard for this action.
-- **Service Creation**: You can create services from **GitHub repositories** and **Docker images**. Other sources (like databases) are not implemented.
+- **Service Creation**: You can create services from **GitHub repositories**, **Docker images** and the four **database** templates (PostgreSQL, MySQL, Redis, MongoDB). Other templates are not available in Topway.
 - **Authentication**: Requires a valid Railway API Token and Workspace ID to function. Sample mode needs no token.
 
 ## Getting Started

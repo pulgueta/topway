@@ -96,7 +96,7 @@ All shared components are in `topway/Shared`.
 | `ErrorBanner` | A failed action. |
 | `GlassConfirmationDialog` | A confirmation, through `destructiveConfirmation(...)`. |
 
-Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 or 3 tabs, menu for a list of environments or time ranges), `Toggle`, `TextField`, `ContentUnavailableView` for an empty state, and `Form` in Settings.
+Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 or 3 tabs, menu for a list of environments or time ranges, radio group for a short list of options in a form), `Toggle`, `TextField`, `ContentUnavailableView` for an empty state, and `Form` in Settings.
 
 ## Liquid Glass
 
@@ -189,7 +189,7 @@ Tradeoffs:
 | Deployments | Logs and restart icons that show on hover. | **View logs**, **Open URL** and **Restart** buttons in each row, and a **Manage** menu for Roll back, Cancel deployment and Remove deployment. **Refresh** and **Redeploy** in the bottom bar. |
 | Metrics | No metrics. | One chart for each metric, with the latest and the highest value as text. A **Time range** menu and **Refresh** in the bottom bar. |
 | Logs | Back icon. | Back button **Deployments**. The connection state and **Copy logs** in the bottom bar. |
-| Add service | Custom source buttons. | A segmented control for the source. **Cancel** and **Add service** in the bottom bar. |
+| Add service | Custom source buttons. | A segmented control for the source: GitHub repository, Docker image or Database. A database shows a radio group of the four databases and the environment. **Cancel** and **Add service** or **Add database** in the bottom bar. |
 | Settings | Save at the bottom of all sections. No way to remove a token. | **Save** in the Credentials section. **Remove token…** with a confirmation in the same window. |
 
 ## Sources

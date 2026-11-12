@@ -78,6 +78,13 @@ public protocol RailwayDataSource: Sendable {
 
     func deleteDomain(id: String, kind: DomainKind, token: String) async throws -> Bool
 
+    /// Adds a database service to a project from the Railway template, and starts it in
+    /// one environment. Returns `false` when Railway accepted the request but did not
+    /// finish in the wait time.
+    func deployDatabase(
+        _ template: DatabaseTemplate, projectId: String, environmentId: String, token: String
+    ) async throws -> Bool
+
     /// Gives the CPU, memory and network samples of a service in one environment.
     func fetchMetrics(
         environmentId: String, serviceId: String, window: MetricWindow, token: String

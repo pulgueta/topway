@@ -211,7 +211,7 @@ public actor SampleDataSource: RailwayDataSource {
 
     // MARK: - Private Methods
 
-    private func addService(named name: String, toProject projectId: String) throws -> String {
+    func addService(named name: String, toProject projectId: String) throws -> String {
         guard let index = projects.firstIndex(where: { $0.id == projectId }) else {
             throw RailwayError.graphQLError("Project not found.")
         }

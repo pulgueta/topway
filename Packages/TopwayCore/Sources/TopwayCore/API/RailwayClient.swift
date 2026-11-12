@@ -3,7 +3,7 @@ import Foundation
 public struct RailwayClient: RailwayDataSource {
     private let baseURL = "https://backboard.railway.com/graphql/v2"
     private let session: URLSession
-    private let sleep: @Sendable (Duration) async throws -> Void
+    let sleep: @Sendable (Duration) async throws -> Void
     private let socket: GraphQLWebSocket
     private let now: @Sendable () -> Date
 

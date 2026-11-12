@@ -62,7 +62,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Deployment **Manage** menu: **Roll back…**, **Cancel deployment…**, **Remove deployment…** | E1, E3, E8 | E1, E3, E8 | E10 | E11f | E12, check 4 | E13c |
 | Metrics: charts, **Time range**, **Refresh** | E1, E15 | E1 | E10 | E15 | E12 | E13f |
 | Logs: tabs, follow, **Copy logs**, **Retry** | E1, E4, E6, E7 | E1, check 2 | E10 | E11e | E12b, check 4 | E13d |
-| Add a service | E1, E4, E6 | E1 | E10 | — | E12 | E13a |
+| Add a service or a database | E1, E4, E6, E8 | E1, E8 | E10 | — | E12 | E13a, E13c |
 | Delete a project or a service (type the name) | E8, check 1 | E8, check 2 | E10, E14, check 8 | E11f | E12c, check 4 | E13c |
 | Environments: list, **New environment**, **Delete…** (type the name) | E1, E3, E4, E8, E9 | E1, E3, E8 | E10 | E11f, E18 | E12, check 4 | E13a, E13c |
 | Mute alerts | E1, E3 | E1, E3 | E10 | E11c | E12 | — |

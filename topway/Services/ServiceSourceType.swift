@@ -2,4 +2,6 @@
 enum ServiceSourceType: Hashable {
     case gitHub
     case docker
+    /// A database from a Railway template.
+    case database
 }
