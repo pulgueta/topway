@@ -4,8 +4,8 @@ import Foundation
 public struct ReferenceCompletion: Equatable, Sendable {
     /// The typed text after `${{`, with no space at the start.
     public let query: String
-    /// The text that a selected target replaces: from `${{` to the cursor, and a `}}` that
-    /// is just after the cursor.
+    /// The text that a selected target replaces: from `${{` to the cursor and, when the
+    /// cursor is in a reference that has a close, the rest of that reference with its `}}`.
     let range: Range<String.Index>
 
     /// `nil` when the cursor is not in an open reference. A brace or a line break after
@@ -19,8 +19,19 @@ public struct ReferenceCompletion: Equatable, Sendable {
         guard !typed.contains("}"), !typed.contains(where: \.isNewline) else { return nil }
 
         query = String(typed.drop(while: \.isWhitespace))
-        let end = text[cursor...].hasPrefix("}}") ? text.index(cursor, offsetBy: 2) : cursor
-        range = open.upperBound..<end
+        range = open.upperBound..<Self.end(of: text, after: cursor)
+    }
+
+    /// The end of the reference that has the cursor: after its `}}`. With no close on the
+    /// same line before the next `${{`, the reference is open, and the end is the cursor,
+    /// so the text after it stays.
+    private static func end(of text: String, after cursor: String.Index) -> String.Index {
+        guard let close = text.range(of: "}}", range: cursor..<text.endIndex) else {
+            return cursor
+        }
+        let inside = text[cursor..<close.lowerBound]
+        guard !inside.contains("${{"), !inside.contains(where: \.isNewline) else { return cursor }
+        return close.upperBound
     }
 
     /// The targets that have the typed text, with no difference between uppercase and
