@@ -37,7 +37,9 @@ struct TopwayApp: App {
                     Task { await appState.loadProjects() }
                 }
                 .keyboardShortcut("r", modifiers: .command)
-                .disabled(!appState.isConfigured || appState.isLoading)
+                // A rejected token fails again on each refresh. The error screen offers
+                // Open Settings and sample data, as the Refresh button of the projects does.
+                .disabled(!appState.isConfigured || appState.isTokenRejected || appState.isLoading)
             }
         }
 
