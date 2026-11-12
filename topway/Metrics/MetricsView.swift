@@ -10,6 +10,8 @@ struct MetricsView: View {
 
     /// `nil` until a load gives metrics. A failed reload keeps the earlier metrics.
     @State private var metrics: ServiceMetrics?
+    /// The time range of `metrics`. After a failed load of a new range, it is not `window`.
+    @State private var loadedWindow = MetricWindow.hour
     @State private var window = MetricWindow.hour
     @State private var isLoading = true
     @State private var latestLoadID = UUID()
@@ -40,6 +42,16 @@ struct MetricsView: View {
             // The charts stay while a reload runs, so the screen does not flash.
             ScrollView {
                 LazyVStack(spacing: 0) {
+                    // The picker shows the selected range, so say which range the charts show.
+                    if loadedWindow != window {
+                        Text("The charts show the \(loadedWindow.title.lowercased()).")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, Layout.contentInset)
+                            .padding(.vertical, Layout.controlSpacing)
+                    }
+
                     ForEach(metrics.series) { series in
                         MetricCard(series: series)
                     }
@@ -99,8 +111,9 @@ struct MetricsView: View {
         let loadID = UUID()
         latestLoadID = loadID
         isLoading = true
+        let requestedWindow = window
         let fetched = await appState.fetchMetrics(
-            environmentId: environmentId, serviceId: service.id, window: window)
+            environmentId: environmentId, serviceId: service.id, window: requestedWindow)
         // Only the latest call may update the screen.
         guard loadID == latestLoadID else { return }
         // A cancelled load is not a failure, so it changes nothing and shows no message.
@@ -109,6 +122,7 @@ struct MetricsView: View {
         // After a failed reload, the charts stay and the banner shows the error.
         if let fetched {
             metrics = fetched
+            loadedWindow = requestedWindow
         }
     }
 }

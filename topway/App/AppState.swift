@@ -128,6 +128,8 @@ class AppState {
     /// Only the latest project load may change the screen. A data source switch also
     /// increases it, so a load from the earlier source is dropped.
     private var latestProjectLoad = 0
+    /// Only the latest metrics load may show an error. A newer load replaces an earlier one.
+    private var latestMetricsLoad = 0
     /// The last settled state of each service. It is `nil` before the first load of a data
     /// source or a workspace, so that load gives no alerts.
     private var alertSnapshot: AlertSnapshot?
@@ -609,7 +611,8 @@ class AppState {
 
     // MARK: - Metrics
 
-    /// Returns `nil` when the fetch fails or is cancelled.
+    /// Returns `nil` when the fetch fails or is cancelled. A cancelled load, or a load that a
+    /// newer load replaced, shows no error, so an earlier failure cannot show over new charts.
     func fetchMetrics(environmentId: String, serviceId: String, window: MetricWindow) async
         -> ServiceMetrics?
     {
@@ -620,6 +623,8 @@ class AppState {
 
         errorMessage = nil
 
+        latestMetricsLoad += 1
+        let load = latestMetricsLoad
         do {
             return try await dataSource.fetchMetrics(
                 environmentId: environmentId,
@@ -628,9 +633,11 @@ class AppState {
                 token: railwayToken
             )
         } catch let error as RailwayError {
+            guard load == latestMetricsLoad, !Task.isCancelled else { return nil }
             show(error)
             return nil
         } catch {
+            guard load == latestMetricsLoad, !Task.isCancelled else { return nil }
             errorMessage = error.localizedDescription
             return nil
         }
