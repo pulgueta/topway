@@ -114,6 +114,19 @@ public protocol RailwayDataSource: Sendable {
 
     /// Gives the latest lines, then new lines while they arrive.
     /// Cancel the consumer task to stop the stream.
-    func logs(_ kind: LogKind, deploymentId: String, token: String)
+    /// - Parameter token: Gives the access token for each socket connect and each poll. A
+    ///   stream can run longer than one token, so a reconnect gets the token of that time.
+    func logs(
+        _ kind: LogKind, deploymentId: String,
+        token: @escaping @Sendable () async throws -> String
+    ) -> AsyncThrowingStream<LogEvent, any Error>
+}
+
+extension RailwayDataSource {
+    /// A stream that uses the same token for each connect and each poll.
+    public func logs(_ kind: LogKind, deploymentId: String, token: String)
         -> AsyncThrowingStream<LogEvent, any Error>
+    {
+        logs(kind, deploymentId: deploymentId, token: { token })
+    }
 }

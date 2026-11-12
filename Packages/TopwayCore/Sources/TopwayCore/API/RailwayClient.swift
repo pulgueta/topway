@@ -470,9 +470,10 @@ public struct RailwayClient: RailwayDataSource {
     /// every 5 seconds and tries the socket again every 60 seconds. A network error in
     /// polling does not stop the stream. `LogDeduplicator` removes the lines that a reconnect
     /// or a poll gives again.
-    public func logs(_ kind: LogKind, deploymentId: String, token: String)
-        -> AsyncThrowingStream<LogEvent, any Error>
-    {
+    public func logs(
+        _ kind: LogKind, deploymentId: String,
+        token: @escaping @Sendable () async throws -> String
+    ) -> AsyncThrowingStream<LogEvent, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -490,7 +491,8 @@ public struct RailwayClient: RailwayDataSource {
     }
 
     private func streamLogs(
-        _ kind: LogKind, deploymentId: String, token: String,
+        _ kind: LogKind, deploymentId: String,
+        token: @Sendable () async throws -> String,
         to continuation: AsyncThrowingStream<LogEvent, any Error>.Continuation
     ) async throws {
         let variables = ["deploymentId": deploymentId]
@@ -508,9 +510,11 @@ public struct RailwayClient: RailwayDataSource {
         let query = Self.logsDocument(kind, operation: "query")
         var recovery = LogRecovery()
         while true {
+            // A failure to get a token ends the stream. It is not a socket failure.
+            let socketToken = try await token()
             do {
                 for try await event in socket.subscribe(
-                    subscription, token: token, as: LogsData.self)
+                    subscription, token: socketToken, as: LogsData.self)
                 {
                     switch event {
                     case .connected:
@@ -541,7 +545,7 @@ public struct RailwayClient: RailwayDataSource {
             for _ in 0..<Self.pollsBeforeSocketTry {
                 do {
                     let data: LogsData = try await execute(
-                        query: query, variables: variables, token: token)
+                        query: query, variables: variables, token: try await token())
                     yield(data.lines)
                     if let deployment = data.deployment, !deployment.isBuildRunning {
                         // A finished build log gets no more lines.
