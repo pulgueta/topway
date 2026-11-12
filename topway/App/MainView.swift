@@ -75,6 +75,16 @@ struct MainView: View {
                 destination = .main
             }
         }
+        // Settings saved a different workspace or token. The open screen and a pending
+        // confirmation belong to the earlier one.
+        .onChange(of: appState.workspaceId) {
+            appState.cancelConfirmation()
+            destination = .main
+        }
+        .onChange(of: appState.railwayToken) {
+            appState.cancelConfirmation()
+            destination = .main
+        }
         // Escape goes back one step.
         .onExitCommand {
             if appState.pendingConfirmation != nil {
