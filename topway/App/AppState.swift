@@ -131,6 +131,8 @@ class AppState {
     private var confirmationTask: Task<Void, Never>?
     /// The message that the latest failed background refresh set.
     private var refreshFailureMessage: String?
+    /// The message of the last failed account load, so a later success removes only that message.
+    private var accountLoadFailureMessage: String?
     /// Only the latest project load may change the screen. A data source switch also
     /// increases it, so a load from the earlier source is dropped.
     private var latestProjectLoad = 0
@@ -532,6 +534,11 @@ class AppState {
             // to an earlier session.
             guard generation == sessionGeneration else { return nil }
             account = loaded
+            // A retry that works removes the message of the failed load, and no other message.
+            if let accountLoadFailureMessage, errorMessage == accountLoadFailureMessage {
+                clearError()
+            }
+            accountLoadFailureMessage = nil
             let selection = WorkspaceChoice.selection(saved: workspaceId, in: loaded.workspaces)
             if selection != workspaceId {
                 selectWorkspace(selection ?? "")
@@ -540,10 +547,12 @@ class AppState {
         } catch let error as RailwayError {
             guard generation == sessionGeneration else { return nil }
             show(error)
+            accountLoadFailureMessage = errorMessage
             return errorMessage
         } catch {
             guard generation == sessionGeneration else { return nil }
             errorMessage = error.localizedDescription
+            accountLoadFailureMessage = errorMessage
             return errorMessage
         }
     }
