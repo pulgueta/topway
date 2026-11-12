@@ -2,6 +2,13 @@
 
 Read `ARCHITECTURE.md` first. `AGENTS.md` lists the facts for automated tools. It tells you where the code goes.
 
+## Report a problem
+
+Use the issue forms: [open a new issue](https://github.com/pulgueta/topway/issues/new/choose) and select **Crash report**, **Bug report** or **Feature request**. The forms are in `.github/ISSUE_TEMPLATE`.
+
+- Do not paste a Railway token, a Workspace ID or variable values. Issues are public.
+- For a security problem, [send a private report](https://github.com/pulgueta/topway/security/advisories/new). Do not open a public issue.
+
 ## Requirements
 
 - Xcode 26.2 or later.

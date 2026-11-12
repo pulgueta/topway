@@ -1,0 +1,144 @@
+name: Crash report
+description: Topway quit when you did not tell it to quit.
+title: "[Crash]: "
+labels: ["crash"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > **This issue is public. Do not paste secrets.**
+        > Do not paste your Railway token, your Workspace ID or the values of your variables.
+        > Remove them from logs and screenshots before you attach them.
+
+        Thank you for the report. Topway collects no data, so this form is the only way we learn about a crash.
+        If you opened this form from **Topway > Settings > Help**, the Mac details are filled in. Make sure that they are correct.
+  - type: checkboxes
+    id: no-secrets
+    attributes:
+      label: Secrets
+      options:
+        - label: This report contains no Railway token, no Workspace ID and no variable values.
+          required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## Your Mac
+        A macOS crash report shows these details in its first lines. The names in parentheses are the lines to look for.
+  - type: input
+    id: app-version
+    attributes:
+      label: Topway version
+      description: The version and the build ("Version" in the crash report). In Finder, select Topway, then select File > Get Info.
+      placeholder: "1.0 (1)"
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: The version and the build ("OS Version" in the crash report). Select Apple menu > About This Mac.
+      placeholder: "macOS 26.2 (25C56)"
+    validations:
+      required: true
+  - type: input
+    id: mac-model
+    attributes:
+      label: Mac model
+      description: The model identifier ("Hardware Model" in the crash report).
+      placeholder: "Mac16,1"
+    validations:
+      required: true
+  - type: input
+    id: architecture
+    attributes:
+      label: Architecture
+      description: Write "Apple silicon (arm64)" or "Intel (x86_64)" ("Code Type" in the crash report).
+      placeholder: "Apple silicon (arm64)"
+    validations:
+      required: true
+  - type: input
+    id: data-mode
+    attributes:
+      label: Data
+      description: Write "Railway token" if Topway showed your Railway projects. Write "Sample data" if Topway showed the sample projects.
+      placeholder: "Railway token"
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## The crash
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What did you do immediately before the crash?
+      description: Name the screen and the last button that you selected.
+      placeholder: "I opened the Deployments tab of a service and selected View logs. Topway quit after about 2 seconds."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to cause the crash again
+      description: Write one action on each line. Leave this empty if you do not know the steps.
+      placeholder: |
+        1. Open Topway from the menu bar.
+        2. Select a service.
+        3. Select the Deployments tab.
+        4. Select View logs.
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does Topway crash when you do this?
+      options:
+        - Once
+        - Sometimes
+        - Every time
+    validations:
+      required: true
+  - type: textarea
+    id: crash-report
+    attributes:
+      label: macOS crash report
+      description: |
+        Use one of these procedures to get the report. Then paste the text here.
+
+        **From the dialog**
+        1. In the "Topway quit unexpectedly" dialog, select **Report…**.
+        2. Select all the text and copy it.
+
+        **From Console**
+        1. Open the **Console** app.
+        2. Select **Crash Reports** in the sidebar.
+        3. Select the newest entry that starts with `topway`.
+        4. Select all the text and copy it.
+
+        **From Finder**
+        1. In Finder, select **Go > Go to Folder…**.
+        2. Enter `~/Library/Logs/DiagnosticReports` and press Return.
+        3. Open the newest file that starts with `topway-` and ends with `.ips`.
+        4. Select all the text and copy it.
+
+        The most important parts are the header (Process, Version, OS Version, Hardware Model, Exception Type, Termination Reason and Crashed Thread) and the backtrace of the crashed thread. If the report is too long, paste those parts.
+      placeholder: |
+        Process:               topway [12345]
+        Path:                  /Applications/topway.app/Contents/MacOS/topway
+        Identifier:            com.pulgueta.topway
+        Version:               1.0 (1)
+        Code Type:             ARM-64 (Native)
+
+        Date/Time:             2026-11-12 10:15:42.1234 -0500
+        OS Version:            macOS 26.2 (25C56)
+        Hardware Model:        Mac16,1
+
+        Crashed Thread:        0  Dispatch queue: com.apple.main-thread
+
+        Exception Type:        EXC_BREAKPOINT (SIGTRAP)
+        Termination Reason:    Namespace SIGNAL, Code 5 Trace/BPT trap: 5
+
+        Thread 0 Crashed::  Dispatch queue: com.apple.main-thread
+        0   topway    0x0000000104a3c1f0 ...
+      render: text
+    validations:
+      required: true
