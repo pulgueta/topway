@@ -87,36 +87,60 @@ Each action in Topway has a text label. No action shows only when the pointer is
 
 - **Project Creation**: Creating new projects is not currently supported via the Public API endpoints available to this application. The app provides a shortcut to the Railway Dashboard for this action.
 - **Service Creation**: You can create services from **GitHub repositories**, **Docker images** and the four **database** templates (PostgreSQL, MySQL, Redis, MongoDB). Other templates are not available in Topway.
-- **Authentication**: Requires a valid Railway API Token and Workspace ID to function. Sample mode needs no token.
+- **Authentication**: Topway connects only through Sign in with Railway. It has no field for an API token. Sample mode needs no account.
+- **Sign out**: Railway has no way for an app to revoke its own access. **Sign out…** removes the sign-in from your Mac. To remove the access of Topway on Railway, open your Railway account settings and select **Apps**.
 
 ## Getting Started
 
-1. Download/Build the app.
-2. Launch Topway (it will appear in your menu bar).
-3. Select **Open Settings**.
-4. Enter your **API token** and **Workspace ID**, then select **Save**.
-   - *Token*: Make this in your Railway account settings. Settings has a link to the Railway tokens page.
-   - *Workspace ID*: Press `Cmd + K` in the Railway Dashboard and search for "Copy Active Workspace ID".
+1. Download or build the app.
+2. Open Topway. It shows in the menu bar.
+3. Select **Sign in with Railway**. A browser window opens the Railway sign-in page.
+4. Sign in to Railway. On the consent page, select the workspaces that Topway can use, then accept.
+5. If you selected more than one workspace, select the workspace in the list. To change it later, select **Settings > Account > Workspace**.
 
-### If Railway does not accept the token
+Topway keeps the sign-in in the Keychain of your Mac and renews it automatically. If you used an API token with an earlier build, Topway removes that token at launch, and you sign in one time.
 
-A token can expire, or you can revoke it on Railway. Topway then shows **Railway did not accept your token**, with two buttons:
+### If Railway does not accept the sign-in
 
-- **Open Settings**: Enter a new token and select **Save**.
-- **Try with sample data**: Use Topway with no token.
+Railway can end a sign-in, for example when you remove the access of Topway on Railway, or when you do not use Topway for one year. Topway then shows the start screen and tells you to sign in again.
 
-To remove the saved token from your Mac, select **Settings > Credentials > Remove token…**. Topway then shows the start screen.
+When the sign-in has no access to a workspace or an action, Topway shows **Railway did not accept your sign-in**, with two buttons:
+
+- **Sign in again**: Sign in, and select the workspace on the Railway consent page.
+- **Try with sample data**: Use Topway with no account.
+
+To remove the sign-in from your Mac, select **Settings > Account > Sign out…**. Topway then shows the start screen.
 
 ## Sample Data
 
-You can use Topway with no Railway token. On the start screen, select **Try with sample data**. The same button shows when Railway does not accept your token.
+You can use Topway with no Railway account. On the start screen, select **Try with sample data**. The same button shows when Railway does not accept your sign-in.
 
 - Topway shows sample projects, services, deployments, variables, metrics, usage and logs. The label **Sample data** shows at the top of each screen.
-- Topway does not connect to Railway. It does not read or save your token.
+- Topway does not connect to Railway. It does not use or save a sign-in.
 - You can restart, redeploy, edit variables and delete items. The changes stay in memory until you exit sample mode or quit the app.
 - Sample mode shows a sample incident banner. Its text starts with "Sample incident".
 - Sample mode can send alerts. Each sample notification shows **Sample data**.
-- To go back to the start screen, select **Exit sample data**. If you save a token in Settings, Topway also exits sample mode.
+- To go back to the start screen, select **Exit sample data**. If you sign in, Topway also exits sample mode.
+
+## Build from Source
+
+You need Xcode 26.2 or later. Open `topway.xcodeproj` and run the `topway` scheme. A build with no OAuth client ID works, but it offers only sample data.
+
+To sign in from your own build, make your own Railway OAuth app:
+
+1. In Railway, open the settings of your workspace, then **Developer > New OAuth App**. Only a workspace admin can do this.
+2. For the type, select **Native (Public)**. A native app has no client secret, and Topway sends none.
+3. Add the redirect URI `topway://oauth/callback`. The text must be the same.
+4. Copy the client ID.
+5. Make the file `Config/OAuth.local.xcconfig` with this line:
+
+   ```
+   RAILWAY_OAUTH_CLIENT_ID = <your client ID>
+   ```
+
+6. Build the app again.
+
+Git ignores `Config/OAuth.local.xcconfig`. Never commit it, and never put the client ID in `Config/OAuth.xcconfig`.
 
 ## Accessibility
 
@@ -134,10 +158,10 @@ You can also [open a new issue](https://github.com/pulgueta/topway/issues/new/ch
 - **Bug report**: Topway did something wrong, but it did not quit.
 - **Feature request**: You have an idea for a change.
 
-Issues are public. Do not paste your Railway token, your Workspace ID or the values of your variables. Remove them from logs and screenshots.
+Issues are public. Do not paste a Railway token, your Workspace ID or the values of your variables. Remove them from logs and screenshots.
 
 For a security problem, [send a private report](https://github.com/pulgueta/topway/security/advisories/new).
 
 ## Privacy
 
-Topway collects no data. It keeps your token in the Keychain and connects only to Railway. Read the [privacy policy](PRIVACY.md).
+Topway collects no data. It keeps your sign-in in the Keychain and connects only to Railway. Read the [privacy policy](PRIVACY.md).

@@ -30,13 +30,28 @@ Topway has no Dock icon (`LSUIElement`). The icon shows in Finder, in Apps, in t
 1. In **App Information > Privacy Policy URL**, enter `https://github.com/pulgueta/topway/blob/main/PRIVACY.md`.
 2. In **App Privacy**, select **Get Started**. Answer **No, we do not collect data from this app**. The result is **Data Not Collected**.
 
-The app declares the same in `topway/PrivacyInfo.xcprivacy`. The export compliance answer is in the build (`ITSAppUsesNonExemptEncryption` is `NO`), because Topway uses only HTTPS and secure WebSockets from the system.
+The app declares the same in `topway/PrivacyInfo.xcprivacy`. The export compliance answer is in the build (`ITSAppUsesNonExemptEncryption` is `NO`), because Topway uses only HTTPS and secure WebSockets from the system. The sign-in also calculates a SHA-256 hash (CryptoKit) for PKCE. It encrypts no data.
 
 ### 4. Accessibility
 
 1. Do the manual checks in [accessibility.md](accessibility.md).
 2. In App Store Connect, add the Accessibility Nutrition Labels for Mac that [accessibility.md](accessibility.md) recommends. Declare a label only when its check passes. Do not select Captions or Audio Descriptions. Apple gives the steps in [Manage Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/manage-accessibility-nutrition-labels).
 3. For the accessibility URL, enter `https://github.com/pulgueta/topway/blob/main/docs/accessibility.md`.
+
+### 5. Sign in with Railway
+
+Users see the name of the Railway OAuth app on the Railway consent page. The development app is "Topway Development".
+
+1. Before the App Store release, rename the OAuth app to "Topway", or make a production OAuth app with the name "Topway". Use the type **Native (Public)** and the redirect URI `topway://oauth/callback`. Railway shows each OAuth app in **Workspace settings > Developer**.
+2. On the Mac that makes the archive, put the client ID of the production app in `Config/OAuth.local.xcconfig`. Never commit it.
+3. After the archive, check that the app has a client ID. The command shows only the number of characters, and it must be more than 0:
+
+   ```sh
+   plutil -extract RailwayOAuthClientID raw \
+     ~/Library/Developer/Xcode/Archives/*/topway*.xcarchive/Products/Applications/topway.app/Contents/Info.plist | tr -d '\n' | wc -c
+   ```
+
+   An archive with no client ID offers only sample data.
 
 ## For each upload
 
@@ -61,9 +76,9 @@ External testers need Beta App Review for the first build of each version.
 1. Select **TestFlight > Test Information**. Enter the feedback email, the privacy policy URL and the beta app description.
 2. In **Beta App Review Information**, clear **Sign-in required**. Enter these notes:
 
-   > Topway needs no account for review. On the first screen, select "Try with sample data". The app then shows sample projects, services, variables, deployments and logs, and it does not connect to a server. All features work on the sample data.
+   > Topway needs no account for review. On the first screen, select "Try with sample data". The app then shows sample projects, services, variables, deployments and logs, and it does not connect to a server. All features work on the sample data. "Sign in with Railway" needs a Railway account, and the review does not need it.
 
-3. In **What to Test**, tell the testers to report problems from **Settings > Help** in the app. Also tell them: if you saved a token with a different build of Topway, macOS can ask for permission to use the Keychain item. Select **Always Allow**. If you select **Deny**, Topway shows the start screen, and you must enter the token again.
+3. In **What to Test**, tell the testers to report problems from **Settings > Help** in the app. Also tell them: select **Sign in with Railway**, and on the Railway consent page, select the workspaces for Topway. Topway removes the API token of an earlier build at launch. If you signed in with a different build of Topway, macOS can ask for permission to use the Keychain item. Select **Always Allow**. If you select **Deny**, Topway shows the start screen, and you must sign in again.
 4. Make an external group, add the build and submit it for review.
 
 ## Checks

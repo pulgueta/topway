@@ -49,7 +49,7 @@ The bars are the control layer. The content is the content layer.
 There is no `NavigationStack`. `MainView` and `ServiceView` each hold an enum of screens.
 
 ```text
-Projects (start screen with no token)
+Projects (start screen with no sign-in; workspace list after a sign-in with several workspaces)
 ├── Usage
 ├── Add service
 ├── Environments
@@ -139,12 +139,12 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 | Load failed | `ErrorStateView`. The title says what did not load. The buttons come from `RecoveryRules`. |
 | Action failed | `ErrorBanner` above the bottom bar. |
 
-When Railway does not accept the token, `ErrorStateView` shows **Open Settings** and **Try with sample data**, and no retry. Settings has **Remove token…**, which shows the start screen again.
+When Railway does not accept the token, `ErrorStateView` shows **Sign in again** and **Try with sample data**, and no retry. Settings has **Sign out…**, which shows the start screen again.
 
 ## Copy
 
 - Write in ASD-STE100 Simplified Technical English: short sentences, active voice, one instruction in each sentence.
-- A button label starts with a verb and names the object: **Add variable**, **View logs**, **Remove token…**.
+- A button label starts with a verb and names the object: **Add variable**, **View logs**, **Sign in with Railway**.
 - Use sentence-style capitalization for buttons, titles and messages. Use title-style capitalization for the section headers in Settings.
 - A message says what occurred and what the user can do.
 - A `.help` text says what the control does in one sentence.
@@ -182,7 +182,8 @@ Tradeoffs:
 | Usage | No usage. | The row **Usage and cost** is first in the projects list. The screen shows the cost that Railway gives, the billing period, the limits and the use of each resource. **Refresh** in the bottom bar. |
 | Environments | No environment actions. | The **Manage** menu of a project opens the list. A **Delete…** button in each row. **New environment** in the bottom bar opens a form with **Name** and **Copy from**. |
 | Service links | No links. | A list of the services of one environment. Each service shows **Uses** and **Used by** lines with the variable names, and **Service not found** with a triangle for a missing target. A list, not a drawing, because it stays readable for 2 to 15 services in the window and VoiceOver reads each link as a sentence. An **Environment** menu at the top and **Refresh** in the bottom bar. |
-| Start | Shows only with no token. | The same screen. A rejected token now has a way back to it. |
+| Start | Shows only with no token. | **Sign in with Railway** (prominent) and **Try with sample data**. After a failed sign-in, the message shows in red with a symbol, and the prominent button is **Try again**. A build with no OAuth client ID offers only sample data and says why. A rejected token has a way back to it. |
+| Workspace list | No list. The user typed a Workspace ID. | After a sign-in with several shared workspaces: **Choose a workspace** and one row for each workspace. With no shared workspace, a message and **Sign in again**. |
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Settings, Domains, Redeploy and Delete service. |
 | Service settings | No settings. | A form with the name, the source as text, and one field for each setting of the environment. **Save changes** in the bottom bar is available only after a change. |
 | Variables | Edit, show and copy icons that show on hover. | **Show**, **Copy** and **Edit** buttons in each row. A value with references shows each target below it, with its status as text and a symbol. The targets are names, so they show also while the value is hidden. **Copy all** and **Add variable** in the bottom bar. |
@@ -192,7 +193,7 @@ Tradeoffs:
 | Metrics | No metrics. | One chart for each metric, with the latest and the highest value as text. A **Time range** menu and **Refresh** in the bottom bar. |
 | Logs | Back icon. | Back button **Deployments**. The connection state and **Copy logs** in the bottom bar. |
 | Add service | Custom source buttons. | A segmented control for the source: GitHub repository, Docker image or Database. A database shows a radio group of the four databases and the environment. **Cancel** and **Add service** or **Add database** in the bottom bar. |
-| Settings | Save at the bottom of all sections. No way to remove a token. | **Save** in the Credentials section. **Remove token…** with a confirmation in the same window. |
+| Settings | Save at the bottom of all sections. No way to remove a token. | The **Account** section: the name and email of the signed-in user, a **Workspace** picker, and **Sign out…** with a confirmation in the same window. All settings apply at once. |
 
 ## Sources
 

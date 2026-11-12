@@ -49,8 +49,9 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Common task | VO | VC | DI | DC | SC | RM |
 |---|---|---|---|---|---|---|
 | Open Topway from the menu bar and read the health | E2, check 1 | E2, check 2 | E10 | E11a | E12 | E13e |
-| Start screen, **Try with sample data**, **Exit sample data** | E1, E5 | E1 | E10 | E11b | E12a | E13a |
-| Settings: token, Workspace ID, **Save** | E1, E7 | E1 | E10 | E11g | E12, check 4 | E13e |
+| Start screen: **Sign in with Railway**, **Try again**, **Try with sample data**, **Exit sample data** | E1, E5, E7 | E1 | E10 | E11b, E11g | E12a | E13a |
+| Choose a workspace after the sign-in | E1, E3, E7 | E1, E3 | E10 | E11g | E12 | — |
+| Settings: **Account**, **Workspace**, **Sign in with Railway**, **Sign out…** | E1 | E1 | E10 | E11f, E11g | E12, check 4 | E13e |
 | See the projects, open or close a project, **Refresh** | E1, E3, E4, E6 | E1, E3 | E10 | E11c | E12 | E13b |
 | **Usage and cost**: cost, period, limits, **Refresh** | E1, E3, E4, E16 | E1 | E10 | E16 | E12 | E13a |
 | Open a service, change the environment, change the tab | E1, E3, E4, E9 | E1, E3, check 2 | E10 | — | E12 | E13a |
@@ -69,7 +70,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Service links: list, **Environment**, **Refresh** | E1, E3, E4, E9 | E1 | E10 | E11i | E12 | E13a |
 | Environments: list, **New environment**, **Delete…** (type the name) | E1, E3, E4, E8, E9 | E1, E3, E8 | E10 | E11f, E18 | E12, check 4 | E13a, E13c |
 | Mute alerts | E1, E3 | E1, E3 | E10 | E11c | E12 | — |
-| Settings: auto refresh, alerts, launch at login, **Remove token…**, Help | E1 | E1 | E10 | E11f, E11g | E12, check 4 | E13e |
+| Settings: auto refresh, alerts, launch at login, Help | E1 | E1 | E10 | E11g | E12, check 4 | E13e |
 | Railway incident banner: **Open status page**, **Hide** | E1, E17 | E1, E17 | E10 | E17 | E12a | E13g |
 | Error and empty states | E1, E7 | E1 | E10 | E11g | E12 | — |
 | Notifications | System | System | System | E11h | System | System |
@@ -99,7 +100,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E6. Status in words.** `LogLineRow` reads a line as "Warning:" or "Error:" and the message. `LogConnectionLabel` reads as "Connection: Live". Each progress indicator has a label, for example "Loading projects".
 
-**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. They post only while the window is open. When the window opens again, VoiceOver says the error that shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved". The variable editor posts "Suggestions are below the value." when reference suggestions show.
+**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. They post only while the window is open. When the window opens again, VoiceOver says the error that shows. `CopyButton` posts "Copied". The start screen posts the error of a failed sign-in, or why the sign-in ended, also only while the window is open: the sign-in window takes the focus, so the menu bar window can close, and VoiceOver says the result when it opens again. The workspace list posts its load error through `ErrorStateView`. The service settings post "Saved". The variable editor posts "Suggestions are below the value." when reference suggestions show.
 
 **E8. Confirmation dialog.** `destructiveConfirmation` disables the content behind the dialog and hides it from assistive technologies. The card has the modal trait. The keyboard focus goes to the name field. With no name field, the VoiceOver focus goes to the title. **Cancel** has the cancel shortcut (Escape). Return confirms only an action that is not destructive. The name field is a standard `TextField`, so Voice Control can dictate into it.
 
@@ -157,13 +158,13 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 
 ## Manual checks
 
-Do each check in sample mode (**Try with sample data**) and go through all rows of the table above. Sample mode ends when you save a token, so do the credential tasks (enter the token and the Workspace ID, **Save**, **Remove token…**, and the rejected token screen) again with a real token. A check passes when you can complete each task with only that feature.
+Do each check in sample mode (**Try with sample data**) and go through all rows of the table above. Sample mode ends when you sign in, so do the account tasks (**Sign in with Railway**, the workspace list, **Settings > Account**, **Sign out…**, and the rejected token screen) again with a Railway account. The sign-in page is a system browser window; check only that VoiceOver and Voice Control can get to it and back. A check passes when you can complete each task with only that feature.
 
 1. **VoiceOver.** Press Command-F5. Press VO-M two times to go to the status menus, find Topway and press VO-Space. Move with VO-Right and VO-Left. Go into a row group with VO-Shift-Down.
    - VoiceOver says the name, the type and the value of each control.
    - The VoiceOver cursor goes into the window when it opens, and into the dialog when it shows.
    - In a dialog, you cannot get to the content behind it. Escape cancels.
-   - VoiceOver says an error when an action fails. To make an error, turn off the network with a real token.
+   - VoiceOver says an error when an action fails. To make an error, turn off the network while you are signed in.
    - Do the same in the Settings window.
 2. **Voice Control.** Turn it on in **System Settings > Accessibility > Voice Control**. Say "Show names", then "Show numbers".
    - Each button, menu, tab and field has a name and a number.
