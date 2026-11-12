@@ -38,4 +38,27 @@ public struct ProjectVariables: Hashable, Sendable {
         }
         return target.variableName.hasPrefix("RAILWAY_") ? .setByRailway : .missingVariable
     }
+
+    /// The groups of the reference menu: the same service, the shared variables, then the
+    /// other services in the order of `services`. A group with no variables is left out.
+    /// - Parameter excludedName: The variable that the user edits. A reference to itself
+    ///   has no value.
+    public func referenceGroups(
+        for serviceId: String, services: [Service], excluding excludedName: String?
+    )
+        -> [ReferenceGroup]
+    {
+        let own = (byService[serviceId] ?? [:]).keys.filter { $0 != excludedName }
+        var groups = [
+            ReferenceGroup(namespace: .sameService, variableNames: own.sorted()),
+            ReferenceGroup(namespace: .shared, variableNames: shared.keys.sorted()),
+        ]
+        for service in services where service.id != serviceId {
+            groups.append(
+                ReferenceGroup(
+                    namespace: .service(service.name),
+                    variableNames: (byService[service.id] ?? [:]).keys.sorted()))
+        }
+        return groups.filter { !$0.variableNames.isEmpty }
+    }
 }

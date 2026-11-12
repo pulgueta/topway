@@ -57,6 +57,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
 | Variables: the targets of references and their status | E3 | — | E10 | E11i | E12 | — |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
+| Variable editor: **Insert reference**, **Suggestions** | E1, E3, E7 | E1, E3 | E10 | — | E12 | — |
 | Service settings: name, commands, paths, **Save changes** | E1, E4, E7, E8, E9 | E1, E8 | E10 | E11g, E18 | E12, check 4 | E13a, E13c |
 | Domains: list, DNS records, **Copy**, **Copy value**, **Add Railway domain**, **Add custom domain**, **Delete…** | E1, E3, E4, E7, E8, E9 | E1, E3, E8 | E10 | E11f, E18, E19 | E12, check 4 | E13a, E13c, E13d |
 | Deployments: list, **View logs**, **Open URL**, **Restart**, **Redeploy** | E3, E5, E8 | E3, E8 | E10 | E11d | E12 | E13c |
@@ -86,6 +87,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - `EnvironmentRow`: the row is a group with the name of the environment. **Delete…** has the label "Delete" and the name of the environment.
 - `DomainRow`: the row is a group with the domain name. **Copy** and **Delete…** name the domain. `DNSRecordRow` is a group with the label "CNAME record shop", and **Copy value** has the label "Copy value of CNAME record shop".
 - `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
+- `ReferenceSuggestions`: a group with the label "Suggestions". Each button has the label "Insert reference to postgres.DATABASE_URL", and `accessibilityInputLabels` gives Voice Control the visible text. **Insert reference** is a standard `Menu` with a submenu for each service.
 - `ReferenceLinkRow`: one item for each target of a reference, with the label "Reference to postgres.DATABASE_URL: Found" (`ReferenceLink.accessibilityDescription`, tested). It has names only, never a value, so it does not show a hidden value.
 - Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", "Delete", "Copy value", and the name on the back button.
 
@@ -95,7 +97,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E6. Status in words.** `LogLineRow` reads a line as "Warning:" or "Error:" and the message. `LogConnectionLabel` reads as "Connection: Live". Each progress indicator has a label, for example "Loading projects".
 
-**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved".
+**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved". The variable editor posts "Suggestions are below the value." when reference suggestions show.
 
 **E8. Confirmation dialog.** `destructiveConfirmation` disables the content behind the dialog and hides it from assistive technologies. The card has the modal trait. The keyboard focus goes to the name field. With no name field, the VoiceOver focus goes to the title. **Cancel** has the cancel shortcut (Escape). Return confirms only an action that is not destructive. The name field is a standard `TextField`, so Voice Control can dictate into it.
 

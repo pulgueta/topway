@@ -27,4 +27,12 @@ public struct ReferenceTarget: Hashable, Sendable {
     public var template: String {
         "${{\(expression)}}"
     }
+
+    /// Puts the template in place of a range, for example the selection of the editor.
+    /// The cursor goes after the template.
+    public func insert(into text: String, replacing range: Range<String.Index>) -> (
+        text: String, cursor: String.Index
+    ) {
+        text.edit(replacing: range, with: template)
+    }
 }

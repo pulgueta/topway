@@ -39,6 +39,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - **References**: A value can use the variable of a different service (`${{ postgres.DATABASE_URL }}`), a shared variable (`${{ shared.LOG_LEVEL }}`) or a variable of the same service (`${{ PORT }}`). Below the value, the row shows each target and its status: **Found**, **Service not found**, **Variable not found**, **Set by Railway** (a `RAILWAY_` variable, which Topway cannot check) or **Not checked** (the other variables did not load). **Show**, **Copy** and **Copy all** give the reference, not the value that Railway makes from it.
 - **Copy all** copies all variables as `NAME=value` lines. A value with a line break or a double quotation mark is put in double quotation marks, as in a `.env` file.
 - **Add variable** is at the bottom. To delete a variable, select **Edit**, then **Delete variable…**.
+- **Insert reference**: In the editor, select a service (or **This service** or **Shared variables**), then a variable. Topway puts `${{service.VARIABLE}}` at the cursor. You can also type `${{` in the value: **Suggestions** shows the variables that match the text after it. Select one to complete the reference.
 
 ### Deployments
 - The **Deployments** tab of a service shows its latest deployments and their status, for example Running, Failed or Building.

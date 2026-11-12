@@ -62,6 +62,8 @@ struct ServiceView: View {
                     environmentName: selectedEnvironmentName,
                     existingVariable: variable,
                     existingNames: areVariablesKnown ? Set(variables.map(\.name)) : nil,
+                    services: project.serviceList,
+                    projectVariables: projectVariables,
                     onDismiss: { show(.overview) },
                     onSave: {
                         Task { await loadVariables() }
