@@ -127,7 +127,7 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 
 **E16. Usage.** `SpendRow` has the label "Usage and cost". `SpendSummary` reads the cost, its period and the days left as one item. The progress bar of the limit has the limit amounts as its label and "50 percent of the limit" as its value. A cost above the limit shows as red text with an octagon and the words "The usage is above the limit."
 
-**E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` when an incident shows, because it shows with no user action. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
+**E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` one time for each incident, because it shows with no user action. It does not say the same incident again when the window opens again. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
 
 ### Known limits
 

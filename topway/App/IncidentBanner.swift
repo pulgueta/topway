@@ -8,6 +8,8 @@ struct IncidentBanner: View {
 
     let incident: PlatformIncident
     let onHide: () -> Void
+    /// Returns `true` only the first time for this incident.
+    let shouldAnnounce: () -> Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -46,8 +48,10 @@ struct IncidentBanner: View {
         .background(.orange.opacity(0.12))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Railway incident")
-        // The banner shows with no user action, so VoiceOver must say it.
+        // The banner shows with no user action, so VoiceOver must say it. The view shows
+        // again each time the window opens, so only a new incident gets an announcement.
         .task(id: incident.id) {
+            guard shouldAnnounce() else { return }
             AccessibilityNotification.Announcement(
                 "Railway incident. \(incident.statusDisplay): \(incident.message)"
             ).post()
@@ -60,7 +64,8 @@ struct IncidentBanner: View {
         incident: PlatformIncident(
             id: "1", message: "Builds are slow in all regions.", status: "INVESTIGATING",
             url: "https://status.railway.com"),
-        onHide: {}
+        onHide: {},
+        shouldAnnounce: { true }
     )
     .frame(width: Layout.windowWidth)
 }

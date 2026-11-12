@@ -29,7 +29,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 ### Railway incidents
 - When Railway reports an open incident, a banner **Railway incident** shows at the top of each screen, with the status and the title of the incident.
 - **Open status page** opens the Railway status page in your browser. **Hide** hides the banner until Railway reports a different incident.
-- Topway asks Railway for the platform status at most one time in 5 minutes, when it loads the projects. This request has no token.
+- Topway asks Railway for the platform status at most one time in 5 minutes, when it loads the projects or when you open the window. This request has no token.
 
 ### Usage and cost
 - On the projects screen, select **Usage and cost**. The screen shows the cost of the usage in the current billing period of the workspace, the dates of the period and the days that are left.

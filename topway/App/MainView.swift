@@ -17,7 +17,11 @@ struct MainView: View {
 
             // No animation, so the banner needs no Reduce Motion rule.
             if let incident = appState.visibleIncident {
-                IncidentBanner(incident: incident) { appState.hideIncident() }
+                IncidentBanner(
+                    incident: incident,
+                    onHide: { appState.hideIncident() },
+                    shouldAnnounce: { appState.shouldAnnounceIncident(id: incident.id) }
+                )
             }
 
             ZStack {
@@ -82,6 +86,10 @@ struct MainView: View {
             if appState.isConfigured && appState.projects.isEmpty {
                 await appState.loadProjects()
             }
+        }
+        // Runs each time the window opens. A project load does not always run then.
+        .task {
+            await appState.refreshIncident()
         }
         // Screens of the earlier data source show items that the new source does not have.
         .onChange(of: appState.isSampleMode) {

@@ -143,6 +143,8 @@ class AppState {
     private var incidentGeneration = 0
     /// The incident that the user hid. A different incident shows again.
     private var hiddenIncidentId: String?
+    /// The incident that VoiceOver said last. No view reads it.
+    @ObservationIgnored private var announcedIncidentId: String?
 
     // MARK: - Init
 
@@ -407,8 +409,24 @@ class AppState {
         }
     }
 
+    /// Runs when the menu bar window opens. With auto refresh off, no project load runs
+    /// then, and the banner must not show an old answer. `checkIncident()` keeps the limit
+    /// of one request in 5 minutes.
+    func refreshIncident() async {
+        guard isConfigured else { return }
+        await checkIncident()
+    }
+
     func hideIncident() {
         hiddenIncidentId = incident?.id
+    }
+
+    /// `true` one time for each incident, so VoiceOver does not say the same incident each
+    /// time the menu bar window opens.
+    func shouldAnnounceIncident(id: String) -> Bool {
+        guard announcedIncidentId != id else { return false }
+        announcedIncidentId = id
+        return true
     }
 
     private func clearIncident() {
@@ -416,6 +434,7 @@ class AppState {
         incident = nil
         lastIncidentCheck = nil
         hiddenIncidentId = nil
+        announcedIncidentId = nil
     }
 
     // MARK: - Alerts
