@@ -22,7 +22,12 @@ struct ProjectsScreen: View {
             ProjectsHeader()
         } bottom: {
             if let error = appState.errorMessage, !appState.projects.isEmpty {
-                ErrorBanner(message: error) { appState.clearError() }
+                // A rejected token fails again on each refresh, so the banner gives the way out.
+                ErrorBanner(
+                    message: error,
+                    onDismiss: { appState.clearError() },
+                    recoveryActions: appState.isTokenRejected ? appState.recoveryActions : []
+                )
             }
             footer
         }

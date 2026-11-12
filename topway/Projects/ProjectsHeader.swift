@@ -24,7 +24,8 @@ struct ProjectsHeader: View {
 
                 Spacer(minLength: Layout.controlSpacing)
 
-                if appState.isConfigured {
+                // A rejected token fails again on each refresh.
+                if appState.isConfigured && !appState.isTokenRejected {
                     Button("Refresh", systemImage: "arrow.clockwise") {
                         Task { await appState.loadProjects() }
                     }
