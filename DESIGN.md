@@ -35,6 +35,7 @@ Each screen has the same parts, from top to bottom. `ScreenLayout` puts them tog
 | Part | Contents | Component |
 |---|---|---|
 | Sample data banner | Shows on all screens in sample mode. | `SampleDataBanner` |
+| Incident banner | Shows on all screens while Railway reports an open incident. The user can hide it. | `IncidentBanner` |
 | Top bar | A back button with the name of the earlier screen, the title, and at most one control. | `ScreenHeader`, `ProjectsHeader` |
 | Context | What the content belongs to: the project, the environment, the tabs. | `ServiceContextBar` |
 | Content | A list, a form, or one state: loading, empty or error. | See "States". |
@@ -118,6 +119,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - One animation: `Animation.screenChange` (ease in and out, 0.2 seconds). It is for a change of screen, a project that opens or closes, and the dialog.
 - A screen one level down moves in from the trailing edge. With Reduce Motion, it only fades (`AnyTransition.screen(reduceMotion:)`).
 - Each custom animation and transition reads `accessibilityReduceMotion`. With Reduce Motion, a project opens and closes with no animation, and the dialog only fades.
+- The incident banner shows and hides with no animation.
 - No animation on hover. No animation that repeats. The only timer is the 2 seconds of `CopyButton`.
 
 ## States

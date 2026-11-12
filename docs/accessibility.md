@@ -63,6 +63,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Delete a project or a service (type the name) | E8, check 1 | E8, check 2 | E10, E14, check 8 | E11f | E12c, check 4 | E13c |
 | Mute alerts | E1, E3 | E1, E3 | E10 | E11c | E12 | — |
 | Settings: auto refresh, alerts, launch at login, **Remove token…**, Help | E1 | E1 | E10 | E11f, E11g | E12, check 4 | E13e |
+| Railway incident banner: **Open status page**, **Hide** | E1, E17 | E1, E17 | E10 | E17 | E12a | E13g |
 | Error and empty states | E1, E7 | E1 | E10 | E11g | E12 | — |
 | Notifications | System | System | System | E11h | System | System |
 | **Quit Topway** | E1 | E1 | E10 | — | E12 | — |
@@ -116,6 +117,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - d. Logs and copy: the scroll to the newest line has no animation. The "Copied" text changes with no animation.
 - e. System motion: the menu bar window, the Settings window, the progress indicators and the glass buttons are system components. The system controls their motion.
 - f. Charts: `MetricCard` has no animation. New samples replace the old samples with no motion.
+- g. Incident banner: `IncidentBanner` shows and hides with no animation.
 
 Topway has no parallax, no symbol effect, no animation that repeats and no content that moves by itself, apart from new log lines. The user stops that with a scroll up.
 
@@ -124,6 +126,8 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 **E15. Charts.** `MetricCard` shows the name, the latest value and the highest value of a metric as text, and VoiceOver reads them as one item. The chart is hidden from assistive technologies, because it only shows the trend of the same values. A chart has one series, so no value depends on a color.
 
 **E16. Usage.** `SpendRow` has the label "Usage and cost". `SpendSummary` reads the cost, its period and the days left as one item. The progress bar of the limit has the limit amounts as its label and "50 percent of the limit" as its value. A cost above the limit shows as red text with an octagon and the words "The usage is above the limit."
+
+**E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` when an incident shows, because it shows with no user action. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
 
 ### Known limits
 

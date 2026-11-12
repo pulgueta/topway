@@ -28,9 +28,11 @@ Topway connects only to the Railway API (`backboard.railway.com`), through HTTPS
 
 - Topway sends your token to Railway to identify you.
 - Topway sends your actions to Railway, for example a restart or a new variable value.
+- Topway asks Railway for the platform status, to show a banner when Railway reports an incident. This request goes to the same address (`backboard.railway.com`), at most one time in 5 minutes. It contains no token and no data about you, your workspace or your projects.
+- The button **Open status page** in the banner opens the Railway status page (`status.railway.com`) in your browser. Topway itself sends nothing to that page.
 - The [Railway privacy policy](https://railway.com/legal/privacy) applies to the data that Railway keeps.
 
-In sample mode, Topway does not connect to Railway and does not read or save a token.
+In sample mode, Topway does not connect to Railway and does not read or save a token. The incident banner then shows a sample incident.
 
 ## Notifications
 

@@ -20,6 +20,9 @@ class AppState {
     /// Sample mode shows the data of `SampleDataSource`. It never reads or writes the
     /// Keychain token, and it ends when the app quits.
     private(set) var isSampleMode = false
+    /// The open incident that Railway reports. `nil` with no incident and before the
+    /// first check.
+    private(set) var incident: PlatformIncident?
 
     // MARK: - Persisted Properties
 
@@ -58,6 +61,7 @@ class AppState {
         guard !isSampleMode else { return true }
         latestProjectLoad += 1
         alertSnapshot = nil
+        clearIncident()
         projects = []
         isLoading = false
         pendingConfirmation = nil
@@ -134,6 +138,11 @@ class AppState {
     /// The last settled state of each service. It is `nil` before the first load of a data
     /// source or a workspace, so that load gives no alerts.
     private var alertSnapshot: AlertSnapshot?
+    private var lastIncidentCheck: Date?
+    /// A data source switch increases it, so an answer of the earlier source is dropped.
+    private var incidentGeneration = 0
+    /// The incident that the user hid. A different incident shows again.
+    private var hiddenIncidentId: String?
 
     // MARK: - Init
 
@@ -172,6 +181,11 @@ class AppState {
         HealthSummary(projects: projects)
     }
 
+    /// The incident for the banner. `nil` when the user hid this incident.
+    var visibleIncident: PlatformIncident? {
+        incident?.id == hiddenIncidentId ? nil : incident
+    }
+
     // MARK: - Public Methods
 
     func loadProjects(keepingError: Bool = false) async {
@@ -184,6 +198,8 @@ class AppState {
         if !keepingError {
             errorMessage = nil
         }
+        // Not awaited, so a slow status answer does not delay the projects.
+        Task { await checkIncident() }
 
         latestProjectLoad += 1
         let load = latestProjectLoad
@@ -363,12 +379,43 @@ class AppState {
         dataSource = source
         latestProjectLoad += 1
         alertSnapshot = nil
+        clearIncident()
         self.isSampleMode = isSampleMode
         projects = []
         isLoading = false
         pendingConfirmation = nil
         clearError()
         restartAutoRefresh()
+    }
+
+    // MARK: - Incident
+
+    /// Asks Railway for its platform status, at most one time in 5 minutes. The request has
+    /// no token. Sample mode sends no request and shows a sample incident. A failed check
+    /// keeps the last answer, because a network problem does not end an incident.
+    private func checkIncident() async {
+        guard IncidentCheck.isDue(lastCheck: lastIncidentCheck, now: .now) else { return }
+        lastIncidentCheck = .now
+        let generation = incidentGeneration
+        do {
+            let found = try await dataSource.fetchOpenIncident()
+            // An answer of the earlier data source must not show for the new one.
+            guard generation == incidentGeneration else { return }
+            incident = found
+        } catch {
+            // The banner is extra information, so a failed check shows no error.
+        }
+    }
+
+    func hideIncident() {
+        hiddenIncidentId = incident?.id
+    }
+
+    private func clearIncident() {
+        incidentGeneration += 1
+        incident = nil
+        lastIncidentCheck = nil
+        hiddenIncidentId = nil
     }
 
     // MARK: - Alerts

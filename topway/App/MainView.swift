@@ -15,6 +15,11 @@ struct MainView: View {
                 SampleDataBanner { appState.exitSampleMode() }
             }
 
+            // No animation, so the banner needs no Reduce Motion rule.
+            if let incident = appState.visibleIncident {
+                IncidentBanner(incident: incident) { appState.hideIncident() }
+            }
+
             ZStack {
                 switch destination {
                 case .main:
