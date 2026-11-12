@@ -75,7 +75,7 @@ struct SampleDataSourceTests {
         #expect(try await workerStatus() == "SUCCESS")
     }
 
-    @Test("Variables keep Railway references as plain values")
+    @Test("Variables keep Railway references as plain values, and a sealed one has no value")
     func variables() async {
         let variables = await makeSource().fetchVariables(
             projectId: "storefront", environmentId: "storefront-production",
@@ -87,7 +87,23 @@ struct SampleDataSourceTests {
                 "REDIS_URL": "${{ redis.REDIS_URL }}",
                 "LOG_LEVEL": "${{ shared.LOG_LEVEL }}",
                 "PORT": "8080",
+                "STRIPE_SECRET_KEY": String?.none,
             ])
+    }
+
+    @Test("A new value of a sealed variable keeps it sealed, as on Railway")
+    func upsertSealedVariable() async {
+        let source = makeSource()
+        let ids = ("storefront", "storefront-production", "storefront-api")
+
+        let didSave = await source.upsertVariable(
+            projectId: ids.0, environmentId: ids.1, serviceId: ids.2, name: "STRIPE_SECRET_KEY",
+            value: "sk_new", token: "")
+
+        #expect(didSave)
+        let variables = await source.fetchVariables(
+            projectId: ids.0, environmentId: ids.1, serviceId: ids.2, token: "")
+        #expect(variables["STRIPE_SECRET_KEY"] == .some(.none))
     }
 
     @Test("Restart makes a crashed deployment run again")

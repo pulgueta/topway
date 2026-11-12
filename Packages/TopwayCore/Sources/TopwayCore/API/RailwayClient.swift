@@ -135,9 +135,10 @@ public struct RailwayClient: RailwayDataSource {
 
     /// With `unrendered: true`, a reference keeps its template, as in the Railway CLI.
     /// The editor then saves the reference, not the value that Railway rendered from it.
+    /// Railway gives `null` as the value of a sealed variable.
     public func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
-    ) async throws -> [String: String] {
+    ) async throws -> [String: String?] {
         let query = """
             query Variables($projectId: String!, $environmentId: String!, $serviceId: String!) {
               variables(

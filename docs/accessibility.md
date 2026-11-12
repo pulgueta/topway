@@ -54,7 +54,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | See the projects, open or close a project, **Refresh** | E1, E3, E4, E6 | E1, E3 | E10 | E11c | E12 | E13b |
 | **Usage and cost**: cost, period, limits, **Refresh** | E1, E3, E4, E16 | E1 | E10 | E16 | E12 | E13a |
 | Open a service, change the environment, change the tab | E1, E3, E4, E9 | E1, E3, check 2 | E10 | — | E12 | E13a |
-| Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
+| Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | E11j | E12 | E13d |
 | Variables: the targets of references and their status | E3 | — | E10 | E11i | E12 | — |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
 | Variable editor: **Insert reference**, **Suggestions** | E1, E3, E7 | E1, E3 | E10 | — | E12 | — |
@@ -87,7 +87,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - `ProjectMenu` and `ServiceMenu`: the label is "Manage" and the name of the item. The **Manage** menu of `DeploymentRow` has the label "Manage" and the status and date of the deployment.
 - `EnvironmentRow`: the row is a group with the name of the environment. **Delete…** has the label "Delete" and the name of the environment.
 - `DomainRow`: the row is a group with the domain name. **Copy** and **Delete…** name the domain. `DNSRecordRow` is a group with the label "CNAME record shop", and **Copy value** has the label "Copy value of CNAME record shop".
-- `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
+- `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00". A sealed variable has no value, so its row has no **Show** and no **Copy**.
 - `ReferenceSuggestions`: a group with the label "Suggestions". Each button has the label "Insert reference to postgres.DATABASE_URL", and `accessibilityInputLabels` gives Voice Control the visible text. **Insert reference** is a standard `Menu` with a submenu for each service.
 - `ServiceLinkSection`: a group with the name of the service, or "Shared variables". Each link is one item with a sentence that has names only, for example "worker uses billing in BILLING_URL. The project has no service with this name." (`ServiceGraph.sentence(for:)`, tested). The arrow symbols are not read.
 - `ReferenceLinkRow`: one item for each target of a reference, with the label "Reference to postgres.DATABASE_URL: Found" (`ReferenceLink.accessibilityDescription`, tested). It has names only, never a value, so it does not show a hidden value.
@@ -95,7 +95,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E4. Headers and back.** The title of each screen and of the dialog has the header trait (`ProjectsHeader`, `ScreenHeader`, `GlassConfirmationDialog`). The back button has the label "Back to" and the name of the screen.
 
-**E5. Symbols that only decorate.** The status dot of a deployment, the dialog backdrop and the progress symbol in the confirm button are hidden from assistive technologies. A hidden variable value reads as "Hidden value".
+**E5. Symbols that only decorate.** The status dot of a deployment, the dialog backdrop and the progress symbol in the confirm button are hidden from assistive technologies. A hidden variable value reads as "Hidden value". A sealed variable value reads as "Sealed value".
 
 **E6. Status in words.** `LogLineRow` reads a line as "Warning:" or "Error:" and the message. `LogConnectionLabel` reads as "Connection: Live". Each progress indicator has a label, for example "Loading projects".
 
@@ -117,6 +117,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - g. Errors and results: a symbol and a text ("Saved", the error message).
 - h. Notifications: the title says the result, for example "Deployment failed".
 - i. Reference status: each status has a text and a different symbol: "Found" (check mark), "Service not found" and "Variable not found" (triangle), "Set by Railway" (circle with "i") and "Not checked" (question mark). Only the triangle is orange. The text is in the primary color. In **Service links**, a missing service shows the text "Service not found" with the triangle, and the direction of a link is in the words **Uses** and **Used by**, not only in the arrow.
+- j. Sealed variable: the text "Sealed" and a lock, in place of the value. The variable editor says the same in text.
 
 **E12. Sufficient Contrast.** Text uses the system text styles and the system colors, which change with Increase Contrast. Primary text is the default for names, values and log lines of the info level.
 - a. `SampleDataBanner`: the text is in the primary color. Only the symbol is orange.

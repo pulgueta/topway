@@ -10,10 +10,10 @@ public protocol RailwayDataSource: Sendable {
         -> String
 
     /// Gives the variables of a service unrendered: a reference keeps its template, for
-    /// example `${{ postgres.DATABASE_URL }}`.
+    /// example `${{ postgres.DATABASE_URL }}`. A sealed variable has the value `nil`.
     func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
-    ) async throws -> [String: String]
+    ) async throws -> [String: String?]
 
     /// Gives the unrendered shared variables of an environment and the unrendered variables
     /// of each service in `serviceIds`, in one request.

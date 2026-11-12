@@ -81,7 +81,7 @@ public actor SampleDataSource: RailwayDataSource {
 
     public func fetchVariables(
         projectId: String, environmentId: String, serviceId: String, token: String
-    ) -> [String: String] {
+    ) -> [String: String?] {
         variables[Self.key(environmentId, serviceId)] ?? [:]
     }
 
@@ -96,7 +96,10 @@ public actor SampleDataSource: RailwayDataSource {
         projectId: String, environmentId: String, serviceId: String, name: String, value: String,
         token: String
     ) -> Bool {
-        variables[Self.key(environmentId, serviceId), default: [:]][name] = value
+        let key = Self.key(environmentId, serviceId)
+        // Railway cannot unseal a variable, so a new value stays hidden.
+        if variables[key]?[name] == .some(nil) { return true }
+        variables[key, default: [:]][name] = value
         return true
     }
 

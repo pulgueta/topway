@@ -47,6 +47,20 @@ struct SampleDataSourceEnvironmentTests {
         #expect(deployments.first?.createdAt == "2026-11-10T12:00:00Z")
     }
 
+    @Test("Create from a source does not copy a sealed variable, as on Railway")
+    func createFromSourceWithSealedVariable() async throws {
+        let source = makeSource()
+
+        let id = try await source.createEnvironment(
+            projectId: "storefront", name: "preview", sourceEnvironmentId: "storefront-production",
+            token: "")
+
+        let variables = await source.fetchVariables(
+            projectId: "storefront", environmentId: id, serviceId: "storefront-api", token: "")
+        #expect(variables["PORT"] == "8080")
+        #expect(!variables.keys.contains("STRIPE_SECRET_KEY"))
+    }
+
     @Test("Create fails with a message for a missing project and for a name in use")
     func createFailures() async {
         let source = makeSource()

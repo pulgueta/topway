@@ -38,6 +38,7 @@ struct EditVariableView: View {
 
     private var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && existingVariable?.accepts(value) ?? true
     }
 
     /// The variables that the value can reference. The variable itself is left out.
@@ -84,7 +85,8 @@ struct EditVariableView: View {
             appState.clearError()
             if let variable = existingVariable {
                 name = variable.name
-                value = variable.value
+                // A sealed variable has no value to show, so the editor starts empty.
+                value = variable.value ?? ""
             }
             // The name of a saved variable cannot change, so the value gets the focus.
             focusedField = isEditing ? .value : .name
@@ -124,6 +126,16 @@ struct EditVariableView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Value")
                         .font(.callout.weight(.medium))
+
+                    if existingVariable?.isSealed == true {
+                        Label(
+                            "This variable is sealed. Railway does not show its value. "
+                                + "Type a new value to replace it.",
+                            systemImage: "lock"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
 
                     // A text editor keeps the line breaks of a value with many lines.
                     TextEditor(text: $value, selection: $selection)

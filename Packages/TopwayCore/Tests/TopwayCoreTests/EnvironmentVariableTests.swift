@@ -36,4 +36,22 @@ struct EnvironmentVariableTests {
 
         #expect(variable.dotenvLine == #"DIR=C:\temp"#)
     }
+
+    @Test("A sealed variable has no value, so its line is a comment with the name only")
+    func sealedLine() {
+        let variable = EnvironmentVariable(name: "STRIPE_KEY", value: nil)
+
+        #expect(variable.isSealed)
+        #expect(variable.dotenvLine == "# STRIPE_KEY is sealed. Railway does not show its value.")
+    }
+
+    @Test("The editor cannot save an empty value over a sealed value")
+    func sealedEmptyValue() {
+        let sealed = EnvironmentVariable(name: "STRIPE_KEY", value: nil)
+        let plain = EnvironmentVariable(name: "PORT", value: "8080")
+
+        #expect(!sealed.accepts(""))
+        #expect(sealed.accepts("sk_new"))
+        #expect(plain.accepts(""))
+    }
 }

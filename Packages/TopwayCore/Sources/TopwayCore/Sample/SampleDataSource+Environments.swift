@@ -24,7 +24,8 @@ extension SampleDataSource {
             for service in project.serviceList {
                 let source = Self.key(sourceEnvironmentId, service.id)
                 let target = Self.key(environment.id, service.id)
-                variables[target] = variables[source]
+                // Railway does not copy a sealed variable to a new environment.
+                variables[target] = variables[source]?.filter { $0.value != nil }
                 if deployments[source] != nil {
                     startDeployment(key: target)
                 }

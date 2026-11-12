@@ -1,3 +1,4 @@
 struct VariablesData: Decodable {
-    let variables: [String: String]
+    /// A sealed variable has the value `null`.
+    let variables: [String: String?]
 }

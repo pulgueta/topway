@@ -18,6 +18,18 @@ struct ReferenceDataTests {
         #expect(query.contains("unrendered: true"))
     }
 
+    @Test("A sealed variable has the value null, so it decodes with its name and no value")
+    func sealedVariable() async throws {
+        let server = StubServer(
+            StubReply(body: #"{"data":{"variables":{"PORT":"8080","STRIPE_KEY":null}}}"#))
+
+        let variables = try await RailwayClient(session: server.session).fetchVariables(
+            projectId: "p1", environmentId: "e1", serviceId: "s1", token: "secret")
+
+        #expect(variables == ["PORT": "8080", "STRIPE_KEY": String?.none])
+        #expect(variables.keys.contains("STRIPE_KEY"))
+    }
+
     @Test("Project variables read the shared variables and each service in one request")
     func projectVariables() async throws {
         let server = StubServer(

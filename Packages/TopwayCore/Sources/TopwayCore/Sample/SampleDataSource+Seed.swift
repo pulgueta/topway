@@ -37,7 +37,8 @@ extension SampleDataSource {
         ]
 
     /// The variables of each environment and service. Railway references stay plain text.
-    static let seedVariables: [String: [String: String]] = [
+    /// A sealed variable has the value `nil`, as in the answer of Railway.
+    static let seedVariables: [String: [String: String?]] = [
         "storefront-production/storefront-web": [
             "API_URL": "https://${{ api.RAILWAY_PUBLIC_DOMAIN }}",
             "NODE_ENV": "production",
@@ -48,6 +49,7 @@ extension SampleDataSource {
             "REDIS_URL": "${{ redis.REDIS_URL }}",
             "LOG_LEVEL": "${{ shared.LOG_LEVEL }}",
             "PORT": "8080",
+            "STRIPE_SECRET_KEY": nil,
         ],
         "storefront-production/storefront-worker": [
             "DATABASE_URL": "${{ postgres.DATABASE_URL }}",
