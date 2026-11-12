@@ -30,4 +30,14 @@ public struct HealthSummary: Sendable {
             health = .healthy
         }
     }
+
+    /// The health in words, for the accessibility label of the menu bar icon.
+    /// `nil` when the health is healthy, because the icon then shows no status.
+    public var statusDescription: String? {
+        switch health {
+        case .healthy: nil
+        case .inProgress: "build or deploy in progress"
+        case .failing: "\(failing.count) service\(failing.count == 1 ? "" : "s") failing"
+        }
+    }
 }

@@ -54,6 +54,21 @@ struct HealthSummaryTests {
         }
     }
 
+    @Test(
+        "The status description says the health in words, and is nil when all is healthy",
+        arguments: [
+            (["SUCCESS", "SLEEPING"], String?.none),
+            ([], nil),
+            (["SUCCESS", "BUILDING"], "build or deploy in progress"),
+            (["DEPLOYING", "FAILED"], "1 service failing"),
+            (["CRASHED", "FAILED", "SUCCESS"], "2 services failing"),
+        ])
+    func statusDescription(statuses: [String], expected: String?) {
+        let summary = HealthSummary(projects: [makeProject("shop", statuses: statuses)])
+
+        #expect(summary.statusDescription == expected)
+    }
+
     /// Makes a project with one production environment and one service for each status.
     private func makeProject(_ name: String, statuses: [String]) -> Project {
         let services = statuses.indices.map { Service(id: "\(name)-s\($0)", name: "s\($0)") }

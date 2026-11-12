@@ -19,12 +19,7 @@ struct MenuBarLabel: View {
     }
 
     private var accessibilityText: String {
-        switch health.health {
-        case .healthy: "Topway"
-        case .inProgress: "Topway, deploy in progress"
-        case .failing:
-            "Topway, \(health.failing.count) service\(health.failing.count == 1 ? "" : "s") failing"
-        }
+        health.statusDescription.map { "Topway, \($0)" } ?? "Topway"
     }
 }
 
