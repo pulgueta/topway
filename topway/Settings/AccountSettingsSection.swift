@@ -51,6 +51,11 @@ struct AccountSettingsSection: View {
             guard appearsActive, let error = appState.signInError else { return }
             AccessibilityNotification.Announcement(error).post()
         }
+        // The sign-out controls go away, so VoiceOver says why the sign-in stays.
+        .task(id: appearsActive ? signOutError : nil) {
+            guard appearsActive, let signOutError else { return }
+            AccessibilityNotification.Announcement("Error: \(signOutError)").post()
+        }
     }
 
     // MARK: - Signed Out
