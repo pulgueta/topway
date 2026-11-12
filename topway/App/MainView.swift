@@ -70,9 +70,12 @@ struct MainView: View {
                     )
                     .transition(.screen(reduceMotion: reduceMotion))
                 case .service(let service, let project):
+                    // The loaded project has the new name of a service and the new
+                    // environments. The opened values stay while the projects load again.
+                    let loaded = appState.projects.first { $0.id == project.id }
                     ServiceView(
-                        service: service,
-                        project: project,
+                        service: loaded?.serviceList.first { $0.id == service.id } ?? service,
+                        project: loaded ?? project,
                         onDismiss: {
                             appState.clearError()
                             show(.main)

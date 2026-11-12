@@ -56,6 +56,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Open a service, change the environment, change the tab | E1, E3, E4, E9 | E1, E3, check 2 | E10 | — | E12 | E13a |
 | Variables: **Show**, **Copy**, **Copy all** | E3, E5, E7 | E3 | E10 | — | E12 | E13d |
 | Add, edit and delete a variable | E1, E4, E8, E9 | E1, E8 | E10 | E11f | E12, check 4 | E13a, E13c |
+| Service settings: name, commands, paths, **Save changes** | E1, E4, E7, E8, E9 | E1, E8 | E10 | E11g, E18 | E12, check 4 | E13a, E13c |
 | Deployments: list, **View logs**, **Open URL**, **Restart**, **Redeploy** | E3, E5, E8 | E3, E8 | E10 | E11d | E12 | E13c |
 | Deployment **Manage** menu: **Roll back…**, **Cancel deployment…**, **Remove deployment…** | E1, E3, E8 | E1, E3, E8 | E10 | E11f | E12, check 4 | E13c |
 | Metrics: charts, **Time range**, **Refresh** | E1, E15 | E1 | E10 | E15 | E12 | E13f |
@@ -90,11 +91,11 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E6. Status in words.** `LogLineRow` reads a line as "Warning:" or "Error:" and the message. `LogConnectionLabel` reads as "Connection: Live". Each progress indicator has a label, for example "Loading projects".
 
-**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error.
+**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved".
 
 **E8. Confirmation dialog.** `destructiveConfirmation` disables the content behind the dialog and hides it from assistive technologies. The card has the modal trait. The keyboard focus goes to the name field. With no name field, the VoiceOver focus goes to the title. **Cancel** has the cancel shortcut (Escape). Return confirms only an action that is not destructive. The name field is a standard `TextField`, so Voice Control can dictate into it.
 
-**E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView` and `AddServiceView` goes back one step. Command-Return saves a variable. Command-R refreshes the projects.
+**E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView`, `AddServiceView`, `EnvironmentsView` and `NewEnvironmentView` goes back one step. Command-Return saves a variable or the service settings. Command-R refreshes the projects.
 
 **E10. Dark Interface.** All colors are system colors (`.red`, `.orange`, `.green`), hierarchical styles (`.secondary`, `.tertiary`), the tint and system materials. The only fixed color is the black backdrop of the dialog at 30 % opacity, which is dark. No view sets `preferredColorScheme`. Settings is a system `Form`.
 

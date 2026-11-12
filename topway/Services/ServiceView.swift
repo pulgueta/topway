@@ -76,6 +76,17 @@ struct ServiceView: View {
                     }
                 )
                 .transition(.screen(reduceMotion: reduceMotion))
+            case .settings:
+                ServiceSettingsView(
+                    service: service,
+                    environmentId: selectedEnvironmentId ?? "",
+                    environmentName: selectedEnvironmentName,
+                    onDismiss: {
+                        appState.clearError()
+                        show(.overview)
+                    }
+                )
+                .transition(.screen(reduceMotion: reduceMotion))
             }
         }
         // Runs at the start and for each new environment.
@@ -138,6 +149,10 @@ struct ServiceView: View {
                     ServiceMenu(
                         serviceName: service.name,
                         isRedeploying: isRedeploying,
+                        onShowSettings: {
+                            appState.clearError()
+                            show(.settings)
+                        },
                         onRedeploy: { confirmRedeploy() },
                         onRequestDelete: { confirmDeleteService() }
                     )

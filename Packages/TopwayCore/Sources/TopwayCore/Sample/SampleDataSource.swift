@@ -13,6 +13,8 @@ public actor SampleDataSource: RailwayDataSource {
     var environmentCount = 0
     /// The variables of each environment and service.
     var variables = seedVariables
+    /// The settings that the user saved, for each environment and service.
+    var settings: [String: ServiceSettings] = [:]
 
     /// - Parameters:
     ///   - now: Gives the current date. The deployment and log dates come from it.
@@ -228,7 +230,7 @@ public actor SampleDataSource: RailwayDataSource {
         deployments[key] = [deployment] + earlier
     }
 
-    private func replaceServices(inProjectAt index: Int, with services: [Service]) {
+    func replaceServices(inProjectAt index: Int, with services: [Service]) {
         let project = projects[index]
         projects[index] = Project(
             id: project.id, name: project.name,

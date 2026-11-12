@@ -52,6 +52,16 @@ public protocol RailwayDataSource: Sendable {
     /// Removes a deployment. The service then stops in the environment of the deployment.
     func removeDeployment(deploymentId: String, token: String) async throws -> Bool
 
+    /// Gives the name of a service and its settings in one environment.
+    func fetchServiceSettings(environmentId: String, serviceId: String, token: String)
+        async throws -> ServiceSettings
+
+    /// Saves the changed settings. A new name applies to all environments, and the other
+    /// settings to one environment. Returns `false` when Railway did not save them.
+    func updateServiceSettings(
+        _ changes: ServiceSettingsChanges, environmentId: String, serviceId: String, token: String
+    ) async throws -> Bool
+
     /// Gives the CPU, memory and network samples of a service in one environment.
     func fetchMetrics(
         environmentId: String, serviceId: String, window: MetricWindow, token: String

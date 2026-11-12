@@ -495,7 +495,8 @@ public struct RailwayClient: RailwayDataSource {
         }
 
         let subscription = GraphQLRequest(
-            query: Self.logsDocument(kind, operation: "subscription"), variables: variables)
+            query: Self.logsDocument(kind, operation: "subscription"),
+            variables: variables.mapValues(JSONValue.string))
         let query = Self.logsDocument(kind, operation: "query")
         var recovery = LogRecovery()
         while true {
@@ -577,6 +578,15 @@ public struct RailwayClient: RailwayDataSource {
     /// - Parameter token: `nil` sends no `Authorization` header.
     func execute<T: Decodable>(
         query: String, variables: [String: String], token: String?
+    ) async throws -> T {
+        try await execute(
+            query: query, json: variables.mapValues(JSONValue.string), token: token)
+    }
+
+    /// For variables that are not all text.
+    /// - Parameter token: `nil` sends no `Authorization` header.
+    func execute<T: Decodable>(
+        query: String, json variables: [String: JSONValue], token: String?
     ) async throws -> T {
         guard let url = URL(string: baseURL) else {
             throw RailwayError.invalidURL
