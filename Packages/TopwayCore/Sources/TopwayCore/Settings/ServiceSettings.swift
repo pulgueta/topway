@@ -21,11 +21,23 @@ public struct ServiceSettings: Hashable, Sendable {
         set { values[setting] = newValue.isEmpty ? nil : newValue }
     }
 
-    /// The first problem that stops a save, or `nil`.
+    /// The first problem of the values, or `nil`. A save uses `problem(comparedTo:)`.
     public var problem: ServiceSettingsProblem? {
         if Self.clean(name).isEmpty { return .emptyName }
         let path = Self.clean(self[.healthcheckPath])
         return path.isEmpty || path.hasPrefix("/") ? nil : .healthcheckPath
+    }
+
+    /// The first problem that stops a save of the changes from `original`. A healthcheck
+    /// path that the user did not change is not a problem: Railway has it, and it must
+    /// not stop a save of the other settings.
+    public func problem(comparedTo original: ServiceSettings) -> ServiceSettingsProblem? {
+        switch problem {
+        case .healthcheckPath where changes(from: original).instance[.healthcheckPath] == nil:
+            nil
+        case let problem:
+            problem
+        }
     }
 
     /// The settings that are different from `original`. Spaces around a value are not a

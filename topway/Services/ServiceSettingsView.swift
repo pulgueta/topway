@@ -22,6 +22,11 @@ struct ServiceSettingsView: View {
         original.map { edited.changes(from: $0) } ?? ServiceSettingsChanges()
     }
 
+    /// A value that Railway has and that the user did not change stops no save.
+    private var problem: ServiceSettingsProblem? {
+        original.flatMap { edited.problem(comparedTo: $0) }
+    }
+
     var body: some View {
         ScreenLayout {
             content
@@ -75,7 +80,7 @@ struct ServiceSettingsView: View {
                 field(
                     "Name", text: $edited.name, example: "web",
                     hint: "The name is the same in all environments.",
-                    problem: edited.problem == .emptyName ? edited.problem : nil
+                    problem: problem == .emptyName ? problem : nil
                 )
 
                 if let source = edited.source {
@@ -88,8 +93,8 @@ struct ServiceSettingsView: View {
                     field(
                         setting.title, text: $edited[dynamicMember: \.[setting]],
                         example: setting.example,
-                        problem: setting == .healthcheckPath && edited.problem == .healthcheckPath
-                            ? edited.problem : nil
+                        problem: setting == .healthcheckPath && problem == .healthcheckPath
+                            ? problem : nil
                     )
                     .font(.body.monospaced())
                 }
@@ -147,7 +152,7 @@ struct ServiceSettingsView: View {
             Button(isSaving ? "Saving…" : "Save changes") { confirmSave() }
                 .buttonStyle(.glassProminent)
                 .keyboardShortcut(.return, modifiers: .command)
-                .disabled(changes.isEmpty || edited.problem != nil || isSaving)
+                .disabled(changes.isEmpty || problem != nil || isSaving)
                 .help("Send the changed settings to Railway (Command-Return).")
         }
     }
@@ -168,7 +173,7 @@ struct ServiceSettingsView: View {
     /// The dialog uses the changes from when it opened.
     private func confirmSave() {
         let changes = changes
-        guard !changes.isEmpty, edited.problem == nil, !isSaving else { return }
+        guard !changes.isEmpty, problem == nil, !isSaving else { return }
         var sentences: [String] = []
         if changes.name != nil {
             sentences.append("The new name applies to all environments.")

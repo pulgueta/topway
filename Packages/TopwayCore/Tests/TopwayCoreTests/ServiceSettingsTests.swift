@@ -64,6 +64,19 @@ struct ServiceSettingsTests {
         #expect((edited.problem == .healthcheckPath) == isProblem)
     }
 
+    @Test("A healthcheck path that Railway has, and that the user did not change, stops no save")
+    func unchangedHealthcheckPath() {
+        let saved = ServiceSettings(name: "web", values: [.healthcheckPath: "health"])
+        var edited = saved
+        edited[.startCommand] = "node server.js"
+
+        #expect(edited.problem(comparedTo: saved) == nil)
+        edited[.healthcheckPath] = "ready"
+        #expect(edited.problem(comparedTo: saved) == .healthcheckPath)
+        edited.name = ""
+        #expect(edited.problem(comparedTo: saved) == .emptyName)
+    }
+
     @Test("The answer of Railway gives the name, the source and the settings that are set")
     func decoding() throws {
         let json = """
