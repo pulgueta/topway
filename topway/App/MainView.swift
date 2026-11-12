@@ -56,6 +56,7 @@ struct MainView: View {
         .destructiveConfirmation(
             request: appState.pendingConfirmation,
             isLoading: appState.isRunningConfirmation,
+            reduceMotion: reduceMotion,
             onConfirm: { appState.runPendingConfirmation() },
             onCancel: { appState.cancelConfirmation() }
         )

@@ -15,6 +15,7 @@ struct GlassConfirmationDialog: View {
     let onCancel: () -> Void
 
     @State private var typedText = ""
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @FocusState private var isNameFieldFocused: Bool
     @AccessibilityFocusState private var isTitleFocused: Bool
 
@@ -80,8 +81,13 @@ struct GlassConfirmationDialog: View {
         .padding(18)
         .frame(maxWidth: 300)
         // The one custom glass surface of the app. Its buttons are not glass, because
-        // glass on glass is hard to read.
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        // glass on glass is hard to read. With Reduce Transparency, the card is opaque.
+        .background {
+            if reduceTransparency {
+                RoundedRectangle(cornerRadius: 20).fill(.background)
+            }
+        }
+        .glassEffect(reduceTransparency ? .identity : .regular, in: .rect(cornerRadius: 20))
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
     }
@@ -167,6 +173,7 @@ struct GlassConfirmationDialog: View {
             environmentName: "production",
             perform: {}
         ),
+        reduceMotion: false,
         onConfirm: {},
         onCancel: {}
     )
