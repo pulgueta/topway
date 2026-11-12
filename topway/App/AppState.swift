@@ -39,6 +39,9 @@ class AppState {
     private(set) var sessionNotice: String?
     /// The signed-in user and the workspaces that the user shared. `nil` until it loads.
     private(set) var account: RailwayAccount?
+    /// Increases when a sign-in installs new tokens, also when the earlier sign-in stays until
+    /// then. `MainView` then goes back to the projects screen.
+    private(set) var completedSignIns = 0
 
     private static let tokensKey = "railwayOAuth"
     /// The Keychain item and the `UserDefaults` key of the API token of earlier builds.
@@ -456,6 +459,14 @@ class AppState {
                 return
             }
             tokens = newTokens
+            completedSignIns += 1
+            // The account, the projects and an open dialog belong to the earlier sign-in. The
+            // workspace stays, so the projects of the same workspace load again below.
+            account = nil
+            latestProjectLoad += 1
+            projects = []
+            alertSnapshot = nil
+            cancelRunningConfirmation()
             // A rejected token of the earlier sign-in no longer applies.
             clearError()
             // A sign-in replaces the sample data.

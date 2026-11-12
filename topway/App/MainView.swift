@@ -144,6 +144,11 @@ struct MainView: View {
             appState.cancelConfirmation()
             destination = .main
         }
+        // Sign in again keeps `isSignedIn` and can keep the workspace, but the open screen
+        // belongs to the earlier sign-in.
+        .onChange(of: appState.completedSignIns) {
+            destination = .main
+        }
         // Escape goes back one step.
         .onExitCommand {
             if appState.pendingConfirmation != nil {
