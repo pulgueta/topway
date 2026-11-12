@@ -24,7 +24,8 @@ struct VariablesTab: View {
         } top: {
             EmptyView()
         } bottom: {
-            if let error = appState.errorMessage, !variables.isEmpty {
+            // With a known list, the error belongs to a different action, not to this load.
+            if let error = appState.errorMessage, !variables.isEmpty || areVariablesKnown {
                 ErrorBanner(message: error) { appState.clearError() }
             }
 
@@ -58,13 +59,11 @@ struct VariablesTab: View {
             }
         } else if isLoading {
             LoadingStateView(title: "Loading variables…")
-        } else if let error = appState.errorMessage {
-            ErrorStateView(title: "Variables did not load", message: error) { onRetry() }
         } else if !areVariablesKnown {
-            // The error is gone, for example after a new token, but the list did not load.
+            // The error can be gone, for example after a new token, but the list did not load.
             ErrorStateView(
                 title: "Variables did not load",
-                message: "Select Try again to load the variables."
+                message: appState.errorMessage ?? "Select Try again to load the variables."
             ) { onRetry() }
         } else {
             ContentUnavailableView(
