@@ -79,6 +79,15 @@ struct IssueReportLinkTests {
         #expect(items["data-mode"] == "Sample data")
     }
 
+    @Test("An Intel build that runs with Rosetta on Apple silicon says Apple silicon and Rosetta")
+    func rosetta() throws {
+        var details = details
+        details.architecture = .appleSiliconWithRosetta
+
+        #expect(
+            try queryItems(.bug, details)["architecture"] == "Apple silicon (arm64) with Rosetta")
+    }
+
     @Test("With no token and no sample data, the data field says that there is no token")
     func noToken() throws {
         var details = details

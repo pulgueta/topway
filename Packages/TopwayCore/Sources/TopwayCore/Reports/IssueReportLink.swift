@@ -19,10 +19,7 @@ public enum IssueReportLink {
             ("app-version", versionText(details.appVersion, build: details.appBuild)),
             ("macos-version", macOSText(details)),
             ("mac-model", details.macModel),
-            (
-                "architecture",
-                details.architecture == .appleSilicon ? "Apple silicon (arm64)" : "Intel (x86_64)"
-            ),
+            ("architecture", architectureText(details.architecture)),
             ("data-mode", dataText(details)),
         ]
         components.queryItems = fields.filter { !$0.1.isEmpty }.map {
@@ -38,6 +35,14 @@ public enum IssueReportLink {
         switch kind {
         case .bug: "bug_report.yml"
         case .crash: "crash_report.yml"
+        }
+    }
+
+    private static func architectureText(_ architecture: CPUArchitecture) -> String {
+        switch architecture {
+        case .appleSilicon: "Apple silicon (arm64)"
+        case .appleSiliconWithRosetta: "Apple silicon (arm64) with Rosetta"
+        case .intel: "Intel (x86_64)"
         }
     }
 
