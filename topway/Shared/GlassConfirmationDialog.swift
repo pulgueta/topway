@@ -93,12 +93,11 @@ struct GlassConfirmationDialog: View {
     }
 
     private var productionLabel: some View {
-        Text("Production environment")
+        // Red text with a symbol, not white text on red: with Increase Contrast in a dark
+        // appearance, the system red is light, and white text on it is hard to read.
+        Label("Production environment", systemImage: "exclamationmark.octagon.fill")
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(.red, in: .capsule)
+            .foregroundStyle(.red)
     }
 
     private var nameField: some View {
