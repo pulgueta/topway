@@ -3,7 +3,7 @@ import TopwayCore
 
 extension DeviceDetails {
     /// The details of this app and this Mac. Topway reads them only when the user reports a problem.
-    static func current(isSampleMode: Bool) -> DeviceDetails {
+    static func current(isSampleMode: Bool, hasToken: Bool) -> DeviceDetails {
         let info = Bundle.main.infoDictionary
         let system = ProcessInfo.processInfo.operatingSystemVersion
         #if arch(arm64)
@@ -20,7 +20,8 @@ extension DeviceDetails {
             macOSBuild: systemText("kern.osversion"),
             macModel: systemText("hw.model"),
             architecture: architecture,
-            isSampleMode: isSampleMode)
+            isSampleMode: isSampleMode,
+            hasToken: hasToken)
     }
 
     /// A text value from `sysctl`, or an empty text when the system does not give it.

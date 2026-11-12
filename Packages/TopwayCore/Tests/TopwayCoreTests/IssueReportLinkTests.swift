@@ -10,7 +10,8 @@ struct IssueReportLinkTests {
         macOSBuild: "25C56",
         macModel: "Mac16,1",
         architecture: .appleSilicon,
-        isSampleMode: false)
+        isSampleMode: false,
+        hasToken: true)
 
     private func queryItems(_ kind: IssueKind, _ details: DeviceDetails) throws -> [String: String]
     {
@@ -76,6 +77,22 @@ struct IssueReportLinkTests {
 
         #expect(items["architecture"] == "Intel (x86_64)")
         #expect(items["data-mode"] == "Sample data")
+    }
+
+    @Test("With no token and no sample data, the data field says that there is no token")
+    func noToken() throws {
+        var details = details
+        details.hasToken = false
+
+        #expect(try queryItems(.bug, details)["data-mode"] == "No token")
+    }
+
+    @Test("Sample mode gives the sample data value also when a token is saved")
+    func sampleModeWithToken() throws {
+        var details = details
+        details.isSampleMode = true
+
+        #expect(try queryItems(.crash, details)["data-mode"] == "Sample data")
     }
 
     @Test(
