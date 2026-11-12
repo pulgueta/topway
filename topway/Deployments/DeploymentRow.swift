@@ -21,6 +21,9 @@ struct DeploymentRow: View {
     }
 
     var body: some View {
+        // `formattedDate` makes date formatters, so the body reads it one time.
+        let formattedDate = deployment.formattedDate
+
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: Layout.controlSpacing) {
                 // The status text is next to the dot, so the color is not the only sign.
@@ -34,7 +37,7 @@ struct DeploymentRow: View {
 
                 Spacer(minLength: Layout.controlSpacing)
 
-                Text(deployment.formattedDate)
+                Text(formattedDate)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -63,6 +66,6 @@ struct DeploymentRow: View {
                 .padding(.leading, Layout.contentInset)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(deployment.statusDisplay), \(deployment.formattedDate)")
+        .accessibilityLabel("\(deployment.statusDisplay), \(formattedDate)")
     }
 }
