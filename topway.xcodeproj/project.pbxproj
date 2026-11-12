@@ -278,6 +278,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Topway;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Andrés Rodríguez. MIT License.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -317,6 +318,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Topway;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Andrés Rodríguez. MIT License.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
