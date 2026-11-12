@@ -32,10 +32,10 @@ The maintainer did the manual checks below on a running app on 2026-11-12, and a
 |---|---|---|
 | VoiceOver | Declare. | The code gives each control a name, a type and a value. Check 1 passed: the menu bar window, the row groups and the dialog work. |
 | Voice Control | Declare. | Each action is a standard control with a name that includes the visible text. Check 2 passed. |
-| Dark Interface | Declare. | The code has no fixed light color and no appearance override. Do check 6 to make sure. |
-| Differentiate Without Color Alone | Declare. | Each status has a text or a symbol with its color. Do check 7 to make sure. |
+| Dark Interface | Declare. | The code has no fixed light color and no appearance override. Check 6 passed. |
+| Differentiate Without Color Alone | Declare. | Each status has a text or a symbol with its color. Check 7 passed. |
 | Sufficient Contrast | Declare. | Some colored text is below 4.5 to 1 in the light appearance by default. See "Known limits". Apple permits the label when Increase Contrast gives sufficient contrast in an app that uses the Apple frameworks. Check 4 passed. |
-| Reduced Motion | Declare. | Each custom animation fades or stops with Reduce Motion. Do check 5 to make sure. |
+| Reduced Motion | Declare. | Each custom animation fades or stops with Reduce Motion. Check 5 passed. |
 | Larger Text | Not available on Mac. | — |
 | Captions | Not applicable. Do not select it. | Topway has no video and no audio. |
 | Audio Descriptions | Not applicable. Do not select it. | Topway has no video. |
