@@ -668,10 +668,13 @@ class AppState {
         }
 
         let client = oauthClient
+        let generation = sessionGeneration
         let refresh = Task {
             do {
                 let renewed = try await client.refresh(current, clientID: clientID)
-                // A sign-out or a new sign-in during the refresh replaced these tokens.
+                // A sign-out or a completed new sign-in replaced these tokens. While the tokens
+                // stay, the new ones are kept also when **Sign in again** started: Railway can
+                // rotate the refresh token, and a use of the earlier one ends the authorization.
                 guard tokens == current else { throw RailwayError.cancelled }
                 tokens = renewed
                 sessionGeneration.record(.tokensRefreshed)
@@ -679,14 +682,17 @@ class AppState {
                 // Railway does not accept the earlier refresh token, and the user signs in.
                 _ = save(renewed)
                 return renewed
-            } catch OAuthError.rejected {
-                if tokens == current {
+            } catch let error as OAuthError {
+                // A refusal of an earlier session ends nothing: it must not close the window
+                // of a newer sign-in. The next request of this session refreshes again.
+                if tokens == current,
+                    sessionGeneration.permitsSessionEnd(after: error, startedIn: generation)
+                {
                     KeychainStore.delete(Self.tokensKey)
                     endSession(
                         notice: "Your Railway sign-in ended. Sign in again to see your projects.")
                 }
-                throw RailwayError.cancelled
-            } catch OAuthError.cancelled {
+                guard error == .rejected || error == .cancelled else { throw error }
                 throw RailwayError.cancelled
             }
         }

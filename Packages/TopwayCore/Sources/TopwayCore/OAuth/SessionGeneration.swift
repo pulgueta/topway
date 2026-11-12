@@ -29,4 +29,13 @@ public struct SessionGeneration: Sendable, Equatable {
     public func permitsRetry(of error: RailwayError, startedIn start: SessionGeneration) -> Bool {
         error.isTokenRejected && start == self
     }
+
+    /// A refresh that Railway refuses ends the sign-in, but only in the session where the
+    /// refresh started. A refusal that arrives after **Sign in again** must not end the new
+    /// sign-in and close its window.
+    public func permitsSessionEnd(after error: OAuthError, startedIn start: SessionGeneration)
+        -> Bool
+    {
+        error == .rejected && start == self
+    }
 }
