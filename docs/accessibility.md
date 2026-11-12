@@ -99,7 +99,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E6. Status in words.** `LogLineRow` reads a line as "Warning:" or "Error:" and the message. `LogConnectionLabel` reads as "Connection: Live". Each progress indicator has a label, for example "Loading projects".
 
-**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved". The variable editor posts "Suggestions are below the value." when reference suggestions show.
+**E7. Announcements.** `ErrorBanner` and `ErrorStateView` post an `AccessibilityNotification.Announcement` when an error shows. They post only while the window is open. When the window opens again, VoiceOver says the error that shows. `CopyButton` posts "Copied". Settings posts "Saved" or the save error. The service settings post "Saved". The variable editor posts "Suggestions are below the value." when reference suggestions show.
 
 **E8. Confirmation dialog.** `destructiveConfirmation` disables the content behind the dialog and hides it from assistive technologies. The card has the modal trait. The keyboard focus goes to the name field. With no name field, the VoiceOver focus goes to the title. **Cancel** has the cancel shortcut (Escape). Return confirms only an action that is not destructive. The name field is a standard `TextField`, so Voice Control can dictate into it.
 
@@ -141,7 +141,7 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 
 **E16. Usage.** `SpendRow` has the label "Usage and cost". `SpendSummary` reads the cost, its period and the days left as one item. The progress bar of the limit has the limit amounts as its label and "50 percent of the limit" as its value. A cost above the limit shows as red text with an octagon and the words "The usage is above the limit."
 
-**E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` one time for each incident, because it shows with no user action. It does not say the same incident again when the window opens again. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
+**E17. Incident banner.** `IncidentBanner` is a group with the label "Railway incident". It shows the status and the title of the incident as text, with a warning triangle and the orange tint, and the text is in the primary color. It posts an `AccessibilityNotification.Announcement` one time for each incident, because it shows with no user action. An incident that starts while the window is closed is said when the window opens. It does not say the same incident again when the window opens again. **Hide** has the label "Hide incident", and `accessibilityInputLabels` gives Voice Control the visible text first.
 
 **E18. Form messages.** A problem with a typed value shows as text below its field, with a warning triangle, for example "This project has an environment with this name. Use a different name." The button of the form is then not available. The symbol is orange, and the text is in the primary color.
 

@@ -5,6 +5,8 @@ import TopwayCore
 /// The actions come from `AppState.recoveryActions`, so a rejected token never traps the user.
 struct ErrorStateView: View {
     @Environment(AppState.self) private var appState
+    /// `false` while the window is closed. A closed window must not speak.
+    @Environment(\.appearsActive) private var appearsActive
 
     /// Says what did not load, for example "Projects did not load".
     let title: String
@@ -29,8 +31,10 @@ struct ErrorStateView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // The error replaces the content, so VoiceOver must say it, with the cause and the next step.
-        .task(id: "\(shownTitle). \(shownMessage)") {
+        // The error replaces the content, so VoiceOver must say it, with the cause and the next
+        // step, but only in an open window. When the window opens again, VoiceOver says it.
+        .task(id: appearsActive ? "\(shownTitle). \(shownMessage)" : nil) {
+            guard appearsActive else { return }
             AccessibilityNotification.Announcement("\(shownTitle). \(shownMessage)").post()
         }
     }

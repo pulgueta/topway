@@ -5,6 +5,8 @@ import TopwayCore
 /// an incident can be the cause of a failed deployment or a failed request.
 struct IncidentBanner: View {
     @Environment(\.openURL) private var openURL
+    /// `false` while the window is closed. A closed window must not speak.
+    @Environment(\.appearsActive) private var appearsActive
 
     let incident: PlatformIncident
     let onHide: () -> Void
@@ -50,8 +52,9 @@ struct IncidentBanner: View {
         .accessibilityLabel("Railway incident")
         // The banner shows with no user action, so VoiceOver must say it. The view shows
         // again each time the window opens, so only a new incident gets an announcement.
-        .task(id: incident.id) {
-            guard shouldAnnounce() else { return }
+        // An incident that comes while the window is closed gets it when the window opens.
+        .task(id: appearsActive ? incident.id : nil) {
+            guard appearsActive, shouldAnnounce() else { return }
             AccessibilityNotification.Announcement(
                 "Railway incident. \(incident.statusDisplay): \(incident.message)"
             ).post()
