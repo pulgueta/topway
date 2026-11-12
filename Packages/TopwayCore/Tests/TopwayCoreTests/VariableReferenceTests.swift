@@ -35,16 +35,41 @@ struct VariableReferenceTests {
         #expect(VariableReference.all(in: value).isEmpty)
     }
 
-    @Test("The service name is the text before the last dot")
+    @Test("A service name has letters, digits, underscores and hyphens")
     func serviceName() {
-        let targets = VariableReference.all(in: "${{ backend-api.PORT }} ${{web.v2.URL}}")
+        let targets = VariableReference.all(in: "${{ backend-api.PORT }} ${{my_api2.URL}}")
             .map(\.target)
 
         #expect(
             targets == [
                 ReferenceTarget(namespace: .service("backend-api"), variableName: "PORT"),
-                ReferenceTarget(namespace: .service("web.v2"), variableName: "URL"),
+                ReferenceTarget(namespace: .service("my_api2"), variableName: "URL"),
             ])
+    }
+
+    @Test(
+        "A malformed reference gives no link, so no part of the value shows",
+        arguments: [
+            "${{api.PASSWORD}literal-secret.PORT}}",
+            "postgres://${{user:literal-secret@api.HOST}}",
+            "${{ api .URL }}",
+            "${{api. URL}}",
+            "${{my service.URL}}",
+            "${{a{literal-secret.URL}}",
+            "${{web.v2.URL}}",
+            "${{1api.URL}}",
+            "${{api.1URL}}",
+        ])
+    func malformed(value: String) {
+        let services = [Service(id: "s-api", name: "api")]
+        let variables = ProjectVariables(shared: [:], byService: ["s-api": ["URL": "x"]])
+
+        let links = ReferenceLink.links(
+            in: value, serviceId: "s-api", services: services, variables: variables)
+
+        #expect(VariableReference.all(in: value).isEmpty)
+        #expect(links.isEmpty)
+        #expect(!links.contains { $0.target.displayName.contains("literal-secret") })
     }
 
     @Test("An opening with no close does not hide a later reference")

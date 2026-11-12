@@ -30,27 +30,49 @@ public struct VariableReference: Hashable, Sendable {
         return references
     }
 
-    /// The text before the last dot is the namespace, because a service name can have a dot
-    /// and a variable name cannot.
+    /// The full text between the braces must be a reference: `NAME`, `shared.NAME` or
+    /// `service.NAME`, with spaces only next to the braces. Anything else, for example a
+    /// brace, a space or a second dot inside, gives no target. So a malformed value never
+    /// shows a part of itself as a target.
     private static func target(in text: Substring) -> ReferenceTarget? {
         let expression = text.trimmingCharacters(in: .whitespaces)
-        guard let dot = expression.lastIndex(of: ".") else {
+        let parts = expression.split(separator: ".", omittingEmptySubsequences: false)
+        switch parts.count {
+        case 1:
             guard isVariableName(expression) else { return nil }
             return ReferenceTarget(namespace: .sameService, variableName: expression)
+        case 2:
+            let namespace = String(parts[0])
+            let name = String(parts[1])
+            guard isVariableName(name) else { return nil }
+            if namespace == "shared" {
+                return ReferenceTarget(namespace: .shared, variableName: name)
+            }
+            guard isServiceName(namespace) else { return nil }
+            return ReferenceTarget(namespace: .service(namespace), variableName: name)
+        default:
+            return nil
         }
-        let namespace = String(expression[..<dot])
-        let name = String(expression[expression.index(after: dot)...])
-        guard !namespace.isEmpty, isVariableName(name) else { return nil }
-        return ReferenceTarget(
-            namespace: namespace == "shared" ? .shared : .service(namespace), variableName: name)
     }
 
-    /// Letters, digits, underscores and hyphens. Railway permits a hyphen in a shared
-    /// variable name, as the Railway CLI shows.
+    /// An ASCII letter or an underscore, then ASCII letters, digits, underscores and
+    /// hyphens. Railway permits a hyphen in a shared variable name, as the Railway CLI shows.
     private static func isVariableName(_ text: String) -> Bool {
-        !text.isEmpty
-            && text.allSatisfy {
-                $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == "-")
-            }
+        guard let first = text.first, first.isASCII, first.isLetter || first == "_" else {
+            return false
+        }
+        return text.allSatisfy(isNameCharacter)
+    }
+
+    /// An ASCII letter, then ASCII letters, digits, underscores and hyphens. This is the
+    /// service name that the Railway CLI accepts in a reference (`auto_wrap_reference`).
+    private static func isServiceName(_ text: String) -> Bool {
+        guard let first = text.first, first.isASCII, first.isLetter else { return false }
+        return text.allSatisfy(isNameCharacter)
+    }
+
+    private static func isNameCharacter(_ character: Character) -> Bool {
+        character.isASCII
+            && (character.isLetter || character.isNumber || character == "_" || character == "-")
     }
 }
