@@ -15,6 +15,9 @@ public actor SampleDataSource: RailwayDataSource {
     var variables = seedVariables
     /// The settings that the user saved, for each environment and service.
     var settings: [String: ServiceSettings] = [:]
+    /// The domains of each environment and service.
+    var domains = seedDomains
+    var domainCount = 0
 
     /// - Parameters:
     ///   - now: Gives the current date. The deployment and log dates come from it.

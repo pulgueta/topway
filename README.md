@@ -11,7 +11,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - **Refresh** and **Settings** are at the top. **New project** opens Railway in your browser. **Quit Topway** is at the bottom.
 - **Add service**: Select **Add service** below the services of a project. You can add a service from a GitHub repository or a Docker image.
 - **Manage**: Each project has a **Manage** menu, with **Add service**, **Environments**, **Mute alerts** and **Delete project…**.
-- Select a service to see its variables, deployments and metrics. The **Manage** menu of the service has **Settings**, **Redeploy** and **Delete service…**.
+- Select a service to see its variables, deployments and metrics. The **Manage** menu of the service has **Settings**, **Domains**, **Redeploy** and **Delete service…**.
 - To delete a project or a service, you must type its name.
 
 ### Environments
@@ -23,6 +23,13 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - In the **Manage** menu of a service, select **Settings**. The screen shows the name of the service, its source, and these settings of the selected environment: build command, start command, root directory and healthcheck path.
 - **Save changes** sends only the settings that you changed. A new name applies to all environments. The other settings apply to the next deployment in the selected environment.
 - Railway uses its default for an empty field. Topway does not change the source of a service.
+
+### Domains
+- In the **Manage** menu of a service, select **Domains**. The screen shows the Railway domain and the custom domains of the service in the selected environment.
+- **Add Railway domain**: Railway makes a public address on `up.railway.app`. A service gets one Railway domain in an environment.
+- **Add custom domain**: Enter a domain that you own, for example `app.example.com`. The list then shows the DNS records that you must set at your DNS provider, with **Copy value** for each record. Each record shows **Set** or **Not set**.
+- A custom domain shows its status: **Set the DNS records**, **Railway makes the certificate** or **Ready**.
+- **Copy** copies the domain name. **Delete…** removes the domain from the service.
 
 ### Environment Variables
 - The **Variables** tab of a service shows its variables in one environment.

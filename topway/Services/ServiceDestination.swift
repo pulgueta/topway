@@ -9,4 +9,6 @@ enum ServiceDestination: Equatable {
     case logs(Deployment)
     /// The name of the service and its settings in the selected environment.
     case settings
+    /// The domains of the service in the selected environment.
+    case domains
 }

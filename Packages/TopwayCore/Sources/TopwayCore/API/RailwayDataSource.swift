@@ -62,6 +62,22 @@ public protocol RailwayDataSource: Sendable {
         _ changes: ServiceSettingsChanges, environmentId: String, serviceId: String, token: String
     ) async throws -> Bool
 
+    /// Gives the Railway domains, then the custom domains, of a service in one environment.
+    func fetchDomains(
+        projectId: String, environmentId: String, serviceId: String, token: String
+    ) async throws -> [Domain]
+
+    /// Makes a public domain of Railway for the service.
+    func createRailwayDomain(environmentId: String, serviceId: String, token: String)
+        async throws -> Domain
+
+    /// Adds a domain of the user. The answer has the DNS records that the user must set.
+    func createCustomDomain(
+        projectId: String, environmentId: String, serviceId: String, name: String, token: String
+    ) async throws -> Domain
+
+    func deleteDomain(id: String, kind: DomainKind, token: String) async throws -> Bool
+
     /// Gives the CPU, memory and network samples of a service in one environment.
     func fetchMetrics(
         environmentId: String, serviceId: String, window: MetricWindow, token: String

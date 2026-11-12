@@ -6,12 +6,15 @@ struct ServiceMenu: View {
     let serviceName: String
     let isRedeploying: Bool
     let onShowSettings: () -> Void
+    let onShowDomains: () -> Void
     let onRedeploy: () -> Void
     let onRequestDelete: () -> Void
 
     var body: some View {
         Menu("Manage") {
             Button("Settings", systemImage: "gearshape") { onShowSettings() }
+
+            Button("Domains", systemImage: "globe") { onShowDomains() }
 
             Button("Redeploy", systemImage: "arrow.triangle.2.circlepath") { onRedeploy() }
                 .disabled(isRedeploying)
@@ -24,7 +27,7 @@ struct ServiceMenu: View {
         }
         .buttonStyle(.glass)
         .fixedSize()
-        .help("Change the settings of \(serviceName), redeploy it or delete it.")
+        .help("Change the settings or the domains of \(serviceName), redeploy it or delete it.")
         .accessibilityLabel("Manage \(serviceName)")
         .accessibilityInputLabels(["Manage", "Manage \(serviceName)"])
     }

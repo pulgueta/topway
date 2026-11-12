@@ -87,6 +87,18 @@ struct ServiceView: View {
                     }
                 )
                 .transition(.screen(reduceMotion: reduceMotion))
+            case .domains:
+                DomainsView(
+                    service: service,
+                    projectId: project.id,
+                    environmentId: selectedEnvironmentId ?? "",
+                    environmentName: selectedEnvironmentName,
+                    onDismiss: {
+                        appState.clearError()
+                        show(.overview)
+                    }
+                )
+                .transition(.screen(reduceMotion: reduceMotion))
             }
         }
         // Runs at the start and for each new environment.
@@ -152,6 +164,10 @@ struct ServiceView: View {
                         onShowSettings: {
                             appState.clearError()
                             show(.settings)
+                        },
+                        onShowDomains: {
+                            appState.clearError()
+                            show(.domains)
                         },
                         onRedeploy: { confirmRedeploy() },
                         onRequestDelete: { confirmDeleteService() }

@@ -132,5 +132,48 @@ struct ClientCall: Sendable, CustomTestStringConvertible {
             run: { client, input in
                 _ = try await client.removeDeployment(deploymentId: input, token: "token")
             }),
+        ClientCall(
+            name: "fetchDomains",
+            reply: #"{"data":{"domains":{"serviceDomains":[],"customDomains":[]}}}"#,
+            variableNames: ["projectId", "environmentId", "serviceId"],
+            run: { client, input in
+                _ = try await client.fetchDomains(
+                    projectId: input, environmentId: input, serviceId: input, token: "token")
+            }),
+        ClientCall(
+            name: "createRailwayDomain",
+            reply: #"{"data":{"serviceDomainCreate":{"id":"d1","domain":"a.up.railway.app"}}}"#,
+            variableNames: ["environmentId", "serviceId"],
+            run: { client, input in
+                _ = try await client.createRailwayDomain(
+                    environmentId: input, serviceId: input, token: "token")
+            }),
+        ClientCall(
+            name: "createCustomDomain",
+            reply: """
+                {"data":{"customDomainCreate":{"id":"d1","domain":"a.example.com","status":{
+                  "dnsRecords":[],"certificateStatus":"CERTIFICATE_STATUS_TYPE_ISSUING",
+                  "verified":true}}}}
+                """,
+            variableNames: ["projectId", "environmentId", "serviceId", "domain"],
+            run: { client, input in
+                _ = try await client.createCustomDomain(
+                    projectId: input, environmentId: input, serviceId: input, name: input,
+                    token: "token")
+            }),
+        ClientCall(
+            name: "deleteRailwayDomain",
+            reply: #"{"data":{"serviceDomainDelete":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.deleteDomain(id: input, kind: .railway, token: "token")
+            }),
+        ClientCall(
+            name: "deleteCustomDomain",
+            reply: #"{"data":{"customDomainDelete":true}}"#,
+            variableNames: ["id"],
+            run: { client, input in
+                _ = try await client.deleteDomain(id: input, kind: .custom, token: "token")
+            }),
     ]
 }
