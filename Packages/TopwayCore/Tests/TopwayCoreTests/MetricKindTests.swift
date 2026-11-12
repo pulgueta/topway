@@ -30,4 +30,13 @@ struct MetricKindTests {
         #expect(MetricKind.networkIn.formatted(value) == text)
         #expect(MetricKind.networkOut.formatted(value) == text)
     }
+
+    @Test(
+        "A size that is not zero and is below 0.1 MB does not show as zero",
+        arguments: [(0.00001, "< 0.1 MB"), (0.00009, "< 0.1 MB"), (0.0001, "0.1 MB")])
+    func smallSize(value: Double, text: String) {
+        #expect(MetricKind.memory.formatted(value) == text)
+        #expect(MetricKind.networkIn.formatted(value) == text)
+        #expect(MetricKind.networkOut.formatted(value) == text)
+    }
 }
