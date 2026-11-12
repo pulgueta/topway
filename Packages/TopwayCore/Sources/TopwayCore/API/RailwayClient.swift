@@ -428,6 +428,28 @@ public struct RailwayClient: RailwayDataSource {
         return Spend(customer: customer, usage: usageData.usage)
     }
 
+    // MARK: - Platform Status
+
+    /// Railway answers this query with no token, so the request has no `Authorization`
+    /// header. It tells Railway nothing about the user.
+    public func fetchOpenIncident() async throws -> PlatformIncident? {
+        let query = """
+            query PlatformStatus {
+              platformStatus {
+                incident {
+                  id
+                  message
+                  status
+                  url
+                }
+              }
+            }
+            """
+
+        let data: PlatformStatusData = try await execute(query: query, variables: [:], token: nil)
+        return data.platformStatus.openIncident
+    }
+
     // MARK: - Logs
 
     private static let pollInterval = Duration.seconds(5)
@@ -551,8 +573,9 @@ public struct RailwayClient: RailwayDataSource {
 
     // MARK: - Private Methods
 
+    /// - Parameter token: `nil` sends no `Authorization` header.
     private func execute<T: Decodable>(
-        query: String, variables: [String: String], token: String
+        query: String, variables: [String: String], token: String?
     ) async throws -> T {
         guard let url = URL(string: baseURL) else {
             throw RailwayError.invalidURL
@@ -561,7 +584,9 @@ public struct RailwayClient: RailwayDataSource {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let token {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try JSONEncoder().encode(
             GraphQLRequest(query: query, variables: variables))
 

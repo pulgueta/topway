@@ -43,6 +43,10 @@ public protocol RailwayDataSource: Sendable {
     /// Gives the cost and the resource usage of the current billing period of a workspace.
     func fetchSpend(workspaceId: String, token: String) async throws -> Spend
 
+    /// Gives the incident that Railway reports as open, or `nil`. The request has no token
+    /// and no data of the user.
+    func fetchOpenIncident() async throws -> PlatformIncident?
+
     /// Gives the latest lines, then new lines while they arrive.
     /// Cancel the consumer task to stop the stream.
     func logs(_ kind: LogKind, deploymentId: String, token: String)
