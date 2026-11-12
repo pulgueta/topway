@@ -128,11 +128,9 @@ struct LogsView: View {
             .padding(.vertical, 4)
         }
         .defaultScrollAnchor(.bottom)
-        // Dense log text under the bars makes the controls hard to read, so the edge is hard.
-        .scrollEdgeEffectStyle(.hard, for: .vertical)
         .scrollPosition($position)
         .onScrollGeometryChange(for: LogScrollMetrics.self) { geometry in
-            // The bottom bar covers the bottom inset, so that part does not show lines.
+            // A bottom content inset does not show lines.
             LogScrollMetrics(
                 offsetY: geometry.contentOffset.y, contentHeight: geometry.contentSize.height,
                 visibleMaxY: geometry.visibleRect.maxY - geometry.contentInsets.bottom)

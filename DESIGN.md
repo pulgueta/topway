@@ -106,7 +106,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - Put the glass buttons of one bar in one `GlassEffectContainer`. The system then draws them in one pass. See [GlassEffectContainer](https://developer.apple.com/documentation/swiftui/glasseffectcontainer).
 - Do not put glass on glass. The buttons in the dialog card use `.bordered` and `.borderedProminent`.
 - With Reduce Transparency, the dialog card is opaque. The system changes the glass of its own button styles.
-- The bars use `safeAreaBar`. Content scrolls under a bar, and the system scroll edge effect keeps the bar readable. The logs use the hard edge style, because dense text under a bar is hard to read. See [safeAreaBar](https://developer.apple.com/documentation/swiftui/view/safeareabar(edge:alignment:spacing:content:)) and [scrollEdgeEffectStyle](https://developer.apple.com/documentation/swiftui/view/scrolledgeeffectstyle(_:for:)).
+- The bars are above and below the content, not on it (`ScreenLayout` is a `VStack`). The content is clipped between the bars, so no row can scroll under a bar and show through its text. Do not use `safeAreaBar` or `safeAreaInset` for a bar: a scroll view then goes under the bar, and on macOS the rows can show through it.
 - For the rules of the effect, see [Applying Liquid Glass to custom views](https://developer.apple.com/documentation/swiftui/applying-liquid-glass-to-custom-views).
 
 ## Type, color and space
@@ -170,7 +170,7 @@ When Railway does not accept the token, `ErrorStateView` shows **Open Settings**
 
 Tradeoffs:
 
-- Content scrolls under the bars, so the system draws the scroll edge effect and the glass buttons above moving content. This costs more than opaque bars. If a profile shows dropped frames, change `ScreenLayout` to a `VStack` with dividers. No other file must change.
+- The content does not scroll under the bars, so the window has no scroll edge effect. A row stops at the edge of a bar. The first design put the content under the bars with `safeAreaBar`, but the rows showed through the bar text after a change of screen.
 - `Deployment.formattedDate` makes date formatters on each call. The deployments list is short, so this stays.
 - Rows are taller than in the first design, because their actions are always visible. The window is 80 points taller to keep the number of visible rows.
 
@@ -206,5 +206,3 @@ Tradeoffs:
 - [GlassEffectContainer](https://developer.apple.com/documentation/swiftui/glasseffectcontainer)
 - [glassEffect(_:in:)](https://developer.apple.com/documentation/swiftui/view/glasseffect(_:in:))
 - [GlassButtonStyle](https://developer.apple.com/documentation/swiftui/glassbuttonstyle)
-- [safeAreaBar(edge:alignment:spacing:content:)](https://developer.apple.com/documentation/swiftui/view/safeareabar(edge:alignment:spacing:content:))
-- [scrollEdgeEffectStyle(_:for:)](https://developer.apple.com/documentation/swiftui/view/scrolledgeeffectstyle(_:for:))

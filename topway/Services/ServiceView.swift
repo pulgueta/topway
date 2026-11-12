@@ -128,42 +128,8 @@ struct ServiceView: View {
     // MARK: - Overview
 
     private var overview: some View {
-        Group {
-            switch tab {
-            case .variables:
-                VariablesTab(
-                    variables: variables,
-                    serviceId: service.id,
-                    services: project.serviceList,
-                    projectVariables: projectVariables,
-                    isLoading: isLoading,
-                    areVariablesKnown: areVariablesKnown,
-                    onRetry: {
-                        Task { await loadVariables() }
-                    },
-                    onAdd: { show(.editVariable(nil)) },
-                    onEdit: { variable in show(.editVariable(variable)) }
-                )
-            case .deployments:
-                DeploymentsView(
-                    service: service,
-                    project: project,
-                    environmentId: selectedEnvironmentId ?? "",
-                    reloadVersion: deploymentsVersion,
-                    onViewLogs: { deployment in
-                        appState.clearError()
-                        show(.logs(deployment))
-                    }
-                )
-                // The deployments of the earlier environment must not show for the new one.
-                .id(selectedEnvironmentId)
-            case .metrics:
-                MetricsView(service: service, environmentId: selectedEnvironmentId ?? "")
-                    // The metrics of the earlier environment must not show for the new one.
-                    .id(selectedEnvironmentId)
-            }
-        }
-        .safeAreaBar(edge: .top, spacing: 0) {
+        // The header is above the tab, not on it, so no row can scroll under it.
+        VStack(spacing: 0) {
             VStack(spacing: 0) {
                 ScreenHeader(title: service.name, backTitle: "Projects", onBack: { onDismiss() }) {
                     ServiceMenu(
@@ -188,6 +154,41 @@ struct ServiceView: View {
                     selectedEnvironmentId: $selectedEnvironmentId,
                     tab: $tab
                 )
+            }
+            Group {
+                switch tab {
+                case .variables:
+                    VariablesTab(
+                        variables: variables,
+                        serviceId: service.id,
+                        services: project.serviceList,
+                        projectVariables: projectVariables,
+                        isLoading: isLoading,
+                        areVariablesKnown: areVariablesKnown,
+                        onRetry: {
+                            Task { await loadVariables() }
+                        },
+                        onAdd: { show(.editVariable(nil)) },
+                        onEdit: { variable in show(.editVariable(variable)) }
+                    )
+                case .deployments:
+                    DeploymentsView(
+                        service: service,
+                        project: project,
+                        environmentId: selectedEnvironmentId ?? "",
+                        reloadVersion: deploymentsVersion,
+                        onViewLogs: { deployment in
+                            appState.clearError()
+                            show(.logs(deployment))
+                        }
+                    )
+                    // The deployments of the earlier environment must not show for the new one.
+                    .id(selectedEnvironmentId)
+                case .metrics:
+                    MetricsView(service: service, environmentId: selectedEnvironmentId ?? "")
+                        // The metrics of the earlier environment must not show for the new one.
+                        .id(selectedEnvironmentId)
+                }
             }
         }
         .onChange(of: tab) {
