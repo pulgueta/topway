@@ -90,3 +90,7 @@ You can also [open a new issue](https://github.com/pulgueta/topway/issues/new/ch
 Issues are public. Do not paste your Railway token, your Workspace ID or the values of your variables. Remove them from logs and screenshots.
 
 For a security problem, [send a private report](https://github.com/pulgueta/topway/security/advisories/new).
+
+## Privacy
+
+Topway collects no data. It keeps your token in the Keychain and connects only to Railway. Read the [privacy policy](PRIVACY.md).
