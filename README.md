@@ -18,7 +18,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - The **Variables** tab of a service shows its variables in one environment.
 - **Environment**: If the project has more than one environment, select the environment at the top.
 - **Show**, **Copy** and **Edit**: Each variable has these buttons. Values are hidden until you select **Show**.
-- **Copy all** copies all variables as `NAME=value` lines.
+- **Copy all** copies all variables as `NAME=value` lines. A value with a line break or a double quotation mark is put in double quotation marks, as in a `.env` file.
 - **Add variable** is at the bottom. To delete a variable, select **Edit**, then **Delete variable…**.
 
 ### Deployments

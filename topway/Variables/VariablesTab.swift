@@ -77,7 +77,7 @@ struct VariablesTab: View {
     }
 
     private func copyAll() {
-        let lines = variables.map { "\($0.name)=\($0.value)" }
+        let lines = variables.map(\.dotenvLine)
         NSPasteboard.general.setSecret(lines.joined(separator: "\n"))
     }
 }
