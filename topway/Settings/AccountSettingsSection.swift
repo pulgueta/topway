@@ -5,6 +5,8 @@ import TopwayCore
 /// confirmation stays in this window. A separate dialog is not necessary.
 struct AccountSettingsSection: View {
     @Environment(AppState.self) private var appState
+    /// `false` while the window is not active. An inactive window must not speak.
+    @Environment(\.appearsActive) private var appearsActive
 
     @State private var loadError: String?
     @State private var isConfirmingSignOut = false
@@ -15,13 +17,7 @@ struct AccountSettingsSection: View {
             if appState.isSignedIn {
                 signedInRows
             } else if appState.canSignIn {
-                LabeledContent {
-                    SignInButton()
-                        .buttonStyle(.glassProminent)
-                } label: {
-                    Text("You are not signed in.")
-                        .foregroundStyle(.secondary)
-                }
+                signedOutRows
             } else {
                 Text("This build has no Railway OAuth client ID, so it cannot sign in.")
                     .foregroundStyle(.secondary)
@@ -39,6 +35,33 @@ struct AccountSettingsSection: View {
         .task(id: appState.isSignedIn) {
             guard appState.isSignedIn, appState.account == nil else { return }
             loadError = await appState.loadAccount()
+        }
+        // The sign-in window takes the focus, so VoiceOver says the error when this window is
+        // active again.
+        .task(id: appearsActive ? appState.signInError : nil) {
+            guard appearsActive, let error = appState.signInError else { return }
+            AccessibilityNotification.Announcement(error).post()
+        }
+    }
+
+    // MARK: - Signed Out
+
+    /// After a failed sign-in, the message shows in red with a symbol, and the button is
+    /// **Try again**.
+    @ViewBuilder
+    private var signedOutRows: some View {
+        LabeledContent {
+            SignInButton(title: appState.signInError == nil ? "Sign in with Railway" : "Try again")
+                .buttonStyle(.glassProminent)
+        } label: {
+            Text("You are not signed in.")
+                .foregroundStyle(.secondary)
+        }
+
+        if let error = appState.signInError {
+            Label(error, systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote)
+                .foregroundStyle(.red)
         }
     }
 
