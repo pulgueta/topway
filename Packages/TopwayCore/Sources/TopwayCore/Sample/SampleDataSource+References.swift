@@ -6,7 +6,10 @@ extension SampleDataSource {
         ProjectVariables(
             shared: sharedVariables[environmentId] ?? [:],
             byService: Dictionary(
-                serviceIds.map { ($0, variables[Self.key(environmentId, $0)] ?? [:]) },
+                serviceIds.map {
+                    // A sealed variable is a target with no value, as in `RailwayClient`.
+                    ($0, (variables[Self.key(environmentId, $0)] ?? [:]).mapValues { $0 ?? "" })
+                },
                 uniquingKeysWith: { first, _ in first }))
     }
 }

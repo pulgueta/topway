@@ -53,7 +53,7 @@ body:
     id: architecture
     attributes:
       label: Architecture
-      description: Write "Apple silicon (arm64)" or "Intel (x86_64)" ("Code Type" in the crash report).
+      description: Write "Apple silicon (arm64)", "Apple silicon (arm64) with Rosetta" or "Intel (x86_64)" ("Code Type" in the crash report).
       placeholder: "Apple silicon (arm64)"
     validations:
       required: true
@@ -61,7 +61,7 @@ body:
     id: data-mode
     attributes:
       label: Data
-      description: Write "Railway token" if Topway showed your Railway projects. Write "Sample data" if Topway showed the sample projects.
+      description: Write "Railway token" if Topway showed your Railway projects. Write "Sample data" if Topway showed the sample projects. Write "No token" if Topway had no token.
       placeholder: "Railway token"
     validations:
       required: true

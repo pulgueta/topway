@@ -28,7 +28,8 @@ struct HelpSettingsSection: View {
     }
 
     private func openReport(_ kind: IssueKind) {
-        let details = DeviceDetails.current(isSampleMode: appState.isSampleMode)
+        let details = DeviceDetails.current(
+            isSampleMode: appState.isSampleMode, hasToken: !appState.railwayToken.isEmpty)
         if let url = IssueReportLink.url(for: kind, details: details) {
             openURL(url)
         }

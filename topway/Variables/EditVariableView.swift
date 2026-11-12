@@ -13,6 +13,9 @@ struct EditVariableView: View {
     let existingVariable: EnvironmentVariable?
     /// The names of the variables in this environment. `nil` means the names are not known.
     let existingNames: Set<String>?
+    /// The names of the sealed variables in this environment. A save must not put an empty
+    /// value over one of them, also from Add variable.
+    let sealedNames: Set<String>
     /// The services of the project, for the reference menu and the suggestions.
     let services: [Service]
     /// `nil` when the variables of the other services did not load.
@@ -38,6 +41,17 @@ struct EditVariableView: View {
 
     private var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && EnvironmentVariable.permitsSave(of: value, as: name, sealedNames: allSealedNames)
+    }
+
+    /// The sealed names, with the edited variable when it is sealed.
+    private var allSealedNames: Set<String> {
+        guard let existingVariable, existingVariable.isSealed else { return sealedNames }
+        return sealedNames.union([existingVariable.name])
+    }
+
+    private var isSealedTarget: Bool {
+        allSealedNames.contains(name.trimmingCharacters(in: .whitespaces))
     }
 
     /// The variables that the value can reference. The variable itself is left out.
@@ -84,7 +98,8 @@ struct EditVariableView: View {
             appState.clearError()
             if let variable = existingVariable {
                 name = variable.name
-                value = variable.value
+                // A sealed variable has no value to show, so the editor starts empty.
+                value = variable.value ?? ""
             }
             // The name of a saved variable cannot change, so the value gets the focus.
             focusedField = isEditing ? .value : .name
@@ -124,6 +139,16 @@ struct EditVariableView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Value")
                         .font(.callout.weight(.medium))
+
+                    if isSealedTarget {
+                        Label(
+                            "This variable is sealed. Railway does not show its value. "
+                                + "Type a new value to replace it.",
+                            systemImage: "lock"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
 
                     // A text editor keeps the line breaks of a value with many lines.
                     TextEditor(text: $value, selection: $selection)
@@ -294,6 +319,7 @@ struct EditVariableView: View {
         environmentName: "production",
         existingVariable: nil,
         existingNames: [],
+        sealedNames: [],
         services: [Service(id: "svc2", name: "postgres")],
         projectVariables: ProjectVariables(
             shared: ["LOG_LEVEL": "info"], byService: ["svc2": ["DATABASE_URL": "postgresql://db"]]),

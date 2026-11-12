@@ -19,11 +19,8 @@ public enum IssueReportLink {
             ("app-version", versionText(details.appVersion, build: details.appBuild)),
             ("macos-version", macOSText(details)),
             ("mac-model", details.macModel),
-            (
-                "architecture",
-                details.architecture == .appleSilicon ? "Apple silicon (arm64)" : "Intel (x86_64)"
-            ),
-            ("data-mode", details.isSampleMode ? "Sample data" : "Railway token"),
+            ("architecture", architectureText(details.architecture)),
+            ("data-mode", dataText(details)),
         ]
         components.queryItems = fields.filter { !$0.1.isEmpty }.map {
             URLQueryItem(name: $0.0, value: $0.1)
@@ -39,6 +36,20 @@ public enum IssueReportLink {
         case .bug: "bug_report.yml"
         case .crash: "crash_report.yml"
         }
+    }
+
+    private static func architectureText(_ architecture: CPUArchitecture) -> String {
+        switch architecture {
+        case .appleSilicon: "Apple silicon (arm64)"
+        case .appleSiliconWithRosetta: "Apple silicon (arm64) with Rosetta"
+        case .intel: "Intel (x86_64)"
+        }
+    }
+
+    /// Sample mode shows the sample projects, also when a token is saved.
+    private static func dataText(_ details: DeviceDetails) -> String {
+        if details.isSampleMode { return "Sample data" }
+        return details.hasToken ? "Railway token" : "No token"
     }
 
     private static func macOSText(_ details: DeviceDetails) -> String {

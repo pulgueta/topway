@@ -3,6 +3,9 @@ import TopwayCore
 
 /// Shows the error of a failed action above the bottom bar, while the content stays visible.
 struct ErrorBanner: View {
+    /// `false` while the window is closed. A closed window must not speak.
+    @Environment(\.appearsActive) private var appearsActive
+
     let message: String
     let onDismiss: () -> Void
     /// Shows a Retry button when it is set.
@@ -29,8 +32,10 @@ struct ErrorBanner: View {
         .padding(.top, 6)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Error")
-        // The banner shows below the content, so VoiceOver must say it.
-        .task(id: message) {
+        // The banner shows below the content, so VoiceOver must say it, but only in an open
+        // window. When the window opens again, the ID changes and VoiceOver says the error.
+        .task(id: appearsActive ? message : nil) {
+            guard appearsActive else { return }
             AccessibilityNotification.Announcement("Error: \(message)").post()
         }
     }

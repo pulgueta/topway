@@ -43,7 +43,8 @@ struct VariablesTab: View {
                 if !variables.isEmpty {
                     CopyButton(title: "Copy all") { copyAll() }
                         .buttonStyle(.glass)
-                        .help("Copy all variables as NAME=value lines.")
+                        .help(
+                            "Copy all variables as NAME=value lines. Sealed values are not copied.")
                 }
 
                 Button("Add variable", systemImage: "plus") { onAdd() }
@@ -62,7 +63,8 @@ struct VariablesTab: View {
                         VariableRow(
                             variable: variable,
                             links: ReferenceLink.links(
-                                in: variable.value, serviceId: serviceId, services: services,
+                                in: variable.value ?? "", serviceId: serviceId,
+                                services: services,
                                 variables: projectVariables)
                         ) { onEdit(variable) }
                     }
