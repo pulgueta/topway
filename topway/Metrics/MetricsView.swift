@@ -8,7 +8,7 @@ struct MetricsView: View {
     let service: Service
     let environmentId: String
 
-    /// `nil` before the first load and after a load that failed.
+    /// `nil` until a load gives metrics. A failed reload keeps the earlier metrics.
     @State private var metrics: ServiceMetrics?
     @State private var window = MetricWindow.hour
     @State private var isLoading = true
@@ -103,8 +103,13 @@ struct MetricsView: View {
             environmentId: environmentId, serviceId: service.id, window: window)
         // Only the latest call may update the screen.
         guard loadID == latestLoadID else { return }
-        metrics = fetched
+        // A cancelled load is not a failure, so it changes nothing and shows no message.
+        guard !Task.isCancelled else { return }
         isLoading = false
+        // After a failed reload, the charts stay and the banner shows the error.
+        if let fetched {
+            metrics = fetched
+        }
     }
 }
 
