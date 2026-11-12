@@ -35,6 +35,10 @@ struct MainView: View {
                             appState.clearError()
                             show(.environments(projectId: project.id, projectName: project.name))
                         },
+                        onOpenServiceLinks: { project in
+                            appState.clearError()
+                            show(.serviceLinks(project: project))
+                        },
                         onOpenService: { service, project in
                             show(.service(service: service, project: project))
                         },
@@ -63,6 +67,16 @@ struct MainView: View {
                     EnvironmentsView(
                         projectId: projectId,
                         projectName: projectName,
+                        onDismiss: {
+                            appState.clearError()
+                            show(.main)
+                        }
+                    )
+                    .transition(.screen(reduceMotion: reduceMotion))
+                case .serviceLinks(let project):
+                    // The loaded project has the new services and environments.
+                    ServiceLinksView(
+                        project: appState.projects.first { $0.id == project.id } ?? project,
                         onDismiss: {
                             appState.clearError()
                             show(.main)

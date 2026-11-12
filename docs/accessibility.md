@@ -66,6 +66,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 | Logs: tabs, follow, **Copy logs**, **Retry** | E1, E4, E6, E7 | E1, check 2 | E10 | E11e | E12b, check 4 | E13d |
 | Add a service or a database | E1, E4, E6, E8 | E1, E8 | E10 | — | E12 | E13a, E13c |
 | Delete a project or a service (type the name) | E8, check 1 | E8, check 2 | E10, E14, check 8 | E11f | E12c, check 4 | E13c |
+| Service links: list, **Environment**, **Refresh** | E1, E3, E4, E9 | E1 | E10 | E11i | E12 | E13a |
 | Environments: list, **New environment**, **Delete…** (type the name) | E1, E3, E4, E8, E9 | E1, E3, E8 | E10 | E11f, E18 | E12, check 4 | E13a, E13c |
 | Mute alerts | E1, E3 | E1, E3 | E10 | E11c | E12 | — |
 | Settings: auto refresh, alerts, launch at login, **Remove token…**, Help | E1 | E1 | E10 | E11f, E11g | E12, check 4 | E13e |
@@ -88,6 +89,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - `DomainRow`: the row is a group with the domain name. **Copy** and **Delete…** name the domain. `DNSRecordRow` is a group with the label "CNAME record shop", and **Copy value** has the label "Copy value of CNAME record shop".
 - `VariableRow` and `DeploymentRow`: the row is a group with the name of the item. Each button names its item, for example "Copy value of DATABASE_URL" and "Restart, Running, 11/10/26, 10:00".
 - `ReferenceSuggestions`: a group with the label "Suggestions". Each button has the label "Insert reference to postgres.DATABASE_URL", and `accessibilityInputLabels` gives Voice Control the visible text. **Insert reference** is a standard `Menu` with a submenu for each service.
+- `ServiceLinkSection`: a group with the name of the service, or "Shared variables". Each link is one item with a sentence that has names only, for example "worker uses billing in BILLING_URL. The project has no service with this name." (`ServiceGraph.sentence(for:)`, tested). The arrow symbols are not read.
 - `ReferenceLinkRow`: one item for each target of a reference, with the label "Reference to postgres.DATABASE_URL: Found" (`ReferenceLink.accessibilityDescription`, tested). It has names only, never a value, so it does not show a hidden value.
 - Where the label has more words than the visible text, `accessibilityInputLabels` gives Voice Control the visible text first: "Manage", "Add service", "Show", "Copy", "Edit", "View logs", "Open URL", "Restart", "Delete", "Copy value", and the name on the back button.
 
@@ -101,7 +103,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E8. Confirmation dialog.** `destructiveConfirmation` disables the content behind the dialog and hides it from assistive technologies. The card has the modal trait. The keyboard focus goes to the name field. With no name field, the VoiceOver focus goes to the title. **Cancel** has the cancel shortcut (Escape). Return confirms only an action that is not destructive. The name field is a standard `TextField`, so Voice Control can dictate into it.
 
-**E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView`, `AddServiceView`, `EnvironmentsView`, `NewEnvironmentView` and `NewDomainView` goes back one step. Command-Return saves a variable or the service settings. Command-R refreshes the projects.
+**E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView`, `AddServiceView`, `EnvironmentsView`, `NewEnvironmentView`, `NewDomainView` and `ServiceLinksView` goes back one step. Command-Return saves a variable or the service settings. Command-R refreshes the projects.
 
 **E10. Dark Interface.** All colors are system colors (`.red`, `.orange`, `.green`), hierarchical styles (`.secondary`, `.tertiary`), the tint and system materials. The only fixed color is the black backdrop of the dialog at 30 % opacity, which is dark. No view sets `preferredColorScheme`. Settings is a system `Form`.
 
@@ -114,7 +116,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - f. Destructive actions: the red text has the word "Delete" or "Remove". The production label has the text "Production environment" and an octagon.
 - g. Errors and results: a symbol and a text ("Saved", the error message).
 - h. Notifications: the title says the result, for example "Deployment failed".
-- i. Reference status: each status has a text and a different symbol: "Found" (check mark), "Service not found" and "Variable not found" (triangle), "Set by Railway" (circle with "i") and "Not checked" (question mark). Only the triangle is orange. The text is in the primary color.
+- i. Reference status: each status has a text and a different symbol: "Found" (check mark), "Service not found" and "Variable not found" (triangle), "Set by Railway" (circle with "i") and "Not checked" (question mark). Only the triangle is orange. The text is in the primary color. In **Service links**, a missing service shows the text "Service not found" with the triangle, and the direction of a link is in the words **Uses** and **Used by**, not only in the arrow.
 
 **E12. Sufficient Contrast.** Text uses the system text styles and the system colors, which change with Increase Contrast. Primary text is the default for names, values and log lines of the info level.
 - a. `SampleDataBanner`: the text is in the primary color. Only the symbol is orange.

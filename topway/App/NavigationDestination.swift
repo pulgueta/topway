@@ -6,6 +6,8 @@ enum NavigationDestination: Equatable {
     case usage
     case addService(projectId: String, projectName: String)
     case environments(projectId: String, projectName: String)
+    /// The links between the services of a project.
+    case serviceLinks(project: Project)
     case service(service: Service, project: Project)
 
     static func == (lhs: NavigationDestination, rhs: NavigationDestination) -> Bool {
@@ -16,6 +18,8 @@ enum NavigationDestination: Equatable {
             return lhsId == rhsId && lhsName == rhsName
         case (.environments(let lhsId, _), .environments(let rhsId, _)):
             return lhsId == rhsId
+        case (.serviceLinks(let lhsProject), .serviceLinks(let rhsProject)):
+            return lhsProject.id == rhsProject.id
         case (.service(let lhsService, let lhsProject), .service(let rhsService, let rhsProject)):
             return lhsService.id == rhsService.id && lhsProject.id == rhsProject.id
         default:

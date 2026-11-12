@@ -54,6 +54,7 @@ Projects (start screen with no token)
 ├── Add service
 ├── Environments
 │   └── New environment
+├── Service links
 └── Service: tabs Variables | Deployments | Metrics
     ├── Add variable / Edit variable
     ├── Settings
@@ -73,7 +74,7 @@ Projects (start screen with no token)
 2. Only two icon-only buttons are permitted: back and close. They must have an accessibility label and a `.help` text. At this time, only the close button of `ErrorBanner` has no text.
 3. Put the actions of a screen in the bottom bar. At most one is prominent (`.glassProminent`). It is the action that the user does most.
 4. Put the actions of a row in the row, as small bordered buttons.
-5. Use a menu only for the rare actions of one item, and give the menu a text label. The label is **Manage**. The project menu has Add service, Environments, Mute alerts and Delete project. The service menu has Settings, Domains, Redeploy and Delete service. The menu of a deployment has Roll back, Cancel deployment and Remove deployment, and it shows only the actions that the deployment permits. The primary action is also visible outside the menu.
+5. Use a menu only for the rare actions of one item, and give the menu a text label. The label is **Manage**. The project menu has Add service, Environments, Service links, Mute alerts and Delete project. The service menu has Settings, Domains, Redeploy and Delete service. The menu of a deployment has Roll back, Cancel deployment and Remove deployment, and it shows only the actions that the deployment permits. The primary action is also visible outside the menu.
 6. Put a destructive action last, after a divider. Its label ends with "…" when a confirmation follows. Its text is red. A menu item gets red text from `role: .destructive`. A bordered button needs `.foregroundStyle(.red)` too, because the role alone does not change its color on macOS.
 7. Each action that changes data goes through `appState.confirm`. `GlassConfirmationDialog` shows in the window. Do not use `alert`, `confirmationDialog` or a sheet, because they close the menu bar window.
 8. In a dialog, Return confirms only an action that is not destructive.
@@ -180,6 +181,7 @@ Tradeoffs:
 | Projects | "+" and trash icons on each project, a gear, a "+" in the section header. | **Refresh** and **Settings** in the top bar. **Manage** menu and an **Add service** row in each project. **New project** and **Quit Topway** in the bottom bar. |
 | Usage | No usage. | The row **Usage and cost** is first in the projects list. The screen shows the cost that Railway gives, the billing period, the limits and the use of each resource. **Refresh** in the bottom bar. |
 | Environments | No environment actions. | The **Manage** menu of a project opens the list. A **Delete…** button in each row. **New environment** in the bottom bar opens a form with **Name** and **Copy from**. |
+| Service links | No links. | A list of the services of one environment. Each service shows **Uses** and **Used by** lines with the variable names, and **Service not found** with a triangle for a missing target. A list, not a drawing, because it stays readable for 2 to 15 services in the window and VoiceOver reads each link as a sentence. An **Environment** menu at the top and **Refresh** in the bottom bar. |
 | Start | Shows only with no token. | The same screen. A rejected token now has a way back to it. |
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Settings, Domains, Redeploy and Delete service. |
 | Service settings | No settings. | A form with the name, the source as text, and one field for each setting of the environment. **Save changes** in the bottom bar is available only after a change. |

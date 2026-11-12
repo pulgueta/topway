@@ -15,6 +15,11 @@ Each action in Topway has a text label. No action shows only when the pointer is
 - Select a service to see its variables, deployments and metrics. The **Manage** menu of the service has **Settings**, **Domains**, **Redeploy** and **Delete service…**.
 - To delete a project or a service, you must type its name.
 
+### Service links
+- In the **Manage** menu of a project, select **Service links**. For each service, the screen shows the services that it uses (**Uses**) and the services that use it (**Used by**), with the names of the variables that have the references. The shared variables show when a service uses them.
+- A reference to a service that the project does not have shows **Service not found**.
+- The screen shows one environment. If the project has more than one environment, select the environment at the top. **Refresh** loads the links again. The screen does not change a variable.
+
 ### Environments
 - In the **Manage** menu of a project, select **Environments**. The screen shows the environments of the project.
 - **New environment**: Enter a name. The environment is empty, or a copy of an environment that you select in **Copy from**. A copy gets the services, the variables and the settings, and its services deploy.

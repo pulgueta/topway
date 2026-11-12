@@ -9,6 +9,7 @@ struct ProjectsScreen: View {
 
     let onAddService: (Project) -> Void
     let onOpenEnvironments: (Project) -> Void
+    let onOpenServiceLinks: (Project) -> Void
     let onOpenService: (Service, Project) -> Void
     let onOpenUsage: () -> Void
 
@@ -67,6 +68,7 @@ struct ProjectsScreen: View {
                         isMuted: appState.mutedProjectIds.contains(project.id),
                         onAddService: { onAddService(project) },
                         onOpenEnvironments: { onOpenEnvironments(project) },
+                        onOpenServiceLinks: { onOpenServiceLinks(project) },
                         onRequestDelete: { confirmDelete(of: project) },
                         onServiceTap: { service in onOpenService(service, project) },
                         onToggleMute: appState.alertsEnabled
@@ -159,7 +161,8 @@ struct ProjectsScreen: View {
 
 #Preview {
     ProjectsScreen(
-        onAddService: { _ in }, onOpenEnvironments: { _ in }, onOpenService: { _, _ in },
+        onAddService: { _ in }, onOpenEnvironments: { _ in }, onOpenServiceLinks: { _ in },
+        onOpenService: { _, _ in },
         onOpenUsage: {}
     )
     .environment(AppState())
