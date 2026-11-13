@@ -32,46 +32,54 @@ The direction that was not selected is a custom design with `glassEffect` on row
 
 Topway has no Dock icon, so at launch a new user sees nothing. At the first launch, the **Welcome to Topway** window (`topway/App/Welcome`) shows a short onboarding of four pages. It tells what Topway does and where the menu bar icon is. It does not show again.
 
-| Page | Picture | Heading | Message |
-|---|---|---|---|
-| 1 | The app icon | **Welcome to Topway** | What Topway is. It is in the menu bar, not in the Dock. |
-| 2 | The three menu bar icons: **Healthy**, **In progress**, **Failed** | **See the health of your services** | The icon shows the health. Alerts are in Settings. |
-| 3 | A copy of the live logs, and in front of it a copy of the restart confirmation in production | **Work from the menu bar** | Restart, redeploy, variables, live logs. The confirmation and the production label. |
-| 4 | The menu bar with the Topway icon, and the start screen below the icon | **Find Topway in the menu bar** | Where to click, and **Sign in with Railway** or **Try with sample data**. |
+The window has the style of the App Store screenshots of Topway. On the leading side, a large headline and a message are on a warm stone ground. On the trailing side, a flat stone stage holds a copy of a part of Topway.
 
-- The last page also has the hint for a full menu bar ("If you cannot see the icon…", in a card) and the line "Topway collects no data." (see [PRIVACY.md](PRIVACY.md)).
-- The pictures are SwiftUI views, not image files. The icon in the menu bar picture is `MenuBarLabel`. The health picture uses the symbols of `MenuBarLabel`. If you change a symbol there, change it in `HealthStatesHero` too. The copies of the app use the texts of the app and of the sample data.
-- The bottom bar has **Skip** (not on the last page), the page indicator, **Back** (not on the first page) and **Continue**. On the last page, **Continue** changes to **Done**. **Skip** and **Done** close the window.
+| Page | Copy on the stage | Headline | Message |
+|---|---|---|---|
+| 1 | The projects list with the sample projects | **Welcome to Topway** | What Topway is. It is in the menu bar, not in the Dock. |
+| 2 | The menu bar with the Topway icon in each state: **Healthy**, **In progress**, **Failed** | **See the health of your services** | The icon shows the health. Alerts are in Settings. |
+| 3 | The Deployments tab of a sample service, with **View logs**, **Restart** and **Manage** in each row | **Work from the menu bar** | Restart, redeploy, variables, live logs. The confirmation and the production label. |
+| 4 | The menu bar with the selected Topway icon, and the start screen below the icon | **Find Topway in the menu bar** | Where to click, and **Sign in with Railway** or **Try with sample data**. |
+
+- The last page also has the hint for a full menu bar ("If you cannot see the icon…") and the line "Topway collects no data." (see [PRIVACY.md](PRIVACY.md)). They are text on the ground, not a card.
+- The copies are not image files and not drawings. They are the views of the app (`ProjectRow`, `SpendRow`, `ScreenHeader`, `ServiceMenu`, `ServiceContextBar`, `DeploymentRow`, `MenuBarLabel`, `SettingsButton`, `ActionBar`, `ScreenLayout`) with the data of a new `SampleDataSource` (`WelcomeSample`). They are sharp at each scale, they follow the app when a view changes, and they show no data of the user.
+- The welcome window does not make an `AppState`, because `AppState.init` changes the Keychain and `UserDefaults`. `ProjectsHeader` and `StartView` read `AppState`, so `FragmentProjectsHeader` and `StartFragment` copy their parts. If you change one of these views, change its copy too.
+- The icon states on page 2 come from the sample projects and the rule of `HealthSummary`, so they are always the symbols of `MenuBarLabel`.
+- A copy is a picture. It does not take clicks (`allowsHitTesting(false)`), and VoiceOver reads it as one image with a short description (`WelcomePage.pictureDescription`). The element ignores its children, so VoiceOver does not offer the buttons of the copy as actions.
+- A copy has the true size of the menu bar window (360 points wide). The stage cuts it at the bottom edge, and cuts the copy of the menu bar at the trailing edge, as the edge of the screen. Only the copy of the current page is on the stage.
+- The bottom bar has the page indicator on its own row, so it does not move. Below it are **Skip** (not on the last page), **Back** (not on the first page) and **Continue**. On the last page, **Continue** changes to **Done**. **Skip** and **Done** close the window.
 - Return selects **Continue** or **Done**. Escape selects **Skip**. The Left Arrow and Right Arrow keys go to the previous and the next page. The pages take the keyboard focus (`focusable(interactions: .edit)`), so the arrow keys work also when Full Keyboard Access is off.
-- The window has no title bar (`.hiddenTitleBar`), so the gradient fills it. The user can move the window with a drag on its background (`windowBackgroundDragBehavior`).
-- The width is fixed: 560 points (`WelcomeLayout.windowWidth`). All pages are in one stack, so the height is the height of the tallest page, and it does not change when the page changes. A larger text makes the window taller, and no text clips. The user cannot change the size. The sizes are in `WelcomeLayout`, not in `Layout`.
-- The heading of each page uses `.largeTitle` with the bold weight, the message `.title3`, and the notes `.callout`. The text in the copies of the app has small fixed sizes, as in an image.
-- VoiceOver: each heading is a header. When the page changes, the VoiceOver focus goes to the new heading. The page indicator reads "Page 2 of 4". The pages that do not show are hidden. The health picture reads what each icon means. The other pictures are hidden, because the page text gives the same information.
+- The window has no title bar (`.hiddenTitleBar`), so the ground fills it. The user can move the window with a drag on its background (`windowBackgroundDragBehavior`).
+- The size is fixed. The content is 780 × 456 points, and macOS keeps the title bar area (32 points) above it, so the window is 780 × 488 points (16:10). The text column is 288 points wide, 40 points from the leading edge. The stage starts 40 points after the text and 40 points below the top of the window, and goes to the trailing and bottom edges. A 45° cut of 32 points removes its top leading corner. The copy is 28 points inside the stage. The capitals of the headline are level with the top of the copy. The sizes are in `WelcomeLayout`, not in `Layout`.
+- The headline is the system font at 34 points, semibold, with a tracking of −1 point (about −0.03 em) and a line height of 1.0. It has two lines or fewer. The message uses `.title3`, and the notes `.body`. The text in the copies has the sizes of the app.
+- VoiceOver: each headline is a header. When the page changes, the VoiceOver focus goes to the new headline. The page indicator reads "Page 2 of 4". The pages that do not show are hidden.
 
 #### Colors of the welcome window
 
-- The background is a `MeshGradient` of the brand colors of the app icon (`Appicon.icon`): `#5E17EB`, `#8205FF` and `#B300FF` at the top, and darker violets below, down to `#1F0866`. It does not move. `WelcomePalette` has the colors.
-- The colors are fixed. They do not change with the appearance. The window uses the dark appearance for its controls and its text in all system appearances.
-- All text is white. This is the one exception to the rule "do not put white text on a system color" (see "Type, color and space"). The brand colors are not system colors, so they do not change with Increase Contrast, and white text on them keeps its contrast.
-- With Increase Contrast, all colors of the mesh are 28% darker, and the borders and the page dots are brighter.
-- The copies of the app are on a deep violet fill (`WelcomeSurface`, `#130540`) at 60% opacity with a thin white border. A copy in front of another copy is opaque. With Reduce Transparency, all fills are opaque.
+The window uses neutral colors only (`WelcomePalette`, made of `WelcomeColor` values). It has no gradient, no shadow at rest, no glow and no glass on its content. The only other colors come from the copies of the app: the system blue and the status colors. The colors follow the appearance:
 
-Contrast of white text (WCAG 2.2, minimum 4.5:1):
+| Color | Light | Dark | Use |
+|---|---|---|---|
+| `ground` | `#ECEBE7` | `#1B1A18` | The background of the window. |
+| `stage` | `#D5D2CA` | `#2A2926` | The stage. |
+| `ink` | `#151513` | `#F1F0EC` | The headline, the dot of the current page, and the tint of **Continue** and **Done**. |
+| `text` | `#3A3935` | `#B9B6AE` | The message and the notes. With Increase Contrast, it is `ink`. |
+| `dot` | `#7A776F` | `#7A776F` | The dots of the other pages. With Increase Contrast, it is `text`. |
 
-| Background | White text |
-|---|---|
-| `#B300FF`, the lightest color, at the top trailing corner. No text is on it. | 4.82:1 |
-| `#8205FF` | 6.15:1 |
-| `#5E17EB` | 7.50:1 |
-| `#1F0866`, the darkest color | 16.35:1 |
-| Any mix of the mesh colors. The mesh mixes in straight lines (`smoothsColors: false`), so a mix is never lighter than the lightest color in each channel. | at least 4.68:1 |
-| The gradient behind the heading, the message and the notes, measured on the preview renders of the four pages | at least 6.09:1 |
-| The same with Increase Contrast | at least 8.91:1 (calculated: at least 7.79:1) |
-| The fill of the copies at 60%, on `#B300FF` | 11.92:1 |
-| The opaque fill | 18.69:1 |
+- The copies are dark in the two appearances, as in the screenshots: the fill is `#202020` with a thin white edge at 16% opacity (50% with Increase Contrast), as the edge of a dark window. On the dark stage, the step from the stage to the darker copy and this edge keep the copy apart. There is no shadow.
+- All fills are opaque, so Reduce Transparency changes nothing on the content. The system changes the glass of its button styles.
 
-- The red **Production environment** text (`#FF453A`) is only on the opaque fill: 5.49:1.
-- A page dot that is not current is white at 50% opacity (80% with Increase Contrast): 4.15:1 on the bottom of the gradient. A dot needs 3:1.
+Contrast (WCAG 2.2: text needs 4.5:1, a dot needs 3:1). The values are calculated from the colors. The preview renders of the four pages give the same colors.
+
+| Pair | Light | Dark |
+|---|---|---|
+| Headline (`ink`) on `ground` | 15.33:1 | 15.25:1 |
+| Message and notes (`text`) on `ground` | 9.69:1 | 8.58:1 |
+| Message and notes with Increase Contrast (`ink`) | 15.33:1 | 15.25:1 |
+| Label of **Continue** and **Done** on its fill, measured on the renders | 16.92:1 | 17.47:1 |
+| Dot of another page (`dot`) on `ground` | 3.75:1 | 3.89:1 |
+| The same with Increase Contrast (`text`) | 9.69:1 | 8.58:1 |
+| White text of the copies on `#202020` | 16.29:1 | 16.29:1 |
 
 ## Layout
 
@@ -147,7 +155,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 ## Liquid Glass
 
 - Glass is only on the control layer: the buttons of the top bar and the bottom bar (`.buttonStyle(.glass)`, `.glassProminent`), the **Follow new lines** button on the logs, the bottom bar of the welcome window, and the card of the confirmation dialog (`glassEffect`).
-- In the welcome window, **Skip** and **Back** use `.glass`. **Continue** and **Done** use `.glassProminent` with a white tint, because the accent color is not clear on the purple gradient. The three buttons are in one `GlassEffectContainer`. The copies of the app on the pages do not use glass, because they are content.
+- In the welcome window, **Skip** and **Back** use `.glass`. **Continue** and **Done** use `.glassProminent` with the `ink` tint: a dark button on the light ground, and a light button in the dark appearance. The system gives the label a color that contrasts. The three buttons are in one `GlassEffectContainer`. The copies of the app on the stage keep the glass buttons of the app bars, because they are copies of the app. The welcome window adds no glass to its content.
 - Never put glass on a list row, on a form field or on a panel of content.
 - Put the glass buttons of one bar in one `GlassEffectContainer`. The system then draws them in one pass. See [GlassEffectContainer](https://developer.apple.com/documentation/swiftui/glasseffectcontainer).
 - Do not put glass on glass. The buttons in the dialog card use `.bordered` and `.borderedProminent`.
@@ -162,7 +170,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - Use `.title` with the semibold weight only for the one number that a screen is about, such as the cost on the usage screen.
 - Use the hierarchical styles `.secondary` and `.tertiary` for less important text and icons. Do not set an opacity on text.
 - Color has a meaning: orange for sample data and warnings, red for errors, destructive buttons and destructive confirmations, green, yellow, red, purple and gray for the deployment status, and the accent color for the prominent button. A color is never the only sign: a text or a symbol is always with it.
-- Do not put orange text on a tint, and do not put white text on a system color. The system colors change with Increase Contrast, and such text is then hard to read. Color the symbol, or use red text with a symbol. The welcome window is the exception: its gradient has fixed brand colors, and its text is white (see "Colors of the welcome window").
+- Do not put orange text on a tint, and do not put white text on a system color. The system colors change with Increase Contrast, and such text is then hard to read. Color the symbol, or use red text with a symbol.
 - Icons in rows are monochrome.
 - A chart (`MetricCard`, Swift Charts) is content: it has no glass, no axis and one series in the tint color. The values that matter are text next to the chart, so the chart is never the only way to read a value. The chart height is `Layout.chartHeight`.
 - Use the constants of `Layout` for padding and spacing.
@@ -172,7 +180,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 - One animation: `Animation.screenChange` (ease in and out, 0.2 seconds). It is for a change of screen, a project that opens or closes, and the dialog.
 - A screen one level down moves in from the trailing edge. With Reduce Motion, it only fades (`AnyTransition.screen(reduceMotion:)`).
 - Each custom animation and transition reads `accessibilityReduceMotion`. With Reduce Motion, a project opens and closes with no animation, and the dialog only fades.
-- In the welcome window, the old page moves out and the new page moves in, by 36 points, with `Animation.screenChange`. With Reduce Motion, the pages only fade. The gradient does not move.
+- In the welcome window, the old text moves out and the new text moves in, by 36 points, with `Animation.screenChange`. The copy on the stage fades. With Reduce Motion, the text only fades. The ground and the stage do not move.
 - The incident banner shows and hides with no animation.
 - No animation on hover. No animation that repeats. The only timer is the 2 seconds of `CopyButton`.
 
@@ -229,7 +237,7 @@ Tradeoffs:
 | Usage | No usage. | The row **Usage and cost** is first in the projects list. The screen shows the cost that Railway gives, the billing period, the limits and the use of each resource. **Refresh** in the bottom bar. |
 | Environments | No environment actions. | The **Manage** menu of a project opens the list. A **Delete…** button in each row. **New environment** in the bottom bar opens a form with **Name** and **Copy from**. |
 | Service links | No links. | A list of the services of one environment. Each service shows **Uses** and **Used by** lines with the variable names, and **Service not found** with a triangle for a missing target. A list, not a drawing, because it stays readable for 2 to 15 services in the window and VoiceOver reads each link as a sentence. An **Environment** menu at the top and **Refresh** in the bottom bar. |
-| Welcome | No window at launch. The user saw only the menu bar icon, and a full menu bar can hide it. | One window at the first launch: four pages on the brand gradient about what Topway does, the health icons, the actions, and where the icon is, with a hint for a full menu bar. **Skip**, **Back**, **Continue** and **Done** in the bottom bar. |
+| Welcome | No window at launch. The user saw only the menu bar icon, and a full menu bar can hide it. | One window at the first launch, in the style of the App Store screenshots: four pages, each with a headline, a message and a copy of a part of Topway on a stone stage. The pages tell what Topway does, the health icons, the actions and where the icon is, with a hint for a full menu bar. **Skip**, **Back**, **Continue** and **Done** in the bottom bar. |
 | Start | Shows only with no token. | **Sign in with Railway** (prominent) and **Try with sample data**. After a failed sign-in, the message shows in red with a symbol, and the prominent button is **Try again**. A build with no OAuth client ID offers only sample data and says why. A rejected token has a way back to it. |
 | Workspace list | No list. The user typed a Workspace ID. | After a sign-in with several shared workspaces: **Choose a workspace** and one row for each workspace. With no shared workspace, a message and **Sign in again**. |
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Settings, Domains, Redeploy and Delete service. |

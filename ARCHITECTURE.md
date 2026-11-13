@@ -34,7 +34,7 @@ Each folder has the name of a feature.
 | Folder | Contents |
 |---|---|
 | `App` | App entry point, `AppState`, `MainView`, navigation, `StartView` and `SampleDataBanner`. |
-| `App/Welcome` | The welcome window: `WelcomeView`, its pages, their pictures, the bottom bar, the gradient and their colors and sizes. |
+| `App/Welcome` | The welcome window: `WelcomeView`, its pages, the bottom bar, the stage, the neutral colors and sizes, and the copies of the app on the stage (`WelcomeFragment` and the views that it shows). `WelcomeSample` reads their data from a new `SampleDataSource`. |
 | `Health` | `MenuBarLabel`, `AlertNotifier` and `NotificationPresenter`. |
 | `Projects` | The projects screen, its top bar, the project rows and the project **Manage** menu. |
 | `Services` | The service screen with its tabs, the service **Manage** menu, service rows and add service. |
@@ -60,8 +60,9 @@ Topway has no Dock icon (`LSUIElement`), so at launch the user sees only the men
 - `defaultLaunchBehavior` is `.presented` while the `UserDefaults` key `welcomeWindowShown` is not set, and `.suppressed` after.
 - `WelcomeView` sets the key when it appears, so the window shows one time. It also activates the app, so the window comes to the front.
 - `restorationBehavior(.disabled)` keeps the window closed at the next launch. `windowResizability(.contentSize)` gives it a fixed size.
-- `.hiddenTitleBar` removes the title bar, so the gradient fills the window. `windowBackgroundDragBehavior(.enabled)` lets the user move the window with a drag on its background.
-- `WelcomeView` keeps the current page (`WelcomePage`) in a `@State`. **Skip** and **Done** call `dismissWindow()`. The window has no other state, and no setting shows it again.
+- `.hiddenTitleBar` removes the title bar, so the stone ground fills the window. macOS keeps the title bar area (32 points) above the content. `windowBackgroundDragBehavior(.enabled)` lets the user move the window with a drag on its background.
+- `WelcomeView` keeps the current page (`WelcomePage`) in a `@State`. **Skip** and **Done** call `dismissWindow()`. No setting shows the window again.
+- The copies of the app on the stage are the views of the app with sample data. `WelcomeView` reads the data in a `.task` with `WelcomeSample.load()`, from a new `SampleDataSource` that keeps its data in memory and sends no request. The welcome window does not make an `AppState`, because `AppState.init` changes the Keychain and `UserDefaults`. The previews set the data before they render (`WelcomeSamplePreview`, through the `welcomeSample` environment value), because a static preview does not wait for the task.
 
 ## Screens
 
