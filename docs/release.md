@@ -53,12 +53,12 @@ Users see the name of the Railway OAuth app on the Railway consent page. The dev
 
    An archive with no client ID offers only sample data.
 
-4. The callback is `https://topway.pulgueta.com/oauth/callback`. `ASWebAuthenticationSession` gets it through Associated Domains (`webcredentials:topway.pulgueta.com`), so only an app with the Topway signature gets the code. Another app on the same Mac cannot get it with the public client ID (RFC 8252, section 8.6). Keep these items in place, or the sign-in stops:
+4. The callback is `https://topway.pulgueta.com/oauth/callback`. `ASWebAuthenticationSession` gets it through Associated Domains (`webcredentials:topway.pulgueta.com`), so only an app with the Topway signature gets the code. Keep these items in place, or the sign-in stops:
    - The file `https://topway.pulgueta.com/.well-known/apple-app-site-association`. It must name the app `7QNFW3929Z.com.pulgueta.topway` in `webcredentials` (the team ID and the bundle ID of the app). The server must send it as `application/json`, with no redirect.
    - The redirect URI `https://topway.pulgueta.com/oauth/callback` in the Railway OAuth app.
    - The Associated Domains capability on the App ID. Xcode automatic signing adds it from `topway/topway.entitlements`.
 
-   Builds before the HTTPS callback use the redirect URI `topway://oauth/callback`. When no user or tester has such a build, remove that redirect URI from the Railway OAuth app.
+   The Railway OAuth app must have only this redirect URI. **Blocker for the App Store release:** remove `topway://oauth/callback` from the Railway OAuth app. While Railway accepts that redirect URI, another app on the same Mac can start a sign-in with it and the public client ID, and get the tokens (RFC 8252, section 8.6). The HTTPS callback protects only the HTTPS redirect URI. Builds before the HTTPS callback use `topway://oauth/callback`, so they cannot sign in after you remove it. A production OAuth app that has only the HTTPS redirect URI also closes this risk.
 
 ## For each upload
 
