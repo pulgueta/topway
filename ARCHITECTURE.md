@@ -33,7 +33,8 @@ Each folder has the name of a feature.
 
 | Folder | Contents |
 |---|---|
-| `App` | App entry point, `AppState`, `MainView`, navigation, `StartView`, `WelcomeView` and `SampleDataBanner`. |
+| `App` | App entry point, `AppState`, `MainView`, navigation, `StartView` and `SampleDataBanner`. |
+| `App/Welcome` | The welcome window: `WelcomeView`, its pages, their pictures, the bottom bar, the gradient and their colors and sizes. |
 | `Health` | `MenuBarLabel`, `AlertNotifier` and `NotificationPresenter`. |
 | `Projects` | The projects screen, its top bar, the project rows and the project **Manage** menu. |
 | `Services` | The service screen with its tabs, the service **Manage** menu, service rows and add service. |
@@ -51,7 +52,7 @@ Each folder has the name of a feature.
 | Scene | Function |
 |---|---|
 | `MenuBarExtra` (style `.window`) | The menu bar icon (`MenuBarLabel`) and the menu bar window (`MainView`). |
-| `Window` (`id: "welcome"`) | The welcome window (`WelcomeView`). It shows only at the first launch. |
+| `Window` (`id: "welcome"`) | The welcome window (`WelcomeView`): four pages of onboarding. It shows only at the first launch. |
 | `Settings` | The native Settings window. |
 
 Topway has no Dock icon (`LSUIElement`), so at launch the user sees only the menu bar icon. The welcome window tells the user where that icon is.
@@ -59,6 +60,8 @@ Topway has no Dock icon (`LSUIElement`), so at launch the user sees only the men
 - `defaultLaunchBehavior` is `.presented` while the `UserDefaults` key `welcomeWindowShown` is not set, and `.suppressed` after.
 - `WelcomeView` sets the key when it appears, so the window shows one time. It also activates the app, so the window comes to the front.
 - `restorationBehavior(.disabled)` keeps the window closed at the next launch. `windowResizability(.contentSize)` gives it a fixed size.
+- `.hiddenTitleBar` removes the title bar, so the gradient fills the window. `windowBackgroundDragBehavior(.enabled)` lets the user move the window with a drag on its background.
+- `WelcomeView` keeps the current page (`WelcomePage`) in a `@State`. **Skip** and **Done** call `dismissWindow()`. The window has no other state, and no setting shows it again.
 
 ## Screens
 

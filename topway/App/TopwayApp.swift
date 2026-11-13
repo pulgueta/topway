@@ -46,13 +46,17 @@ struct TopwayApp: App {
         }
 
         // Topway has no Dock icon and no other window at launch. At the first launch,
-        // this window tells the user where the menu bar icon is.
+        // this window tells the user what Topway does and where the menu bar icon is.
         Window("Welcome to Topway", id: "welcome") {
             WelcomeView()
         }
         .defaultLaunchBehavior(isWelcomeShown ? .suppressed : .presented)
         .restorationBehavior(.disabled)
         .windowResizability(.contentSize)
+        // The gradient fills the window, so the window has no title bar. The user can move
+        // the window with a drag on its background.
+        .windowStyle(.hiddenTitleBar)
+        .windowBackgroundDragBehavior(.enabled)
 
         // Native preferences window (⌘, is added automatically).
         Settings {
