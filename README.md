@@ -17,7 +17,7 @@ Each action has a text label. No action hides until you hover over a row. To del
 
 ## Paid on the App Store, free to build
 
-Topway will be a paid app on the Mac App Store (coming soon). It is also open source under the [MIT license](LICENSE). You can build it from source, fork it and own it, at no cost.
+Topway is a paid app on the Mac App Store. It is also open source under the [MIT license](LICENSE). You can build it from source, fork it and own it, at no cost.
 
 If you buy Topway on the App Store, you support the developer. Buying it is optional.
 
