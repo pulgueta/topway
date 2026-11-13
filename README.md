@@ -93,7 +93,7 @@ Each action in Topway has a text label. No action shows only when the pointer is
 ## Getting Started
 
 1. Download or build the app.
-2. Open Topway. It shows in the menu bar.
+2. Open Topway. It shows in the menu bar, not in the Dock. At the first launch, the **Welcome to Topway** window shows the icon to look for. Select **OK** to close it. The window does not show again.
 3. Select **Sign in with Railway**. A browser window opens the Railway sign-in page.
 4. Sign in to Railway. On the consent page, select the workspaces that Topway can use, then accept.
 5. If you selected more than one workspace, select the workspace in the list. To change it later, select **Settings > Account > Workspace**.

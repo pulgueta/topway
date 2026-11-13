@@ -19,6 +19,7 @@ Topway is a macOS menu bar app for Railway. Topway collects no data.
 | Railway sign-in: an access token and a refresh token | The Keychain of your Mac | Select **Settings > Account > Sign out…**. |
 | The ID of the selected workspace | The app settings (`UserDefaults`) | Select **Settings > Account > Sign out…**. |
 | Your settings: auto-refresh, alerts and muted projects | The app settings (`UserDefaults`) | Delete the app and its data. |
+| A record that the welcome window showed one time | The app settings (`UserDefaults`) | Delete the app and its data. |
 
 Your name, your email, the names of your workspaces, and the projects, services, variables, deployments and logs stay in memory. Topway does not write them to disk.
 

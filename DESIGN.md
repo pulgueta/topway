@@ -28,6 +28,16 @@ The direction that was not selected is a custom design with `glassEffect` on row
 - The size is fixed: **360 × 480 points** (`Layout.windowWidth`, `Layout.windowHeight`). The first design was 320 × 400. Text labels need the width. A fixed size keeps the window stable when the content changes.
 - Settings is the native `Settings` scene, in its own window.
 
+### Welcome window
+
+Topway has no Dock icon, so at launch a new user sees nothing. At the first launch, the **Welcome to Topway** window (`WelcomeView`) tells the user where the menu bar icon is. It does not show again.
+
+- From top to bottom: the app icon, the heading **Topway is in the menu bar**, one sentence about where to click, the menu bar icon with **Look for this icon**, a hint for a full menu bar, and **OK**.
+- The icon to look for comes from `MenuBarLabel`, so it is the same as the icon in the menu bar.
+- The window has no bars. **OK** is its only control. It is prominent (`.glassProminent`), and Return selects it.
+- The width is `Layout.windowWidth`. The height follows the text, and the user cannot change the size.
+- The heading uses `.title2` with the semibold weight, because it is the only title of the window. The app icon is decorative and hidden from VoiceOver.
+
 ## Layout
 
 Each screen has the same parts, from top to bottom. `ScreenLayout` puts them together.
@@ -101,7 +111,7 @@ Use these system controls directly: `Button`, `Menu`, `Picker` (segmented for 2 
 
 ## Liquid Glass
 
-- Glass is only on the control layer: the buttons of the top bar and the bottom bar (`.buttonStyle(.glass)`, `.glassProminent`), the **Follow new lines** button on the logs, and the card of the confirmation dialog (`glassEffect`).
+- Glass is only on the control layer: the buttons of the top bar and the bottom bar (`.buttonStyle(.glass)`, `.glassProminent`), the **Follow new lines** button on the logs, the **OK** button of the welcome window, and the card of the confirmation dialog (`glassEffect`).
 - Never put glass on a list row, on a form field or on a panel of content.
 - Put the glass buttons of one bar in one `GlassEffectContainer`. The system then draws them in one pass. See [GlassEffectContainer](https://developer.apple.com/documentation/swiftui/glasseffectcontainer).
 - Do not put glass on glass. The buttons in the dialog card use `.bordered` and `.borderedProminent`.
@@ -182,6 +192,7 @@ Tradeoffs:
 | Usage | No usage. | The row **Usage and cost** is first in the projects list. The screen shows the cost that Railway gives, the billing period, the limits and the use of each resource. **Refresh** in the bottom bar. |
 | Environments | No environment actions. | The **Manage** menu of a project opens the list. A **Delete…** button in each row. **New environment** in the bottom bar opens a form with **Name** and **Copy from**. |
 | Service links | No links. | A list of the services of one environment. Each service shows **Uses** and **Used by** lines with the variable names, and **Service not found** with a triangle for a missing target. A list, not a drawing, because it stays readable for 2 to 15 services in the window and VoiceOver reads each link as a sentence. An **Environment** menu at the top and **Refresh** in the bottom bar. |
+| Welcome | No window at launch. The user saw only the menu bar icon, and a full menu bar can hide it. | One window at the first launch, with the icon to look for, a hint for a full menu bar and **OK**. |
 | Start | Shows only with no token. | **Sign in with Railway** (prominent) and **Try with sample data**. After a failed sign-in, the message shows in red with a symbol, and the prominent button is **Try again**. A build with no OAuth client ID offers only sample data and says why. A rejected token has a way back to it. |
 | Workspace list | No list. The user typed a Workspace ID. | After a sign-in with several shared workspaces: **Choose a workspace** and one row for each workspace. With no shared workspace, a message and **Sign in again**. |
 | Service | Variables first. Deployments in a menu behind an icon. | Tabs **Variables**, **Deployments** and **Metrics**. **Manage** menu for Settings, Domains, Redeploy and Delete service. |

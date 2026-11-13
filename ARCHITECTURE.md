@@ -33,7 +33,7 @@ Each folder has the name of a feature.
 
 | Folder | Contents |
 |---|---|
-| `App` | App entry point, `AppState`, `MainView`, navigation, `StartView` and `SampleDataBanner`. |
+| `App` | App entry point, `AppState`, `MainView`, navigation, `StartView`, `WelcomeView` and `SampleDataBanner`. |
 | `Health` | `MenuBarLabel`, `AlertNotifier` and `NotificationPresenter`. |
 | `Projects` | The projects screen, its top bar, the project rows and the project **Manage** menu. |
 | `Services` | The service screen with its tabs, the service **Manage** menu, service rows and add service. |
@@ -43,6 +43,22 @@ Each folder has the name of a feature.
 | `SignIn` | `WebSignIn` (the `ASWebAuthenticationSession` window), `SignInButton` and the workspace list after a sign-in. |
 | `Settings` | The native Settings window, the Account section, the Alerts section, the launch at login toggle and the Help section, which opens the issue forms. |
 | `Shared` | The screen layout, the bars, button styles, state views, the confirmation dialog and `openAppSettings`. |
+
+## Scenes
+
+`TopwayApp` has three scenes:
+
+| Scene | Function |
+|---|---|
+| `MenuBarExtra` (style `.window`) | The menu bar icon (`MenuBarLabel`) and the menu bar window (`MainView`). |
+| `Window` (`id: "welcome"`) | The welcome window (`WelcomeView`). It shows only at the first launch. |
+| `Settings` | The native Settings window. |
+
+Topway has no Dock icon (`LSUIElement`), so at launch the user sees only the menu bar icon. The welcome window tells the user where that icon is.
+
+- `defaultLaunchBehavior` is `.presented` while the `UserDefaults` key `welcomeWindowShown` is not set, and `.suppressed` after.
+- `WelcomeView` sets the key when it appears, so the window shows one time. It also activates the app, so the window comes to the front.
+- `restorationBehavior(.disabled)` keeps the window closed at the next launch. `windowResizability(.contentSize)` gives it a fixed size.
 
 ## Screens
 
