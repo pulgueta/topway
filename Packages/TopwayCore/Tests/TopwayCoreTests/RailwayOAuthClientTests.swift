@@ -30,7 +30,7 @@ struct RailwayOAuthClientTests {
             request.form == [
                 "grant_type": "authorization_code",
                 "code": "code-1",
-                "redirect_uri": "topway://oauth/callback",
+                "redirect_uri": "https://topway.pulgueta.com/oauth/callback",
                 "client_id": "test-client-id",
                 "code_verifier": "verifier-1",
             ])

@@ -11,11 +11,14 @@ public enum RailwayOAuth {
     static let authorizationEndpoint = "https://backboard.railway.com/oauth/auth"
     static let tokenEndpoint = "https://backboard.railway.com/oauth/token"
 
-    /// `ASWebAuthenticationSession` gets the redirect to this scheme. Topway does not
-    /// register the scheme with the system, so no other app can send it a code.
-    public static let callbackScheme = "topway"
+    /// `ASWebAuthenticationSession` gets the redirect to this HTTPS host and path. The
+    /// Associated Domains entitlement has `webcredentials:topway.pulgueta.com`, and the
+    /// `apple-app-site-association` file of the host names only the app of team 7QNFW3929Z.
+    /// Thus only an app with the Topway signature gets the redirect (RFC 8252, section 8.6).
+    public static let callbackHost = "topway.pulgueta.com"
+    public static let callbackPath = "/oauth/callback"
     /// Must be the same text as a redirect URI of the OAuth app on Railway.
-    public static let redirectURI = "topway://oauth/callback"
+    public static let redirectURI = "https://\(callbackHost)\(callbackPath)"
 
     /// - `email` and `profile` are necessary with a workspace scope: without them,
     ///   `me { workspaces }` gives an empty list.
