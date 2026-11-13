@@ -12,6 +12,8 @@ import UserNotifications
 @MainActor
 struct TopwayApp: App {
     @State private var appState = AppState()
+    /// `true` after the welcome window showed one time.
+    @AppStorage(WelcomeView.shownKey) private var isWelcomeShown = false
     /// The notification center keeps a weak reference, so the app keeps this one.
     private let notificationPresenter = NotificationPresenter()
 
@@ -42,6 +44,15 @@ struct TopwayApp: App {
                 .disabled(!appState.isConfigured || appState.isTokenRejected || appState.isLoading)
             }
         }
+
+        // Topway has no Dock icon and no other window at launch. At the first launch,
+        // this window tells the user where the menu bar icon is.
+        Window("Welcome to Topway", id: "welcome") {
+            WelcomeView()
+        }
+        .defaultLaunchBehavior(isWelcomeShown ? .suppressed : .presented)
+        .restorationBehavior(.disabled)
+        .windowResizability(.contentSize)
 
         // Native preferences window (⌘, is added automatically).
         Settings {
