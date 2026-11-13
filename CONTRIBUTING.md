@@ -62,7 +62,3 @@ type(scope): brief description
 The types are `feat`, `fix`, `refactor`, `chore`, `docs`, `style` and `test`. Each commit has one purpose and must build.
 
 Example: `fix(core): report HTTP failures as typed errors`
-
-## Release
-
-[docs/release.md](docs/release.md) gives the steps to upload a build to TestFlight.
