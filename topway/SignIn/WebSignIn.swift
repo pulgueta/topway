@@ -9,8 +9,10 @@ import TopwayCore
 /// from an email opens in the same browser. An ephemeral session would ask for the Railway
 /// password at each sign-in, and an email link could not complete it.
 ///
-/// `ASWebAuthenticationSession` gets the redirect to `topway://` itself, so Topway registers
-/// no URL scheme and runs no local server.
+/// `ASWebAuthenticationSession` gets the redirect to `RailwayOAuth.redirectURI` itself, so
+/// Topway registers no URL scheme and runs no local server. The callback is HTTPS: Associated
+/// Domains (`webcredentials:topway.pulgueta.com`) give it only to an app with the Topway
+/// signature.
 final class WebSignIn: NSObject, ASWebAuthenticationPresentationContextProviding {
     private let anchor: ASPresentationAnchor
     private var session: ASWebAuthenticationSession?
@@ -31,7 +33,8 @@ final class WebSignIn: NSObject, ASWebAuthenticationPresentationContextProviding
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             let session = ASWebAuthenticationSession(
-                url: url, callback: .customScheme(RailwayOAuth.callbackScheme)
+                url: url,
+                callback: .https(host: RailwayOAuth.callbackHost, path: RailwayOAuth.callbackPath)
             ) { @Sendable callbackURL, error in
                 let result: Result<URL, any Error>
                 if let callbackURL {

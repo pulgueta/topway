@@ -130,7 +130,7 @@ To sign in from your own build, make your own Railway OAuth app:
 
 1. In Railway, open the settings of your workspace, then **Developer > New OAuth App**. Only a workspace admin can do this.
 2. For the type, select **Native (Public)**. A native app has no client secret, and Topway sends none.
-3. Add the redirect URI `topway://oauth/callback`. The text must be the same.
+3. Add the redirect URI `https://topway.pulgueta.com/oauth/callback`. The text must be the same.
 4. Copy the client ID.
 5. Make the file `Config/OAuth.local.xcconfig` with this line:
 
@@ -141,6 +141,8 @@ To sign in from your own build, make your own Railway OAuth app:
 6. Build the app again.
 
 Git ignores `Config/OAuth.local.xcconfig`. Never commit it, and never put the client ID in `Config/OAuth.xcconfig`.
+
+The callback uses Associated Domains on `topway.pulgueta.com`, and that domain gives the callback only to an app that the Topway team (7QNFW3929Z) signs. A build with a different team cannot complete the sign-in. For such a build, use a domain of your own: put an `apple-app-site-association` file with your team ID and bundle ID on it, then use that domain in `RailwayOAuth.callbackHost`, `topway/topway.entitlements` and the redirect URI.
 
 ## Accessibility
 

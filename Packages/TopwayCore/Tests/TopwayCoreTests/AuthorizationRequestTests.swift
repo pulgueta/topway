@@ -25,7 +25,7 @@ struct AuthorizationRequestTests {
 
         #expect(items["response_type"] == "code")
         #expect(items["client_id"] == "test-client-id")
-        #expect(items["redirect_uri"] == "topway://oauth/callback")
+        #expect(items["redirect_uri"] == "https://topway.pulgueta.com/oauth/callback")
         #expect(items["state"] == "state-1")
         #expect(items["code_challenge"] == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
         #expect(items["code_challenge_method"] == "S256")
