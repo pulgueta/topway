@@ -53,8 +53,8 @@ struct TopwayApp: App {
         .defaultLaunchBehavior(isWelcomeShown ? .suppressed : .presented)
         .restorationBehavior(.disabled)
         .windowResizability(.contentSize)
-        // The gradient fills the window, so the window has no title bar. The user can move
-        // the window with a drag on its background.
+        // The stone ground fills the window, so the window has no title bar. The user can
+        // move the window with a drag on its background.
         .windowStyle(.hiddenTitleBar)
         .windowBackgroundDragBehavior(.enabled)
 

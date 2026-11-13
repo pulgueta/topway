@@ -11,7 +11,7 @@ Topway is a menu bar app. It uses the standard controls of macOS, and each actio
 
 - **VoiceOver**: Each button, field and status has a name. VoiceOver says an error when it shows. In a confirmation, VoiceOver stays in the dialog.
 - **Voice Control**: You can say the text that you see on a button, for example "Click Restart". When more than one button has the same text, say "Show numbers".
-- **Keyboard**: Escape goes back one step or cancels a dialog. Command-Return saves a variable. Command-R refreshes the projects.
+- **Keyboard**: Escape goes back one step or cancels a dialog. Command-Return saves a variable. Command-R refreshes the projects. In the welcome window, Return selects **Continue** or **Done**, Escape selects **Skip**, and the Left Arrow and Right Arrow keys change the page.
 - **Dark appearance**: Topway follows the appearance of macOS.
 - **Color**: A color is never the only sign of a status. A text or a symbol is always with it.
 - **Contrast**: Topway uses the system colors. They change when you turn on Increase Contrast.
@@ -26,7 +26,7 @@ If a feature does not work for you, tell us: select **Settings > Help > Report a
 
 Apple permits a label only when the user can complete all common tasks with that feature. See the [overview of Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels).
 
-The maintainer did the manual checks below on a running app on 2026-11-12, and all checks passed. The recommendations come from the code and from these checks.
+The maintainer did the manual checks below on a running app on 2026-11-12, and all checks passed. The recommendations come from the code and from these checks. The welcome window changed after these checks (the neutral style of 2026-11-13). Do checks 1 and 3 on it again.
 
 | Label (Mac) | Recommendation | Reason |
 |---|---|---|
@@ -48,6 +48,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 | Common task | VO | VC | DI | DC | SC | RM |
 |---|---|---|---|---|---|---|
+| First launch: the welcome window, **Skip**, **Back**, **Continue**, **Done** | E1, E20, check 1 | E1, E20 | E10, E20 | E11a | E12d | E13h |
 | Open Topway from the menu bar and read the health | E2, check 1 | E2, check 2 | E10 | E11a | E12 | E13e |
 | Start screen: **Sign in with Railway**, **Try again**, **Try with sample data**, **Exit sample data** | E1, E5, E7 | E1 | E10 | E11b, E11g | E12a | E13a |
 | Choose a workspace after the sign-in | E1, E3, E7 | E1, E3 | E10 | E11g | E12 | — |
@@ -106,7 +107,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 
 **E9. Keyboard.** `onExitCommand` in `MainView`, `ServiceView`, `AddServiceView`, `EnvironmentsView`, `NewEnvironmentView`, `NewDomainView` and `ServiceLinksView` goes back one step. Command-Return saves a variable or the service settings. Command-R refreshes the projects.
 
-**E10. Dark Interface.** All colors are system colors (`.red`, `.orange`, `.green`), hierarchical styles (`.secondary`, `.tertiary`), the tint and system materials. The only fixed color is the black backdrop of the dialog at 30 % opacity, which is dark. No view sets `preferredColorScheme`. Settings is a system `Form`.
+**E10. Dark Interface.** All colors are system colors (`.red`, `.orange`, `.green`), hierarchical styles (`.secondary`, `.tertiary`), the tint and system materials. The only fixed color is the black backdrop of the dialog at 30 % opacity, which is dark. No view sets `preferredColorScheme`. Settings is a system `Form`. The welcome window has its own neutral colors, each with a light and a dark value (`WelcomePalette`), so it follows the appearance. Its copies of the app are dark in the two appearances, as pictures.
 
 **E11. Differentiate Without Color Alone.**
 - a. Menu bar health: three different symbols (tram, arrows, warning triangle).
@@ -124,6 +125,7 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - a. `SampleDataBanner`: the text is in the primary color. Only the symbol is orange.
 - b. `LogLineRow`: warning lines are orange and error lines are red. See "Known limits".
 - c. `GlassConfirmationDialog`: the production label is red text with a symbol, not white text on red.
+- d. Welcome window: the headline is 15.33 to 1 (light) and 15.25 to 1 (dark) on the ground, and the message and the notes are 9.69 to 1 and 8.58 to 1. With Increase Contrast, the message and the notes have the color of the headline. [DESIGN.md](../DESIGN.md) has all the numbers.
 
 **E13. Reduced Motion.** Topway has one custom animation, `Animation.screenChange` (0.2 seconds).
 - a. Screen change (`MainView`, `ServiceView`): with Reduce Motion, `AnyTransition.screen(reduceMotion:)` only fades.
@@ -133,10 +135,11 @@ The columns are the six labels for Mac: VoiceOver (VO), Voice Control (VC), Dark
 - e. System motion: the menu bar window, the Settings window, the progress indicators and the glass buttons are system components. The system controls their motion.
 - f. Charts: `MetricCard` has no animation. New samples replace the old samples with no motion.
 - g. Incident banner: `IncidentBanner` shows and hides with no animation.
+- h. Welcome window: the text of a page moves by 36 points and fades, and the copy of the app fades. With Reduce Motion, the text only fades. The ground and the stage do not move.
 
 Topway has no parallax, no symbol effect, no animation that repeats and no content that moves by itself, apart from new log lines. The user stops that with a scroll up.
 
-**E14. Reduce Transparency.** With Reduce Transparency, the dialog card is opaque (`GlassConfirmationDialog`). All other glass comes from the system button styles.
+**E14. Reduce Transparency.** With Reduce Transparency, the dialog card is opaque (`GlassConfirmationDialog`). All other glass comes from the system button styles. The welcome window has only opaque fills.
 
 **E15. Charts.** `MetricCard` shows the name, the latest value and the highest value of a metric as text, and VoiceOver reads them as one item. The chart is hidden from assistive technologies, because it only shows the trend of the same values. A chart has one series, so no value depends on a color.
 
@@ -147,6 +150,12 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 **E18. Form messages.** A problem with a typed value shows as text below its field, with a warning triangle, for example "This project has an environment with this name. Use a different name." The button of the form is then not available. The symbol is orange, and the text is in the primary color.
 
 **E19. Domain status.** A custom domain shows its status as text with a symbol: "Set the DNS records" (triangle), "Railway makes the certificate" (clock), "Certificate failed" (octagon with a cross, and a text that says what to check) or "Ready" (check mark). A DNS record shows "Set" (check mark) or "Not set" (clock). No status uses a color.
+
+**E20. Welcome window.** The window shows one time, at the first launch (`WelcomeView`). Its controls are standard buttons with text labels: **Skip**, **Back**, **Continue** and **Done**.
+- VoiceOver reads the headline of each page as a header, then the message. When the page changes, the VoiceOver focus goes to the new headline. The page indicator reads "Page 2 of 4". The pages that do not show are hidden.
+- The copy of the app on each page is a picture: VoiceOver reads it as one image with a short description, for example "Picture of the menu bar icon. It is a tram when all services are healthy, arrows when a build or a deploy is in progress, and a triangle when a service failed or crashed." The buttons in the copy do not take clicks, and VoiceOver and Voice Control do not get to them.
+- Keyboard: Return selects **Continue** or **Done**. Escape selects **Skip**. The Left Arrow and Right Arrow keys change the page, also when Full Keyboard Access is off. When keyboard navigation is on, Tab goes only to the pages, **Skip**, **Back**, **Continue** and **Done**. It does not stop on the buttons in the copy (`focusable(false)`), so Space cannot select them. A test on all four pages confirmed this.
+- The icon states on page 2 have three different symbols and a text: **Healthy**, **In progress**, **Failed**.
 
 ### Known limits
 
@@ -166,6 +175,7 @@ Do each check in sample mode (**Try with sample data**) and go through all rows 
    - In a dialog, you cannot get to the content behind it. Escape cancels.
    - VoiceOver says an error when an action fails. To make an error, turn off the network while you are signed in.
    - Do the same in the Settings window.
+   - In the welcome window (delete the `welcomeWindowShown` key and launch), VoiceOver reads the headline, the message, the picture as one item, and the buttons. After **Continue**, it reads the new headline.
 2. **Voice Control.** Turn it on in **System Settings > Accessibility > Voice Control**. Say "Show names", then "Show numbers".
    - Each button, menu, tab and field has a name and a number.
    - "Click Manage", "Click Restart", "Click Variables" and "Click Projects" work.
