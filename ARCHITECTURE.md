@@ -69,7 +69,7 @@ Each folder has the name of a feature.
 
 Sign in with Railway is the only way to connect. Topway is a Railway OAuth app of the type Native (Public), with PKCE S256 and no client secret.
 
-1. **Sign in with Railway** calls `AppState.signIn()`. `WebSignIn` opens the Railway page in an `ASWebAuthenticationSession` window with the callback scheme `topway`.
+1. **Sign in with Railway** calls `AppState.signIn()`. `WebSignIn` opens the Railway page in an `ASWebAuthenticationSession` window with the HTTPS callback `https://topway.pulgueta.com/oauth/callback` (Associated Domains `webcredentials`).
 2. `AuthorizationCallback.code(in:state:)` checks the callback. `RailwayOAuthClient.exchange` sends the code, the client ID and the PKCE verifier. Topway saves `OAuthTokens` in the Keychain as one item.
 3. `AppState.loadAccount()` reads the name, the email and the shared workspaces. `WorkspaceChoice` selects the saved workspace or the only one. With several, the projects screen shows the workspace list.
 4. `AppState.withAccessToken` gives each request a token. It refreshes the token 5 minutes before it expires, and one time after a "Not Authorized" answer. Only one refresh runs at a time.
