@@ -1,36 +1,31 @@
 # Contributing
 
-Read `ARCHITECTURE.md` first. `AGENTS.md` lists the facts for automated tools. It tells you where the code goes.
-
-## Report a problem
-
-Use the issue forms: [open a new issue](https://github.com/pulgueta/topway/issues/new/choose) and select **Crash report**, **Bug report** or **Feature request**. The forms are in `.github/ISSUE_TEMPLATE`.
-
-- Do not paste a Railway token, a Workspace ID or variable values. Issues are public.
-- For a security problem, [send a private report](https://github.com/pulgueta/topway/security/advisories/new). Do not open a public issue.
+Thank you for your help with Topway. Read [ARCHITECTURE.md](ARCHITECTURE.md) first: it tells you where the code goes. Read [DESIGN.md](DESIGN.md) before you change a screen. [AGENTS.md](AGENTS.md) has the rules that keep the app working.
 
 ## Requirements
 
-- Xcode 26.2 or later.
-- A Mac with macOS 26.2 or later.
+- A Mac with macOS 26.2 or later
+- Xcode 26.2 or later
 
 ## Build
 
-Open `topway.xcodeproj` in Xcode and select the `topway` scheme. Or use this command:
+Open `topway.xcodeproj` and run the `topway` scheme, or use this command:
 
 ```sh
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
+To sign in from your build, follow [Build from source](README.md#build-from-source).
+
 ## Test
 
-Tests are in `Packages/TopwayCore/Tests`. They use Swift Testing. Do not use Xcode to run them. Use this command:
+The tests are in `Packages/TopwayCore/Tests` and use Swift Testing. Run them with this command, not in Xcode:
 
 ```sh
 swift test --package-path Packages/TopwayCore
 ```
 
-Write a test that fails first. Then write the code that makes the test pass.
+Write a test that fails first. Then write the code that makes it pass.
 
 ## Format
 
@@ -43,22 +38,18 @@ swift format lint --recursive --strict topway Packages
 
 ## Code rules
 
-- One type in each file. The file has the name of the type.
+- Put one type in each file, with the name of the type.
 - Do not add third-party packages.
 - Keep SwiftUI out of `TopwayCore`.
 - Make a type `public` only if the app uses it.
 - Send all user input through GraphQL `variables`.
 - Do not use `@unchecked Sendable` or `nonisolated(unsafe)` to stop compiler errors.
-- Write UI text and docs in ASD-STE100 Simplified Technical English. Use short sentences and active voice. Use a verb on each button, such as "Restart" or "Delete project".
+- Write UI text and docs in ASD-STE100 Simplified Technical English: short sentences and active voice. Start each button label with a verb, such as "Restart" or "Delete project".
 
 ## Commits
 
-Use this format, with no body:
+Use `type(scope): brief description`, with no body. The types are `feat`, `fix`, `refactor`, `chore`, `docs`, `style` and `test`. Each commit has one purpose and must build. For example: `fix(core): report HTTP failures as typed errors`.
 
-```
-type(scope): brief description
-```
+## Report a problem
 
-The types are `feat`, `fix`, `refactor`, `chore`, `docs`, `style` and `test`. Each commit has one purpose and must build.
-
-Example: `fix(core): report HTTP failures as typed errors`
+Use the [issue forms](https://github.com/pulgueta/topway/issues/new/choose). Issues are public, so do not paste a Railway token, a Workspace ID or variable values. For a security problem, [send a private report](https://github.com/pulgueta/topway/security/advisories/new).
