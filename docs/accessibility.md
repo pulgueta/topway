@@ -154,7 +154,7 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 **E20. Welcome window.** The window shows one time, at the first launch (`WelcomeView`). Its controls are standard buttons with text labels: **Skip**, **Back**, **Continue** and **Done**.
 - VoiceOver reads the headline of each page as a header, then the message. When the page changes, the VoiceOver focus goes to the new headline. The page indicator reads "Page 2 of 4". The pages that do not show are hidden.
 - The copy of the app on each page is a picture: VoiceOver reads it as one image with a short description, for example "Picture of the menu bar icon. It is a tram when all services are healthy, arrows when a build or a deploy is in progress, and a triangle when a service failed or crashed." The buttons in the copy do not take clicks, and VoiceOver and Voice Control do not get to them.
-- Keyboard: Return selects **Continue** or **Done**. Escape selects **Skip**. The Left Arrow and Right Arrow keys change the page, also when Full Keyboard Access is off.
+- Keyboard: Return selects **Continue** or **Done**. Escape selects **Skip**. The Left Arrow and Right Arrow keys change the page, also when Full Keyboard Access is off. When keyboard navigation is on, Tab goes only to the pages, **Skip**, **Back**, **Continue** and **Done**. It does not stop on the buttons in the copy (`focusable(false)`), so Space cannot select them. A test on all four pages confirmed this.
 - The icon states on page 2 have three different symbols and a text: **Healthy**, **In progress**, **Failed**.
 
 ### Known limits
@@ -164,7 +164,6 @@ Topway has no parallax, no symbol effect, no animation that repeats and no conte
 - **Secondary text.** Dates, counts, hints and the **Add service** row use `.secondary`. The system makes it stronger with Increase Contrast.
 - **Menu bar name for Voice Control.** The icon has no visible text, and its name changes with the health. "Click Topway" can fail when the health is not healthy. "Show numbers" always works.
 - **No main menu.** Topway has no Dock icon and no visible main menu (`LSUIElement`). All actions are in the menu bar window and in Settings.
-- **Buttons in the welcome copies and Tab.** The copies of the app use the real views, so they have buttons that do not take clicks. Check 3 must show that Tab does not stop on them when keyboard navigation is on.
 
 ## Manual checks
 
