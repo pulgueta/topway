@@ -174,9 +174,10 @@ public actor SampleDataSource: RailwayDataSource {
     /// The same lines for each deployment. Build logs end after the build steps.
     /// Deploy logs give the start lines, then one line every 2 seconds until the stream stops.
     /// Each line is 1 second after the line before it.
-    public nonisolated func logs(_ kind: LogKind, deploymentId: String, token: String)
-        -> AsyncThrowingStream<LogEvent, any Error>
-    {
+    public nonisolated func logs(
+        _ kind: LogKind, deploymentId: String,
+        token: @escaping @Sendable () async throws -> String
+    ) -> AsyncThrowingStream<LogEvent, any Error> {
         let start = now()
         let sleep = sleep
         func line(_ seed: (severity: String, message: String), second: Int) -> LogLine {

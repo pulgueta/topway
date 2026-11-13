@@ -27,7 +27,9 @@ struct ProjectsScreen: View {
             if let error = appState.errorMessage, !appState.projects.isEmpty {
                 // A rejected token fails again on each refresh, so the banner gives the way out.
                 ErrorBanner(
-                    message: error,
+                    // A failed Sign in again shows with the rejected-token message.
+                    message: [error, appState.signInAgainError].compactMap { $0 }
+                        .joined(separator: " "),
                     onDismiss: { appState.clearError() },
                     recoveryActions: appState.isTokenRejected ? appState.recoveryActions : []
                 )
@@ -40,7 +42,9 @@ struct ProjectsScreen: View {
 
     @ViewBuilder
     private var content: some View {
-        if !appState.isConfigured {
+        if appState.needsWorkspace {
+            WorkspacePickerView()
+        } else if !appState.isConfigured {
             StartView()
         } else if !appState.projects.isEmpty {
             projectList
@@ -98,7 +102,7 @@ struct ProjectsScreen: View {
             Text(
                 appState.isSampleMode
                     ? "You deleted all sample projects. To get them back, exit sample data and start it again."
-                    : "This workspace has no projects. Select New project to create one on Railway, or check the Workspace ID in Settings."
+                    : "This workspace has no projects. Select New project to create one on Railway, or select a different workspace in Settings."
             )
         } actions: {
             if !appState.isSampleMode {

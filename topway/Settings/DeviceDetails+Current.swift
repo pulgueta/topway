@@ -3,7 +3,7 @@ import TopwayCore
 
 extension DeviceDetails {
     /// The details of this app and this Mac. Topway reads them only when the user reports a problem.
-    static func current(isSampleMode: Bool, hasToken: Bool) -> DeviceDetails {
+    static func current(isSampleMode: Bool, isSignedIn: Bool) -> DeviceDetails {
         let info = Bundle.main.infoDictionary
         let system = ProcessInfo.processInfo.operatingSystemVersion
         // The hardware, not the build: an Intel build can run with Rosetta on Apple silicon.
@@ -20,7 +20,7 @@ extension DeviceDetails {
             macModel: systemText("hw.model"),
             architecture: architecture,
             isSampleMode: isSampleMode,
-            hasToken: hasToken)
+            isSignedIn: isSignedIn)
     }
 
     /// A number from `sysctl`, or `nil` when the system does not give it.

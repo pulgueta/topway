@@ -24,7 +24,8 @@ The app imports the core. The core does not import the app.
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
 | `Recovery` | `RecoveryAction` and `RecoveryRules`, which give the actions after a failed load. |
 | `Reports` | `IssueReportLink`, which makes the link to a GitHub issue form with the `DeviceDetails` filled in. It sends no token and no project data. |
-| `Storage` | `KeychainStore`, which keeps the API token in the Keychain. |
+| `OAuth` | Sign in with Railway: `PKCE`, `AuthorizationRequest`, `AuthorizationCallback`, `RailwayOAuthClient` (token exchange and refresh, no client secret), `OAuthTokens`, `WorkspaceChoice` and `SessionGeneration`. |
+| `Storage` | `KeychainStore`, which keeps the tokens of Sign in with Railway in the Keychain. |
 
 ### App folders
 
@@ -39,7 +40,8 @@ Each folder has the name of a feature.
 | `Deployments` | The Deployments tab and its rows, with restart and redeploy. |
 | `Logs` | The logs screen, the log line row and the connection label. |
 | `Variables` | The Variables tab, its rows and the variable editor. |
-| `Settings` | The native Settings window, the Alerts section, the launch at login toggle and the Help section, which opens the issue forms. |
+| `SignIn` | `WebSignIn` (the `ASWebAuthenticationSession` window), `SignInButton` and the workspace list after a sign-in. |
+| `Settings` | The native Settings window, the Account section, the Alerts section, the launch at login toggle and the Help section, which opens the issue forms. |
 | `Shared` | The screen layout, the bars, button styles, state views, the confirmation dialog and `openAppSettings`. |
 
 ## Screens
@@ -63,20 +65,33 @@ Each folder has the name of a feature.
 6. `AppState` updates its properties. If the action fails, `AppState` sets `errorMessage`.
 7. The view updates. `ErrorBanner` or `ErrorStateView` shows `errorMessage`.
 
+## Sign in with Railway
+
+Sign in with Railway is the only way to connect. Topway is a Railway OAuth app of the type Native (Public), with PKCE S256 and no client secret.
+
+1. **Sign in with Railway** calls `AppState.signIn()`. `WebSignIn` opens the Railway page in an `ASWebAuthenticationSession` window with the callback scheme `topway`.
+2. `AuthorizationCallback.code(in:state:)` checks the callback. `RailwayOAuthClient.exchange` sends the code, the client ID and the PKCE verifier. Topway saves `OAuthTokens` in the Keychain as one item.
+3. `AppState.loadAccount()` reads the name, the email and the shared workspaces. `WorkspaceChoice` selects the saved workspace or the only one. With several, the projects screen shows the workspace list.
+4. `AppState.withAccessToken` gives each request a token. It refreshes the token 5 minutes before it expires, and one time after a "Not Authorized" answer. Only one refresh runs at a time.
+5. `SessionGeneration` changes on a new sign-in, a sign-out and sample mode, but not on a refresh. A sign-in or an account load that ends in a later generation changes nothing, and a sign-out or sample data closes the sign-in window.
+
+The client ID comes from the build: `Config/OAuth.xcconfig` includes the gitignored `Config/OAuth.local.xcconfig`, and `topway/Info.plist` puts the value in `RailwayOAuthClientID`. With no value, the start screen offers only sample data. At launch, `AppState` removes the API token of earlier builds and does not use it.
+
 ## Failed loads and the token
 
 `ErrorStateView` shows a failed load. Its buttons come from `RecoveryRules.actions(isTokenRejected:isSampleMode:)`, through `AppState.recoveryActions`:
 
 | State | Buttons |
 |---|---|
-| Railway did not accept the token | **Open Settings**, **Try with sample data**. No retry, because the same token fails again. |
+| Railway did not accept the token | **Sign in again**, **Try with sample data**. No retry, because the same token fails again. |
 | Other failures | **Try again**, **Open Settings**. |
 | Sample mode | **Try again**. |
 
 - `RailwayError.isTokenRejected` is `true` only for `RailwayError.unauthorized`.
 - Railway answers a request that has a bad token with status 200 and the GraphQL error "Not Authorized". `RailwayError.init(graphQLErrors:)` makes `unauthorized` from that message, for HTTP requests and for the socket. An HTTP 401 also gives `unauthorized`.
-- `AppState.isTokenRejected` is `true` while `errorMessage` comes from that error. Each new `errorMessage` sets it to `false`, and then `show(_:)` sets it for the new error.
-- **Settings > Credentials > Remove token…** calls `AppState.removeToken()`. It deletes the token from the Keychain, removes the projects and stops the refresh. `isConfigured` is then `false`, so `MainView` shows the start screen. Sample mode stays on.
+- `AppState.isTokenRejected` is `true` while `errorMessage` comes from that error, after one refresh did not help. Each new `errorMessage` sets it to `false`, and then `show(_:)` sets it for the new error.
+- When Railway does not accept the refresh token, the sign-in ends, and the start screen shows why.
+- **Settings > Account > Sign out…** calls `AppState.signOut()`. It deletes the tokens from the Keychain, removes the workspace choice and the projects, and stops the refresh. `isConfigured` is then `false`, so `MainView` shows the start screen. Sample mode stays on. Railway has no revocation endpoint, so the user removes the access of Topway on the Apps page of the Railway account settings.
 
 ## Data sources and sample mode
 
@@ -87,11 +102,11 @@ Each folder has the name of a feature.
 | `RailwayClient` | Sends GraphQL requests to Railway. |
 | `SampleDataSource` | An actor that keeps sample data in memory. It sends no network requests. |
 
-Sample mode lets the app run with no token, for example for App Review.
+Sample mode lets the app run with no Railway account, for example for App Review.
 
 - The start screen has the **Try with sample data** button. It calls `appState.enterSampleMode()`. `ErrorStateView` has the same button when Railway does not accept the token.
 - In sample mode, `MainView` shows `SampleDataBanner`. Its **Exit sample data** button calls `appState.exitSampleMode()`.
-- Sample mode does not read or write the Keychain token. It is not saved, so it ends when the app quits.
+- Sample mode does not read or write the tokens. It is not saved, so it ends when the app quits.
 - Actions change the sample data, and a later read shows the change. Redeploy adds a deployment with the current date.
 - `SampleDataSource` gets the date from its `now` parameter, so tests can set a fixed date.
 
@@ -186,7 +201,7 @@ A production environment shows a red label in the dialog.
 
 To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows `GlassConfirmationDialog` above all screens with `destructiveConfirmation(...)`. Do not use `alert` or `confirmationDialog`, because they close the menu bar window. Return confirms only an action that is not destructive.
 
-The Settings window is a separate window, so **Remove token…** asks for its confirmation in the Settings form.
+The Settings window is a separate window, so **Sign out…** asks for its confirmation in the Settings form.
 
 ## Add a feature
 

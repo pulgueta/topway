@@ -126,20 +126,27 @@ struct MainView: View {
         .onChange(of: appState.isSampleMode) {
             destination = .main
         }
-        // With no token, only the start screen is correct.
+        // With no sign-in or no workspace, only the start screen or the workspace list is
+        // correct.
         .onChange(of: appState.isConfigured) { _, isConfigured in
             if !isConfigured {
                 destination = .main
             }
         }
-        // Settings saved a different workspace or token. The open screen and a pending
-        // confirmation belong to the earlier one.
+        // Settings selected a different workspace, or the sign-in changed. The open screen
+        // and a pending confirmation belong to the earlier one. A token refresh changes
+        // nothing here.
         .onChange(of: appState.workspaceId) {
             appState.cancelConfirmation()
             destination = .main
         }
-        .onChange(of: appState.railwayToken) {
+        .onChange(of: appState.isSignedIn) {
             appState.cancelConfirmation()
+            destination = .main
+        }
+        // Sign in again keeps `isSignedIn` and can keep the workspace, but the open screen
+        // belongs to the earlier sign-in.
+        .onChange(of: appState.completedSignIns) {
             destination = .main
         }
         // Escape goes back one step.

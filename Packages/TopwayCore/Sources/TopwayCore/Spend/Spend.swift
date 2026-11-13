@@ -66,13 +66,13 @@ public struct Spend: Hashable, Sendable {
 
     /// The message for a spend load that failed. `nil` for a cancelled load.
     ///
-    /// Railway answers "Not Authorized" when the token cannot read the billing, for example
-    /// the token of a member with no billing access. The projects load with the same token,
+    /// Railway answers "Not Authorized" when the account cannot read the billing: Railway
+    /// gives billing access only to workspace admins. The projects load with the same token,
     /// so this is not a rejected token.
     public static func failureMessage(for error: RailwayError) -> String? {
         if case .unauthorized = error {
             return
-                "Your token cannot read the billing of this workspace. Use the token of a member with billing access."
+                "Your Railway account cannot read the billing of this workspace. Railway shows the billing only to workspace admins."
         }
         return error.errorDescription
     }

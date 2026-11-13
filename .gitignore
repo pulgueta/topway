@@ -72,3 +72,6 @@ skills-lock.json
 .claude/settings.local.json
 odd/
 .atl/
+
+# Local build settings with values that stay out of git
+Config/*.local.xcconfig

@@ -11,7 +11,7 @@ struct IssueReportLinkTests {
         macModel: "Mac16,1",
         architecture: .appleSilicon,
         isSampleMode: false,
-        hasToken: true)
+        isSignedIn: true)
 
     private func queryItems(_ kind: IssueKind, _ details: DeviceDetails) throws -> [String: String]
     {
@@ -52,7 +52,7 @@ struct IssueReportLinkTests {
         #expect(items["macos-version"] == "macOS 26.2 (25C56)")
         #expect(items["mac-model"] == "Mac16,1")
         #expect(items["architecture"] == "Apple silicon (arm64)")
-        #expect(items["data-mode"] == "Railway token")
+        #expect(items["data-mode"] == "Signed in with Railway")
     }
 
     @Test(
@@ -88,15 +88,15 @@ struct IssueReportLinkTests {
             try queryItems(.bug, details)["architecture"] == "Apple silicon (arm64) with Rosetta")
     }
 
-    @Test("With no token and no sample data, the data field says that there is no token")
+    @Test("With no sign-in and no sample data, the data field says that there is no sign-in")
     func noToken() throws {
         var details = details
-        details.hasToken = false
+        details.isSignedIn = false
 
-        #expect(try queryItems(.bug, details)["data-mode"] == "No token")
+        #expect(try queryItems(.bug, details)["data-mode"] == "Not signed in")
     }
 
-    @Test("Sample mode gives the sample data value also when a token is saved")
+    @Test("Sample mode gives the sample data value also while the user is signed in")
     func sampleModeWithToken() throws {
         var details = details
         details.isSampleMode = true
