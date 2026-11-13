@@ -77,9 +77,7 @@ Git ignores `Config/OAuth.local.xcconfig`. Never commit it, and never put the cl
 
 ### Sign in from a build that another team signs
 
-The sign-in callback uses Associated Domains on `topway.pulgueta.com`. That domain gives the callback only to an app that the Topway team (7QNFW3929Z) signs, so a build that a different team signs cannot complete the sign-in.
-
-For such a build, use a domain of your own. Put an `apple-app-site-association` file with your team ID and bundle ID on it. Then use that domain in `RailwayOAuth.callbackHost`, in `topway/topway.entitlements` and in the redirect URI.
+The sign-in callback on `topway.pulgueta.com` works only for an app that the Topway team (7QNFW3929Z) signs. To sign your build with your own team and use your own callback, follow [Build and own Topway](docs/own-your-build.md).
 
 To change the code, read [CONTRIBUTING.md](CONTRIBUTING.md).
 

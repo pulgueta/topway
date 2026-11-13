@@ -15,7 +15,7 @@ Open `topway.xcodeproj` and run the `topway` scheme, or use this command:
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
-To sign in from your build, follow [Build from source](README.md#build-from-source).
+To sign in from your build, follow [Build from source](README.md#build-from-source). To sign it with your own team, follow [Build and own Topway](docs/own-your-build.md).
 
 ## Test
 
