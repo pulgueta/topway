@@ -1,6 +1,6 @@
 # Architecture
 
-Topway is a macOS menu bar app for Railway. This page tells you where code goes and how data moves through the app.
+This page tells you where the Topway code goes and how data moves through the app.
 
 ## Layers
 
@@ -27,7 +27,7 @@ The app imports the core. The core never imports the app.
 | `Recovery` | `RecoveryAction` and `RecoveryRules`: the actions after a failed load. |
 | `Reports` | `IssueReportLink`: the link to a GitHub issue form, with the `DeviceDetails` filled in. It has no token and no project data. |
 | `References` | Variable references, reference completion and the service graph. |
-| `Environments`, `Settings`, `Domains`, `Databases`, `Metrics`, `Spend`, `Status` | The rules of the feature with the same name. `Settings` is for service settings, and `Status` is for the Railway incident banner. |
+| `Environments`, `Settings`, `Domains`, `Databases`, `Metrics`, `Spend`, `Status` | The rules of the feature with the same name. `Settings` is for service settings, and `Status` is for the Railway incident banner. See [Feature notes](#feature-notes). |
 
 ### App folders
 
@@ -47,7 +47,7 @@ Each folder has the name of a feature.
 
 ## Scenes
 
-`TopwayApp` has three scenes:
+`TopwayApp` has three scenes.
 
 | Scene | What it shows |
 |---|---|
@@ -61,20 +61,15 @@ Topway has no Dock icon (`LSUIElement`), so the welcome window shows a new user 
 
 - `defaultLaunchBehavior` is `.presented` until the `UserDefaults` key `welcomeWindowShown` is set, and `.suppressed` after. `WelcomeView` sets the key when it appears, and activates the app so the window comes to the front. No setting shows the window again.
 - `restorationBehavior(.disabled)` keeps the window closed at the next launch. `windowResizability(.contentSize)` gives it a fixed size.
-- `.hiddenTitleBar` lets the stone ground fill the window. macOS keeps the title bar area (32 points) above the content. `windowBackgroundDragBehavior(.enabled)` lets the user drag the window by its background.
-- **Skip** and **Done** call `dismissWindow()`.
-- `WelcomeView` loads the sample data for the copies of the app in a `.task` with `WelcomeSample.load()`, from a new `SampleDataSource` that sends no request.
-- The welcome window never makes an `AppState`, because `AppState.init` changes the Keychain and `UserDefaults`.
+- `WelcomeView` loads the sample data for the copies of the app in a `.task` with `WelcomeSample.load()`, from a new `SampleDataSource` that sends no request. It never makes an `AppState`, because `AppState.init` changes the Keychain and `UserDefaults`.
 - Previews set the data before they render (`WelcomeSamplePreview`, through the `welcomeSample` environment value), because a static preview does not wait for the task.
 
 [DESIGN.md](DESIGN.md#welcome-window) has the pages, the sizes, the colors and the accessibility rules.
 
 ## Screens and navigation
 
-- The menu bar window has a fixed size of 360 × 480 points (`Layout`).
 - There is no `NavigationStack`. `MainView` shows one `NavigationDestination`: the projects, usage, add service, environments, service links or one service.
 - `ServiceView` shows one `ServiceDestination`: the overview, the variable editor, the logs, the settings or the domains. The overview has the tabs **Variables**, **Deployments** and **Metrics** (`ServiceTab`).
-- `ScreenLayout` gives each screen a top bar (`ScreenHeader`), content and a bottom bar (`ActionBar`).
 - Escape goes back one step. `ServiceView` handles its own steps first, then `MainView` handles the others.
 
 Follow [DESIGN.md](DESIGN.md) when you add or change a screen.
@@ -84,7 +79,7 @@ Follow [DESIGN.md](DESIGN.md) when you add or change a screen.
 1. A view calls a method on `AppState`, which calls its data source: `RailwayClient`, or `SampleDataSource` in sample mode.
 2. `RailwayClient` sends a GraphQL request. All user input goes in `variables`. Never put user input in the query text.
 3. The data source returns a value or throws a `RailwayError`.
-4. `AppState` updates its properties. When an action fails, it sets `errorMessage`, and `ErrorBanner` or `ErrorStateView` shows it.
+4. `AppState` updates its properties. Most write methods then call `loadProjects()`. When an action fails, `AppState` sets `errorMessage`, and `ErrorBanner` or `ErrorStateView` shows it.
 
 ## Sign in with Railway
 
@@ -94,9 +89,9 @@ Sign in with Railway is the only way to connect. Topway is a Railway OAuth app o
 2. `AuthorizationCallback.code(in:state:)` checks the callback. `RailwayOAuthClient.exchange` sends the code, the client ID and the PKCE verifier. Topway saves `OAuthTokens` in the Keychain as one item.
 3. `AppState.loadAccount()` reads the name, the email and the shared workspaces. `WorkspaceChoice` selects the saved workspace or the only one. With several, the projects screen shows the workspace list.
 4. `AppState.withAccessToken` gives each request a token. It refreshes the token 5 minutes before it expires, and one time after a "Not Authorized" answer. Only one refresh runs at a time.
-5. `SessionGeneration` changes on a new sign-in, a sign-out and sample mode, but not on a refresh. A sign-in or an account load that ends in a later generation changes nothing. A sign-out or sample data closes the sign-in window.
+5. `SessionGeneration` changes on a new sign-in, a sign-out and sample mode, but not on a refresh. A late answer from an earlier generation changes nothing, and a sign-out or sample data closes the sign-in window.
 
-The client ID comes from the build. `Config/OAuth.xcconfig` includes the gitignored `Config/OAuth.local.xcconfig`, and `topway/Info.plist` puts the value in `RailwayOAuthClientID`. With no value, the start screen offers only sample data. At launch, `AppState` removes the API token of earlier builds and does not use it.
+The client ID comes from the build (see [AGENTS.md](AGENTS.md#oauth-client-id)). With no value, the start screen offers only sample data. At launch, `AppState` removes the API token of earlier builds and does not use it.
 
 ## Failed loads and a rejected token
 
@@ -108,8 +103,7 @@ The client ID comes from the build. `Config/OAuth.xcconfig` includes the gitigno
 | Other failures | **Try again** and **Open Settings**. |
 | Sample mode | **Try again**. |
 
-- Railway answers a request with a bad token with status 200 and the GraphQL error "Not Authorized". `RailwayError.init(graphQLErrors:)` makes `unauthorized` from that message, for HTTP requests and for the socket. An HTTP 401 also gives `unauthorized`.
-- `RailwayError.isTokenRejected` is `true` only for `unauthorized`.
+- Railway answers a request with a bad token with status 200 and the GraphQL error "Not Authorized". `RailwayError.init(graphQLErrors:)` makes `unauthorized` from that message, for HTTP requests and for the socket. An HTTP 401 also gives `unauthorized`, and `RailwayError.isTokenRejected` is `true` only for it.
 - `AppState.isTokenRejected` is `true` while `errorMessage` comes from that error, after one refresh did not help.
 - When Railway does not accept the refresh token, the sign-in ends, and the start screen shows why.
 - **Settings > Account > Sign out…** calls `AppState.signOut()`. It deletes the tokens from the Keychain, removes the workspace choice and the projects, and stops the refresh. `isConfigured` is then `false`, so `MainView` shows the start screen. Sample mode stays on.
@@ -122,7 +116,7 @@ The client ID comes from the build. `Config/OAuth.xcconfig` includes the gitigno
 - `MainView` shows `SampleDataBanner`. Its **Exit sample data** button calls `appState.exitSampleMode()`.
 - Sample mode does not read or write the tokens. It is not saved, so it ends when the app quits.
 - Actions change the sample data, and a later read shows the change. Redeploy adds a deployment with the current date.
-- `SampleDataSource` gets the date from its `now` parameter, so tests can set a fixed date.
+- `SampleDataSource` takes `now` and `sleep` parameters, so tests can set a fixed date and run with no wait.
 
 ## Health and alerts
 
@@ -177,38 +171,75 @@ There is no alert for the first load, for the same deployment with the same stat
 | The socket never connected in this stream | Poll the matching query every 5 seconds. The state is `polling`. |
 | Railway sends an error, or does not accept the token | Stop the stream with the error. Polling gets the same answer. |
 
-`LogRecovery` keeps these rules and has no network code. While the stream polls:
-
-- It sends one request each 5 seconds. A network error does not stop the stream.
-- Every 60 seconds (12 polls), it tries the socket again. If the socket connects, the state is `live` again.
-- The build log query also reads the deployment status. When the build is finished (the status is not `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING` or `NEEDS_APPROVAL`), polling stops and the log ends.
+`LogRecovery` keeps these rules and has no network code. While the stream polls, a network error does not stop it, and every 60 seconds (12 polls) it tries the socket again. The build log query also reads the deployment status: when the build is finished (the status is not `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING` or `NEEDS_APPROVAL`), the log ends.
 
 A server `complete` ends the stream, with no polling. In one hour, a polling stream sends at most 720 polls and 60 socket tries. A socket that connects, gives a line and drops each time resets the backoff, so a stream can connect up to 1,800 times in one hour.
 
 `LogDeduplicator` removes lines that a reconnect or a poll gives again. A line is a duplicate when its timestamp, message and severity are equal to one of the last 1,000 lines. It does not compare times, because Railway can add a line with an earlier timestamp.
 
-`SampleDataSource` gives sample lines: build logs end, and deploy logs add one line every 2 seconds. Its `sleep` parameter lets tests run with no wait.
+`SampleDataSource` gives sample lines. Build logs end, and deploy logs add one line every 2 seconds.
 
 ### Logs screen
 
-- **View logs** in `DeploymentRow` opens `LogsView` in `ServiceView`. Back and Escape go to the Deployments tab.
-- The screen opens on **Build** when the deployment status is `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING`, `NEEDS_APPROVAL` or `FAILED` (`Deployment.defaultLogKind`), and on **Deploy** for all other statuses.
+- `LogsView` opens on **Build** when the deployment status is `BUILDING`, `QUEUED`, `WAITING`, `INITIALIZING`, `NEEDS_APPROVAL` or `FAILED` (`Deployment.defaultLogKind`), and on **Deploy** for all other statuses.
 - The **Build** and **Deploy** tabs each start a new stream. The stream stops when the screen closes or the tab changes.
 - `LogBuffer` keeps the newest 1,000 lines in memory.
 - The screen follows new lines until the user scrolls up. `LogScrollMetrics` checks the bottom first, so a bounce at the bottom keeps follow on.
-- Errors show in `ErrorBanner`, or in `ErrorStateView` with **Try again** when there are no lines.
 
-## Confirmation levels
+## Feature notes
 
-Each action that changes data has a `HarmLevel`:
+Each feature keeps its pure rules in a `TopwayCore` folder, with tests.
 
-| Level | Result | Actions |
-|---|---|---|
-| Low | No dialog. | Create a variable with a new name. |
-| Medium | A dialog names the service and the environment. | Restart, redeploy, edit a variable, save a variable with a name that exists, delete a variable. |
-| High | The user must type the exact name. | Delete a service, delete a project. |
+### Metrics
 
-A production environment shows a red label in the dialog.
+- `fetchMetrics` reads the `metrics` query for one service in one environment. `MetricWindow` gives the start date and `sampleRateSeconds` (30, 60 or 240, as the Railway CLI does).
+- `MetricsView` loads on open, on a new time range and on **Refresh**. It does not poll.
+
+### Environments and service settings
+
+- `environmentCreate` takes `projectId`, `name` and an optional `sourceEnvironmentId`. With a source, Railway copies its services, variables and settings.
+- `ServiceSettings.changes(from:)` sends only the changed values: `serviceUpdate` for a new name (all environments), and `serviceInstanceUpdate` for the other settings (one environment). An empty field goes as `null`.
+- To add a service setting, add a case to `ServiceSetting` (the raw value is the field name on Railway) and to the response type.
+
+### Domains
+
+- A service gets one Railway domain in an environment (`DomainRules.canAddRailwayDomain`). `CustomDomainStatus.records` gives the records of Railway, then a TXT record `railway-verify=<token>` at `verificationDnsHost` until `verified` is true, as the Railway CLI shows them.
+- Topway shows a domain as text and does not open it.
+
+### Databases
+
+- The raw values of `DatabaseTemplate` (`postgres`, `mysql`, `redis`, `mongo`) are the template codes on Railway.
+- `deployDatabase` reads the public template, gives each variable its default (`TemplateConfig.filled`), and sends `templateDeployV2`. A variable with no default that is not optional stops the deploy (`TemplateConfigProblem`), because Topway has no screen to ask for it.
+- `waitForDatabase` asks `workflowStatus` each 2 seconds, at most 30 times and 60 seconds, with a 10-second limit for each request. `Complete` ends the wait, `Error` throws, and all other answers wait.
+
+### Variables and references
+
+- A value can hold `${{api.VAR}}` (a service), `${{shared.VAR}}` (a shared variable) and `${{VAR}}` (the same service), with spaces inside the braces. A service name follows the rule of the Railway CLI (`auto_wrap_reference`). Malformed text, such as `secret(32)`, gives no target.
+- `fetchProjectVariables` reads the shared variables and the variables of each service in one request, with the aliases `s0`, `s1`…
+- A sealed variable shows "Sealed" with a lock. **Copy all** gives a `#` comment line with its name only. A save replaces the value, and Railway keeps it sealed. The sample data has one: `STRIPE_SECRET_KEY` of the storefront API.
+
+### Service links
+
+- `ServiceGraph` makes one edge for each pair of services, with the sorted names of the variables. A reference to the same service gives no edge.
+- When a reload removes the selected environment, `EnvironmentSelection.reconciled` selects the first one. `ServiceView` uses the same rule: it goes back to its overview and closes an open dialog. With no environment, it shows "No environments" and disables **Settings**, **Domains** and **Redeploy**.
+
+### Deployments
+
+`Deployment.availableActions` gives the **Manage** menu: cancel for a build or a deploy in progress, roll back when Railway gives `canRollback: true`, and remove for a deployment that runs, crashed or sleeps.
+
+### Spend
+
+`workspace.customer` gives `currentUsage` (Railway calculates it in US dollars and keeps it in a cache), `billingPeriod` and `usageLimit`. A `softLimit` of 0 is not set. Then `usage`, with `includeDeleted: true` as the Railway CLI does, gives the totals of each `UsageKind`.
+
+### Incident banner
+
+- An incident is open when its status is not `RESOLVED`. `PlatformIncident.link` opens only an HTTPS page on railway.com, or else `https://status.railway.com`.
+- `IncidentCheck.isDue` permits one request in 5 minutes. A failed check keeps the last answer and shows no error. VoiceOver says each incident one time.
+- Topway does not use the JSON of the status page, because it is about 570 KB for each request and has no schema.
+
+## Confirmations
+
+Each action that changes data has a `HarmLevel`. [AGENTS.md](AGENTS.md#confirmations) lists the levels and the actions. A production environment shows a red label in the dialog.
 
 To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows `GlassConfirmationDialog` above all screens, with `destructiveConfirmation(...)`. Do not use `alert` or `confirmationDialog`, because they close the menu bar window. Return confirms only an action that is not destructive.
 
