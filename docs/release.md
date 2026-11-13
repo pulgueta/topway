@@ -42,7 +42,7 @@ The app declares the same in `topway/PrivacyInfo.xcprivacy`. The export complian
 
 Users see the name of the Railway OAuth app on the Railway consent page. The development app is "Topway Development".
 
-1. Before the App Store release, rename the OAuth app to "Topway", or make a production OAuth app with the name "Topway". Use the type **Native (Public)** and the redirect URI `topway://oauth/callback`. Railway shows each OAuth app in **Workspace settings > Developer**.
+1. Before the App Store release, rename the OAuth app to "Topway", or make a production OAuth app with the name "Topway". Use the type **Native (Public)** and the redirect URI `https://topway.pulgueta.com/oauth/callback`. Railway shows each OAuth app in **Workspace settings > Developer**.
 2. On the Mac that makes the archive, put the client ID of the production app in `Config/OAuth.local.xcconfig`. Never commit it.
 3. After the archive, check that the app has a client ID. The command shows only the number of characters, and it must be more than 0:
 
@@ -53,7 +53,12 @@ Users see the name of the Railway OAuth app on the Railway consent page. The dev
 
    An archive with no client ID offers only sample data.
 
-4. **Blocker for the App Store release (not for TestFlight):** change the callback from `topway://oauth/callback` to an HTTPS callback. Any app on the same Mac can use the `topway` scheme and the public client ID, so a malicious local app can show the real Topway consent page and get the tokens (RFC 8252, section 8.6). An HTTPS callback through Associated Domains goes only to an app with the Topway signing identity. It needs a domain with an `apple-app-site-association` file, the redirect URI `https://<domain>/oauth/callback` in Railway, the Associated Domains entitlement, and `ASWebAuthenticationSession.Callback.https(host:path:)`.
+4. The callback is `https://topway.pulgueta.com/oauth/callback`. `ASWebAuthenticationSession` gets it through Associated Domains (`webcredentials:topway.pulgueta.com`), so only an app with the Topway signature gets the code. Another app on the same Mac cannot get it with the public client ID (RFC 8252, section 8.6). Keep these items in place, or the sign-in stops:
+   - The file `https://topway.pulgueta.com/.well-known/apple-app-site-association`. It must name the app `7QNFW3929Z.com.pulgueta.topway` in `webcredentials` (the team ID and the bundle ID of the app). The server must send it as `application/json`, with no redirect.
+   - The redirect URI `https://topway.pulgueta.com/oauth/callback` in the Railway OAuth app.
+   - The Associated Domains capability on the App ID. Xcode automatic signing adds it from `topway/topway.entitlements`.
+
+   Builds before the HTTPS callback use the redirect URI `topway://oauth/callback`. When no user or tester has such a build, remove that redirect URI from the Railway OAuth app.
 
 ## For each upload
 
