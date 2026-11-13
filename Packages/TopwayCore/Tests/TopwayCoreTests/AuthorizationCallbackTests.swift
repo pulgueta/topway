@@ -60,6 +60,9 @@ struct AuthorizationCallbackTests {
             "https://topway.pulgueta.com/oauth/callback/?code=abc123&state=s1",
             "https://topway.pulgueta.com:8443/oauth/callback?code=abc123&state=s1",
             "https://user@topway.pulgueta.com/oauth/callback?code=abc123&state=s1",
+            "https://topway.pulgueta.com:/oauth/callback?code=abc123&state=s1",
+            "https://topway.pulgueta.com/oauth/callback?code=abc123&state=s1#other",
+            "https://topway.pulgueta.com/oauth/callback#?code=abc123&state=s1",
         ])
     func otherAddress(text: String) throws {
         let callback = try url(text)
