@@ -1,0 +1,106 @@
+# Make a release of the direct build when a version tag (v*) is pushed:
+# a notarized DMG in a GitHub release, and a pull request that adds it to the appcast.
+# docs/direct-distribution.md lists the secrets.
+name: Release the direct build
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Import the Developer ID certificate and the profile
+        env:
+          DEVELOPER_ID_CERT_P12_BASE64: ${{ secrets.DEVELOPER_ID_CERT_P12_BASE64 }}
+          DEVELOPER_ID_CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+          DEVELOPER_ID_PROFILE_BASE64: ${{ secrets.DEVELOPER_ID_PROFILE_BASE64 }}
+        run: |
+          umask 077
+          keychain="$RUNNER_TEMP/release.keychain-db"
+          certificate="$RUNNER_TEMP/developer_id.p12"
+          profile="$RUNNER_TEMP/developer_id.provisionprofile"
+          printf '%s' "$DEVELOPER_ID_CERT_P12_BASE64" | base64 --decode > "$certificate"
+          printf '%s' "$DEVELOPER_ID_PROFILE_BASE64" | base64 --decode > "$profile"
+
+          keychain_password=$(openssl rand -base64 24)
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$certificate" -P "$DEVELOPER_ID_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain" > /dev/null
+          security list-keychain -d user -s "$keychain"
+          rm -f "$certificate"
+
+          security cms -D -i "$profile" > "$RUNNER_TEMP/profile.plist"
+          uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")
+          name=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")
+          profiles_dir="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$profiles_dir"
+          mv "$profile" "$profiles_dir/$uuid.provisionprofile"
+          rm -f "$RUNNER_TEMP/profile.plist"
+          echo "PROFILE_PATH=$profiles_dir/$uuid.provisionprofile" >> "$GITHUB_ENV"
+          echo "DEVELOPER_ID_PROFILE_NAME=$name" >> "$GITHUB_ENV"
+
+      - name: Write the OAuth client ID and the keys
+        env:
+          RAILWAY_OAUTH_CLIENT_ID: ${{ secrets.RAILWAY_OAUTH_CLIENT_ID }}
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+          SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+        run: |
+          umask 077
+          printf 'RAILWAY_OAUTH_CLIENT_ID = %s\n' "$RAILWAY_OAUTH_CLIENT_ID" > Config/OAuth.local.xcconfig
+          printf '%s' "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/notary_key.p8"
+          printf '%s' "$SPARKLE_PRIVATE_ED_KEY" > "$RUNNER_TEMP/sparkle_private_key"
+          chmod 600 Config/OAuth.local.xcconfig "$RUNNER_TEMP/notary_key.p8" "$RUNNER_TEMP/sparkle_private_key"
+          echo "NOTARY_KEY_PATH=$RUNNER_TEMP/notary_key.p8" >> "$GITHUB_ENV"
+          echo "SPARKLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/sparkle_private_key" >> "$GITHUB_ENV"
+
+      - name: Build, notarize and add to the appcast
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: scripts/release-direct.sh "$GITHUB_REF_NAME"
+
+      - name: Make the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" "build/release/Topway-$version.dmg" \
+            --verify-tag --title "Topway $version" --generate-notes
+
+      - name: Open the appcast pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="release/$GITHUB_REF_NAME"
+          title="chore(web): add $GITHUB_REF_NAME to the appcast"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$branch"
+          git add web/public/appcast.xml
+          git commit --message "$title"
+          gh auth setup-git --hostname github.com
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title "$title" --body \
+            "This pull request adds $GITHUB_REF_NAME to the Sparkle appcast. The GitHub release $GITHUB_REF_NAME has the DMG. Merge this pull request, then deploy the website. Then the direct build finds the update."
+
+      - name: Delete the keychain and the key files
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/release.keychain-db" 2> /dev/null || true
+          rm -f "$RUNNER_TEMP/developer_id.p12" "$RUNNER_TEMP/developer_id.provisionprofile" \
+            "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP/notary_key.p8" "$RUNNER_TEMP/sparkle_private_key" \
+            Config/OAuth.local.xcconfig
+          if [ -n "${PROFILE_PATH:-}" ]; then rm -f "$PROFILE_PATH"; fi
