@@ -105,4 +105,63 @@ struct KeychainMigrationTests {
         #expect(dataProtection.items.isEmpty)
         #expect(fileBased.reads.count == 1)
     }
+
+    @Test("A refused read of the data protection keychain stops the move and changes nothing")
+    func refusedDataProtectionRead() {
+        let fileBased = FakeKeychain([account: "earlier"])
+        let dataProtection = FakeKeychain([account: "current"])
+        dataProtection.refusesRead = true
+
+        let isDone = KeychainMigration(fileBased: fileBased, dataProtection: dataProtection)
+            .move(account, isDone: false)
+
+        #expect(!isDone)
+        #expect(dataProtection.items == [account: "current"])
+        #expect(fileBased.reads.isEmpty)
+        #expect(fileBased.deletes.isEmpty)
+    }
+
+    @Test(
+        "A refused read of the file-based item does not end the move, so the next launch moves it"
+    )
+    func refusedFileBasedRead() {
+        let fileBased = FakeKeychain([account: "earlier"])
+        fileBased.refusesRead = true
+        let dataProtection = FakeKeychain()
+        let migration = KeychainMigration(fileBased: fileBased, dataProtection: dataProtection)
+
+        let isDone = migration.move(account, isDone: false)
+
+        #expect(!isDone)
+        #expect(dataProtection.items.isEmpty)
+        #expect(fileBased.deletes.isEmpty)
+
+        fileBased.refusesRead = false
+        let isDoneAtNextLaunch = migration.move(account, isDone: isDone)
+
+        #expect(isDoneAtNextLaunch)
+        #expect(dataProtection.items == [account: "earlier"])
+    }
+
+    @Test("After a failed move, a sign-in and a sign-out do not bring back the file-based item")
+    func newSignInReplacesFileBasedItem() {
+        let fileBased = FakeKeychain([account: "earlier"])
+        fileBased.refusesDelete = true
+        let dataProtection = FakeKeychain()
+        dataProtection.refusesSave = true
+        let migration = KeychainMigration(fileBased: fileBased, dataProtection: dataProtection)
+
+        var isDone = migration.move(account, isDone: false)
+        // As `AppState` does: a saved sign-in replaces the file-based item, so the move is done.
+        dataProtection.refusesSave = false
+        if dataProtection.save("new", for: account) {
+            isDone = true
+        }
+        dataProtection.items[account] = nil
+        let isDoneAtNextLaunch = migration.move(account, isDone: isDone)
+
+        #expect(isDoneAtNextLaunch)
+        #expect(dataProtection.items.isEmpty)
+        #expect(fileBased.reads.count == 1)
+    }
 }

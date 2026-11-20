@@ -1,9 +1,8 @@
 /// One keychain that keeps secret strings by account. The one-time move in
 /// `KeychainMigration` uses two: the file-based keychain and the data protection keychain.
 protocol KeychainItemStore {
-    /// Returns the secret for `account`, or `nil` when it is absent or the keychain refuses
-    /// the read.
-    func read(_ account: String) -> String?
+    /// Reads the secret for `account`. A refused read is not the same as an absent item.
+    func read(_ account: String) -> KeychainRead
 
     /// Stores the secret for `account`, or replaces it.
     /// - Returns: `false` when the keychain refuses the write.

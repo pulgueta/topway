@@ -53,6 +53,8 @@ class AppState {
     private static let tokensKey = "railwayOAuth"
     /// The `UserDefaults` key that is `true` after the sign-in of earlier builds moved to the
     /// data protection keychain. Then Topway never reads the file-based keychain again.
+    /// A saved sign-in and a sign-out also set it: they replace the earlier sign-in, so a
+    /// later move must not bring it back.
     private static let keychainMoveKey = "keychainMoveDone"
     /// The Keychain item and the `UserDefaults` key of the API token of earlier builds.
     private static let legacyTokenKey = "railwayToken"
@@ -589,6 +591,7 @@ class AppState {
     @discardableResult
     func signOut() -> Bool {
         guard KeychainStore.delete(Self.tokensKey) else { return false }
+        UserDefaults.standard.set(true, forKey: Self.keychainMoveKey)
         endSession()
         return true
     }
@@ -615,8 +618,11 @@ class AppState {
 
     /// Writes the tokens to the Keychain as one item.
     private func save(_ newTokens: OAuthTokens) -> Bool {
-        guard let value = newTokens.keychainValue else { return false }
-        return KeychainStore.save(value, for: Self.tokensKey)
+        guard let value = newTokens.keychainValue,
+            KeychainStore.save(value, for: Self.tokensKey)
+        else { return false }
+        UserDefaults.standard.set(true, forKey: Self.keychainMoveKey)
+        return true
     }
 
     /// Runs one request with an access token that is not expired. Sample mode has no token.

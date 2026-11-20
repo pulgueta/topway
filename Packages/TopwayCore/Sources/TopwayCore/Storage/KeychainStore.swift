@@ -21,9 +21,10 @@ public enum KeychainStore {
         return dataProtection.save(value, for: account)
     }
 
-    /// Returns the secret for `account`, or `nil` if absent.
+    /// Returns the secret for `account`, or `nil` if absent or the keychain refuses the read.
     public static func read(_ account: String) -> String? {
-        dataProtection.read(account)
+        guard case .found(let value) = dataProtection.read(account) else { return nil }
+        return value
     }
 
     /// Deletes the secret for `account`. Succeeds even if nothing was stored.

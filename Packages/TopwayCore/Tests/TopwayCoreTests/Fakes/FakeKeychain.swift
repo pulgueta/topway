@@ -1,9 +1,11 @@
 @testable import TopwayCore
 
-/// A keychain in memory. It records the reads and the deletes, and it can refuse a save or a
-/// delete, as a real keychain can.
+/// A keychain in memory. It records the reads and the deletes, and it can refuse a read, a
+/// save or a delete, as a real keychain can.
 final class FakeKeychain: KeychainItemStore {
     var items: [String: String]
+    /// A locked keychain, or a user who denies the access, refuses a read.
+    var refusesRead = false
     var refusesSave = false
     /// A file-based item that another code signature made refuses a delete.
     var refusesDelete = false
@@ -14,9 +16,10 @@ final class FakeKeychain: KeychainItemStore {
         self.items = items
     }
 
-    func read(_ account: String) -> String? {
+    func read(_ account: String) -> KeychainRead {
         reads.append(account)
-        return items[account]
+        guard !refusesRead else { return .refused }
+        return items[account].map(KeychainRead.found) ?? .notFound
     }
 
     func save(_ value: String, for account: String) -> Bool {

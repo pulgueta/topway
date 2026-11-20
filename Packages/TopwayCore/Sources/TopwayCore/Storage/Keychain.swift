@@ -11,16 +11,21 @@ struct Keychain: KeychainItemStore {
     /// the access list of an item follows the code signature that made it.
     let usesDataProtectionKeychain: Bool
 
-    func read(_ account: String) -> String? {
+    func read(_ account: String) -> KeychainRead {
         var search = query(for: account)
         search[kSecReturnData as String] = true
         search[kSecMatchLimit as String] = kSecMatchLimitOne
         var result: AnyObject?
-        guard SecItemCopyMatching(search as CFDictionary, &result) == errSecSuccess,
-            let data = result as? Data,
-            let value = String(data: data, encoding: .utf8)
-        else { return nil }
-        return value
+        switch SecItemCopyMatching(search as CFDictionary, &result) {
+        case errSecSuccess:
+            guard let data = result as? Data, let value = String(data: data, encoding: .utf8)
+            else { return .refused }
+            return .found(value)
+        case errSecItemNotFound:
+            return .notFound
+        default:
+            return .refused
+        }
     }
 
     /// Changes an item in place when it is there, and adds it when it is not. Thus the secret
