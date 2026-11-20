@@ -1,0 +1,30 @@
+---
+// A stage with a copy of the app. The copy is a picture made of HTML, so it is hidden from
+// assistive technologies. The caption says that it is an illustration and what it shows.
+interface Props {
+  /** What the picture shows, for screen readers. */
+  description: string;
+  /** Classes for the stage, for the layout of each section. */
+  stageClass?: string;
+  class?: string;
+}
+
+const { description, stageClass, class: className } = Astro.props;
+---
+
+<figure class:list={["copy-figure", className]}>
+  <div class:list={["stage", stageClass]} aria-hidden="true">
+    <slot />
+  </div>
+  <figcaption class="figure-caption">
+    Illustration with sample data.
+    <span class="visually-hidden">{description}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .copy-figure {
+    margin: 0;
+    min-width: 0;
+  }
+</style>

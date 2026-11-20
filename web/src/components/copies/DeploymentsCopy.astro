@@ -1,0 +1,74 @@
+---
+import "../../styles/app-copy.css";
+import Icon from "../Icon.astro";
+
+// A copy of the Deployments tab of the sample service "web" in the sample project
+// "storefront". The statuses and the ages come from the sample data of the app. The dates are
+// 2, 24 and 25 hours before 9:41, the time in the copy of the menu bar.
+const deployments = [
+  { status: "Running", color: "var(--app-green)", date: "11/20/26, 7:41 AM" },
+  { status: "Removed", color: "var(--app-gray)", date: "11/19/26, 9:41 AM" },
+  { status: "Failed", color: "var(--app-red)", date: "11/19/26, 8:41 AM" },
+];
+---
+
+<div class="app-window">
+  <div class="app-bar">
+    <span class="app-glass"><Icon name="caretLeft" />Projects</span>
+    <span class="app-title deployments-title">web</span>
+    <span class="app-glass">Manage<Icon name="caretDown" /></span>
+  </div>
+  <div class="app-context">
+    <div class="app-context-line">
+      storefront
+      <span class="app-bordered">production<Icon name="caretUpDown" /></span>
+    </div>
+    <div class="app-segmented">
+      <span>Variables</span>
+      <span class="is-selected">Deployments</span>
+      <span>Metrics</span>
+    </div>
+  </div>
+  {
+    deployments.map((deployment) => (
+      <div class="app-deployment">
+        <div class="app-deployment-line">
+          <span class="app-status-dot" style={`background: ${deployment.color}`} />
+          <strong class="deployment-status">{deployment.status}</strong>
+          <span class="app-date">{deployment.date}</span>
+        </div>
+        <div class="app-actions">
+          <span class="app-bordered">View logs</span>
+          <span class="app-bordered">Restart</span>
+          <span class="app-bordered">
+            Manage
+            <Icon name="caretDown" />
+          </span>
+        </div>
+      </div>
+    ))
+  }
+  <div class="app-bottom">
+    <span class="app-glass">Refresh</span>
+    <span class="app-glass redeploy">Redeploy</span>
+  </div>
+</div>
+
+<style>
+  .deployments-title {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .deployment-status {
+    color: var(--app-label);
+    font-weight: 500;
+  }
+
+  .app-bottom .redeploy {
+    margin-left: 0;
+    background: var(--app-prominent);
+    box-shadow: none;
+    color: #fff;
+  }
+</style>

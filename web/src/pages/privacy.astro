@@ -1,0 +1,99 @@
+---
+// The privacy policy has one source: PRIVACY.md at the root of the repository. The build
+// renders it here, so the website and the repository always show the same text.
+import { Content } from "../../../PRIVACY.md";
+import { privacySourceUrl } from "../config";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Privacy policy | Topway"
+  description="Topway collects no data. Read what Topway keeps on your Mac and which servers it connects to."
+>
+  <div class="container">
+    <article class="prose">
+      <Content />
+      <p class="source">
+        This page shows <a href={privacySourceUrl}>PRIVACY.md in the Topway repository</a>.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .prose {
+    max-width: 44rem;
+    padding-top: clamp(1.5rem, 1rem + 3vw, 4rem);
+  }
+
+  .prose :global(h1) {
+    margin-bottom: 1rem;
+  }
+
+  .prose :global(h2) {
+    margin-top: 3rem;
+    font-size: clamp(1.5rem, 1.35rem + 0.6vw, 1.875rem);
+  }
+
+  .prose :global(h3) {
+    margin-top: 2rem;
+  }
+
+  .prose :global(h2 + *),
+  .prose :global(h3 + *) {
+    margin-top: 0.875rem;
+  }
+
+  .prose :global(p),
+  .prose :global(ul),
+  .prose :global(table) {
+    margin-top: 1rem;
+  }
+
+  .prose :global(ul) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    padding-left: 1.25rem;
+  }
+
+  .prose :global(:is(h2, h3)[id]) {
+    scroll-margin-top: 1.5rem;
+  }
+
+  /* The table has short cells, so it wraps on a narrow screen and the page does not scroll
+     to the side. */
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--step-small);
+  }
+
+  .prose :global(th),
+  .prose :global(td) {
+    padding: 0.625rem 0.75rem 0.625rem 0;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  /* A code word, such as UserDefaults, does not break in the middle. */
+  .prose :global(td code) {
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
+  .prose :global(th) {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .source {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: var(--step-small);
+  }
+</style>

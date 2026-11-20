@@ -1,0 +1,75 @@
+---
+import "../../styles/app-copy.css";
+import Icon from "../Icon.astro";
+
+// A copy of the Variables tab of the sample service "web". The names are the sample variables
+// of the app (SampleDataSource+Seed.swift). The values are hidden, as in the app.
+const variables = ["API_URL", "NODE_ENV", "PORT"];
+---
+
+<div class="app-window">
+  <div class="app-bar">
+    <span class="app-glass"><Icon name="caretLeft" />Projects</span>
+    <span class="app-title variables-title">web</span>
+    <span class="app-glass">Manage<Icon name="caretDown" /></span>
+  </div>
+  <div class="app-context">
+    <div class="app-context-line">
+      storefront
+      <span class="app-bordered">production<Icon name="caretUpDown" /></span>
+    </div>
+    <div class="app-segmented">
+      <span class="is-selected">Variables</span>
+      <span>Deployments</span>
+      <span>Metrics</span>
+    </div>
+  </div>
+  {
+    variables.map((name) => (
+      <div class="app-deployment">
+        <span class="variable-name">{name}</span>
+        <div class="app-deployment-line">
+          <span class="variable-value">••••••••••••</span>
+          <span class="app-actions variable-actions">
+            <span class="app-bordered">Show</span>
+            <span class="app-bordered">Copy</span>
+            <span class="app-bordered">Edit</span>
+          </span>
+        </div>
+      </div>
+    ))
+  }
+  <div class="app-bottom">
+    <span class="app-glass">Copy all</span>
+    <span class="app-glass add-variable">Add variable</span>
+  </div>
+</div>
+
+<style>
+  .variables-title {
+    margin-inline: auto;
+  }
+
+  .variable-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .variable-value {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--app-secondary);
+  }
+
+  .variable-actions {
+    margin-left: auto;
+  }
+
+  .app-bottom .add-variable {
+    margin-left: 0;
+    background: var(--app-prominent);
+    box-shadow: none;
+    color: #fff;
+  }
+</style>

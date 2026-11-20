@@ -75,3 +75,9 @@ odd/
 
 # Local build settings with values that stay out of git
 Config/*.local.xcconfig
+
+# Website (web/): dependencies and build output
+web/node_modules
+web/dist
+web/.astro
+web/.wrangler

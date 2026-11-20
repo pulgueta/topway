@@ -1,0 +1,67 @@
+---
+import "../../styles/app-copy.css";
+import Icon from "../Icon.astro";
+
+// A copy of the live deploy log of the sample deployment. The lines are the sample deploy log
+// of the app (SampleDataSource+Seed.swift).
+const lines = [
+  { level: "info", text: "Starting server on port 3000" },
+  { level: "info", text: "Connected to postgres.railway.internal:5432" },
+  { level: "info", text: "GET /health 200 2ms" },
+  { level: "warn", text: "Slow query: 820ms on orders" },
+  { level: "info", text: "GET /api/products 200 34ms" },
+  { level: "error", text: "Payment webhook failed: timeout after 10s" },
+  { level: "info", text: "GET /health 200 1ms" },
+  { level: "info", text: "GET /api/cart 200 12ms" },
+  { level: "warn", text: "Cache miss rate above 40%" },
+  { level: "error", text: "Request to inventory failed: connection reset" },
+];
+---
+
+<div class="app-window">
+  <div class="app-bar">
+    <span class="app-glass"><Icon name="caretLeft" />Deployments</span>
+    <span class="app-title logs-title">Logs</span>
+    <span class="logs-spacer"></span>
+  </div>
+  <div class="app-context">
+    <div class="app-context-line">Running · 11/20/26, 7:41 AM</div>
+    <div class="app-segmented logs-tabs">
+      <span>Build</span>
+      <span class="is-selected">Deploy</span>
+    </div>
+  </div>
+  <div class="app-log">
+    {
+      lines.map((line) => (
+        <div class:list={["app-log-line", `is-${line.level}`]}>
+          <span class="app-log-level">{line.level}</span>
+          <span>{line.text}</span>
+        </div>
+      ))
+    }
+  </div>
+  <div class="app-bottom">
+    <span class="app-live"><span class="app-status-dot live-dot"></span>Live</span>
+    <span class="app-glass">Copy logs</span>
+  </div>
+</div>
+
+<style>
+  .logs-title {
+    margin-inline: auto;
+  }
+
+  /* The same width as the back button, so the title is in the center. */
+  .logs-spacer {
+    width: 104px;
+  }
+
+  .logs-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .live-dot {
+    background: var(--app-green);
+  }
+</style>
