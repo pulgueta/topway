@@ -4,9 +4,9 @@
 // check stops when dist/ has no sign-in callback files.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  // TODO(owner): Make sure that this is the name of the Worker that serves
-  // topway.pulgueta.com now. A different name makes a second Worker.
-  "name": "topway",
+  // The Worker that serves topway.pulgueta.com (checked in the Cloudflare API on 2026-11-20).
+  // A different name makes a second Worker.
+  "name": "topway-assets",
   "compatibility_date": "2026-11-19",
   "assets": {
     "directory": "./dist",
@@ -19,7 +19,6 @@
     // read files that exist, so this choice does not change them.
     "not_found_handling": "404-page",
   },
-  // TODO(owner): Make sure that this agrees with the domain of the Worker in the Cloudflare
-  // dashboard before the first deploy. Wrangler applies the routes in this file.
+  // The custom domain of the Worker topway-assets. Wrangler applies the routes in this file.
   "routes": [{ "pattern": "topway.pulgueta.com", "custom_domain": true }],
 }
