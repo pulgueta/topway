@@ -6,4 +6,4 @@
 // The public EdDSA key of Sparkle (from generate_keys). It goes into the Info.plist key
 // SUPublicEDKey. A public key is not a secret, so it can be in this file. Never put the
 // private key in this repository.
-SPARKLE_PUBLIC_ED_KEY =
+SPARKLE_PUBLIC_ED_KEY = hjgyklWpRQpcC1eBFwxvGs5FEf38s7mPFgnfHKmtq7s=
