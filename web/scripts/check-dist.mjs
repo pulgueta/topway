@@ -69,13 +69,16 @@ if (check(callback !== null, `dist/${CALLBACK_PATH} is missing.`)) {
   );
 }
 
-// 4. The Sparkle appcast, when the source has one. The release workflow writes it.
+// 4. The Sparkle appcast is a copy of the source. The direct build reads /appcast.xml for
+// updates, so a deploy with no appcast stops all updates. With no release, the source is a
+// channel with no items. The release workflow adds the items.
 const appcastSource = read(source, APPCAST_PATH);
-if (appcastSource !== null) {
-  const appcast = read(dist, APPCAST_PATH);
+const appcast = read(dist, APPCAST_PATH);
+const appcastSourceFound = check(appcastSource !== null, `public/${APPCAST_PATH} is missing.`);
+if (check(appcast !== null, `dist/${APPCAST_PATH} is missing.`) && appcastSourceFound) {
   check(
-    appcast !== null && appcast.equals(appcastSource),
-    `dist/${APPCAST_PATH} is missing or is not the same as public/${APPCAST_PATH}.`,
+    appcast.equals(appcastSource),
+    `dist/${APPCAST_PATH} is not the same as public/${APPCAST_PATH}.`,
   );
 }
 
@@ -97,7 +100,6 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-const appcastNote = appcastSource === null ? "" : ", the appcast";
 console.log(
-  `OK: dist has the Associated Domains file, its _headers rule, the sign-in callback page${appcastNote} and the 404 page.`,
+  "OK: dist has the Associated Domains file, its _headers rule, the sign-in callback page, the appcast and the 404 page.",
 );

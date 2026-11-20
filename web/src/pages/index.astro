@@ -271,8 +271,8 @@ const features = [
       clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
   }
 
-  /* The stage goes to the trailing edge of the window, as in the hero, and cuts the last
-     copy there. */
+  /* The stage goes to the trailing edge of the window, as in the hero. On a wide screen, the
+     copies are in one row, and the stage cuts the last copy there. */
   .bleed {
     display: grid;
     grid-template-columns: var(--gutter) minmax(0, 1fr);
@@ -300,6 +300,30 @@ const features = [
 
   .bleed :global(.actions-stage > *) {
     flex: none;
+  }
+
+  /* On a narrower screen, the copies go in two columns or in one column, and each copy is
+     fully visible. In a column that is narrower than the window of the app (360 points), the
+     copy is narrower too. */
+  @media (width < 60rem) {
+    .bleed :global(.actions-stage) {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+      padding-right: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+    }
+
+    .bleed :global(.actions-stage > *) {
+      width: auto;
+      max-width: 360px;
+      min-width: 0;
+    }
+  }
+
+  /* On a phone, a smaller padding keeps each line of the copies in the window. */
+  @media (max-width: 26rem) {
+    .bleed :global(.actions-stage) {
+      padding: 1rem;
+    }
   }
 
   .features {
