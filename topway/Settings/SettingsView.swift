@@ -35,6 +35,11 @@ struct SettingsView: View {
                 LaunchAtLoginToggle()
             }
 
+            #if DIRECT_DISTRIBUTION
+                // The App Store updates the App Store build, so only the direct build has this.
+                UpdatesSettingsSection()
+            #endif
+
             HelpSettingsSection()
         }
         .formStyle(.grouped)
@@ -45,4 +50,7 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environment(AppState())
+        #if DIRECT_DISTRIBUTION
+            .environment(AppUpdater(startsUpdater: false))
+        #endif
 }

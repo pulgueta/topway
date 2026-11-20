@@ -8,11 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		2F2455422F18BCDD0081322D /* TopwayCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2F2455412F18BCDD0081322D /* TopwayCore */; };
+		2FD1EC102F18BCDD0081322D /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 2FD1EC0E2F18BCDD0081322D /* Sparkle */; };
+		2FD1EC112F18BCDD0081322D /* TopwayCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2FD1EC0F2F18BCDD0081322D /* TopwayCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2F2455312F18BCDC0081322D /* topway.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = topway.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F7A11C02F18BCDD0081322D /* OAuth.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = OAuth.xcconfig; sourceTree = "<group>"; };
+		2FD1EC052F18BCDD0081322D /* topway-direct.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "topway-direct.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2FD1EC0C2F18BCDD0081322D /* Direct.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Direct.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -23,6 +27,20 @@
 			);
 			target = 2F2455302F18BCDC0081322D /* topway */;
 		};
+		2FD1EC0A2F18BCDD0081322D /* Exceptions for "topway" folder in "topway-direct" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2FD1EC012F18BCDD0081322D /* topway-direct */;
+		};
+		2FD1EC0B2F18BCDD0081322D /* Exceptions for "topway-direct" folder in "topway-direct" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2FD1EC012F18BCDD0081322D /* topway-direct */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -30,8 +48,17 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				2F7A11C22F18BCDD0081322D /* Exceptions for "topway" folder in "topway" target */,
+				2FD1EC0A2F18BCDD0081322D /* Exceptions for "topway" folder in "topway-direct" target */,
 			);
 			path = topway;
+			sourceTree = "<group>";
+		};
+		2FD1EC092F18BCDD0081322D /* topway-direct */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2FD1EC0B2F18BCDD0081322D /* Exceptions for "topway-direct" folder in "topway-direct" target */,
+			);
+			path = "topway-direct";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -45,6 +72,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2FD1EC032F18BCDD0081322D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2FD1EC112F18BCDD0081322D /* TopwayCore in Frameworks */,
+				2FD1EC102F18BCDD0081322D /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -53,6 +89,7 @@
 			children = (
 				2F7A11C12F18BCDD0081322D /* Config */,
 				2F2455332F18BCDC0081322D /* topway */,
+				2FD1EC092F18BCDD0081322D /* topway-direct */,
 				2F2455322F18BCDC0081322D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,6 +98,7 @@
 			isa = PBXGroup;
 			children = (
 				2F2455312F18BCDC0081322D /* topway.app */,
+				2FD1EC052F18BCDD0081322D /* topway-direct.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,6 +106,7 @@
 		2F7A11C12F18BCDD0081322D /* Config */ = {
 			isa = PBXGroup;
 			children = (
+				2FD1EC0C2F18BCDD0081322D /* Direct.xcconfig */,
 				2F7A11C02F18BCDD0081322D /* OAuth.xcconfig */,
 			);
 			path = Config;
@@ -99,6 +138,31 @@
 			productReference = 2F2455312F18BCDC0081322D /* topway.app */;
 			productType = "com.apple.product-type.application";
 		};
+		2FD1EC012F18BCDD0081322D /* topway-direct */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2FD1EC062F18BCDD0081322D /* Build configuration list for PBXNativeTarget "topway-direct" */;
+			buildPhases = (
+				2FD1EC022F18BCDD0081322D /* Sources */,
+				2FD1EC032F18BCDD0081322D /* Frameworks */,
+				2FD1EC042F18BCDD0081322D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2F2455332F18BCDC0081322D /* topway */,
+				2FD1EC092F18BCDD0081322D /* topway-direct */,
+			);
+			name = "topway-direct";
+			packageProductDependencies = (
+				2FD1EC0F2F18BCDD0081322D /* TopwayCore */,
+				2FD1EC0E2F18BCDD0081322D /* Sparkle */,
+			);
+			productName = "topway-direct";
+			productReference = 2FD1EC052F18BCDD0081322D /* topway-direct.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -111,6 +175,9 @@
 				TargetAttributes = {
 					2F2455302F18BCDC0081322D = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					2FD1EC012F18BCDD0081322D = {
+						CreatedOnToolsVersion = 27.2;
 					};
 				};
 			};
@@ -125,6 +192,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2F2455402F18BCDD0081322D /* XCLocalSwiftPackageReference "Packages/TopwayCore" */,
+				2FD1EC0D2F18BCDD0081322D /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2F2455322F18BCDC0081322D /* Products */;
@@ -132,6 +200,7 @@
 			projectRoot = "";
 			targets = (
 				2F2455302F18BCDC0081322D /* topway */,
+				2FD1EC012F18BCDD0081322D /* topway-direct */,
 			);
 		};
 /* End PBXProject section */
@@ -144,10 +213,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2FD1EC042F18BCDD0081322D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		2F24552D2F18BCDC0081322D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2FD1EC022F18BCDD0081322D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -365,6 +448,96 @@
 			};
 			name = Release;
 		};
+		2FD1EC072F18BCDD0081322D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2FD1EC0C2F18BCDD0081322D /* Direct.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Appicon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = "topway-direct/topway-direct.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 7QNFW3929Z;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "topway-direct/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Topway;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Andrés Rodríguez. MIT License.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pulgueta.topway;
+				PRODUCT_MODULE_NAME = topway_direct;
+				PRODUCT_NAME = topway;
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DIRECT_DISTRIBUTION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_NAME = "topway-direct.app";
+			};
+			name = Debug;
+		};
+		2FD1EC082F18BCDD0081322D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2FD1EC0C2F18BCDD0081322D /* Direct.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Appicon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = "topway-direct/topway-direct.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 7QNFW3929Z;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "topway-direct/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Topway;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Andrés Rodríguez. MIT License.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pulgueta.topway;
+				PRODUCT_MODULE_NAME = topway_direct;
+				PRODUCT_NAME = topway;
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DIRECT_DISTRIBUTION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_NAME = "topway-direct.app";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -386,6 +559,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		2FD1EC062F18BCDD0081322D /* Build configuration list for PBXNativeTarget "topway-direct" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2FD1EC072F18BCDD0081322D /* Debug */,
+				2FD1EC082F18BCDD0081322D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -395,8 +577,28 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		2FD1EC0D2F18BCDD0081322D /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		2F2455412F18BCDD0081322D /* TopwayCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TopwayCore;
+		};
+		2FD1EC0E2F18BCDD0081322D /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2FD1EC0D2F18BCDD0081322D /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+		2FD1EC0F2F18BCDD0081322D /* TopwayCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TopwayCore;
 		};
