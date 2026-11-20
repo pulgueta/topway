@@ -1,0 +1,58 @@
+---
+// Phosphor icons (MIT), put into the HTML at build time. The page loads no icon font or file.
+// The copies of the app use them in place of SF Symbols, which Apple licenses only for apps.
+import arrowsClockwise from "@phosphor-icons/core/assets/bold/arrows-clockwise-bold.svg?raw";
+import arrowClockwise from "@phosphor-icons/core/assets/bold/arrow-clockwise-bold.svg?raw";
+import batteryFull from "@phosphor-icons/core/assets/fill/battery-full-fill.svg?raw";
+import caretDown from "@phosphor-icons/core/assets/bold/caret-down-bold.svg?raw";
+import caretLeft from "@phosphor-icons/core/assets/bold/caret-left-bold.svg?raw";
+import caretRight from "@phosphor-icons/core/assets/bold/caret-right-bold.svg?raw";
+import caretUpDown from "@phosphor-icons/core/assets/bold/caret-up-down-bold.svg?raw";
+import chartBar from "@phosphor-icons/core/assets/regular/chart-bar.svg?raw";
+import cube from "@phosphor-icons/core/assets/regular/cube.svg?raw";
+import folder from "@phosphor-icons/core/assets/fill/folder-simple-fill.svg?raw";
+import gear from "@phosphor-icons/core/assets/fill/gear-six-fill.svg?raw";
+import plus from "@phosphor-icons/core/assets/bold/plus-bold.svg?raw";
+import testTube from "@phosphor-icons/core/assets/fill/test-tube-fill.svg?raw";
+import toggle from "@phosphor-icons/core/assets/fill/toggle-left-fill.svg?raw";
+import train from "@phosphor-icons/core/assets/fill/train-simple-fill.svg?raw";
+import warning from "@phosphor-icons/core/assets/fill/warning-fill.svg?raw";
+import wifi from "@phosphor-icons/core/assets/bold/wifi-high-bold.svg?raw";
+
+const icons = {
+  arrowsClockwise,
+  arrowClockwise,
+  batteryFull,
+  caretDown,
+  caretLeft,
+  caretRight,
+  caretUpDown,
+  chartBar,
+  cube,
+  folder,
+  gear,
+  plus,
+  testTube,
+  toggle,
+  train,
+  warning,
+  wifi,
+};
+
+export type IconName = keyof typeof icons;
+
+interface Props {
+  name: IconName;
+  class?: string;
+}
+
+const { name, class: className } = Astro.props;
+// The icons only decorate: each one is next to a text, or in a copy that is hidden from
+// assistive technologies.
+const svg = icons[name].replace(
+  "<svg ",
+  `<svg aria-hidden="true" focusable="false" class="icon${className ? ` ${className}` : ""}" `,
+);
+---
+
+<Fragment set:html={svg} />

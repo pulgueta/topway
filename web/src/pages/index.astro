@@ -1,0 +1,380 @@
+---
+import CopyFigure from "../components/CopyFigure.astro";
+import DeploymentsCopy from "../components/copies/DeploymentsCopy.astro";
+import LogsCopy from "../components/copies/LogsCopy.astro";
+import MenuBarStrip from "../components/copies/MenuBarStrip.astro";
+import ProjectsCopy from "../components/copies/ProjectsCopy.astro";
+import VariablesCopy from "../components/copies/VariablesCopy.astro";
+import { buildFromSourceUrl, repositoryUrl } from "../config";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// The facts come from "What you can do" in the README of the repository.
+const features = [
+  {
+    term: "Projects and services",
+    text: "See all projects and their services. Add a service from a GitHub repository or a Docker image, or add a PostgreSQL, MySQL, Redis or MongoDB database.",
+  },
+  {
+    term: "Environments, settings and domains",
+    text: "Create, copy and delete environments. Change the build command, the start command, the root directory and the healthcheck path. Add a Railway domain or a custom domain.",
+  },
+  {
+    term: "Variables",
+    text: "Show, copy and edit variables. Topway checks each reference to a variable of another service. Copy all gives you the variables in .env format.",
+  },
+  {
+    term: "Deployments and logs",
+    text: "Restart, redeploy, roll back, cancel or remove a deployment. Read the build and deploy logs live.",
+  },
+  {
+    term: "Metrics and cost",
+    text: "See CPU, memory and network charts for the last hour, 6 hours or 24 hours. See the cost of the current billing period, as Railway reports it.",
+  },
+  {
+    term: "Health and alerts",
+    text: "Get a notification when a deployment fails, a service crashes or a service recovers. You can mute a project.",
+  },
+  {
+    term: "Service links",
+    text: "See which services use the variables of other services.",
+  },
+  {
+    term: "Railway incidents",
+    text: "A banner tells you when Railway reports an open incident.",
+  },
+];
+---
+
+<BaseLayout
+  title="Topway: your Railway projects in the menu bar"
+  description="Topway is a macOS menu bar app for Railway. Check your services, read live logs and restart or roll back a deployment, with no browser tab open."
+>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-text enter">
+      <h1 id="hero-title">Your Railway projects in the menu bar</h1>
+      <p class="lead">
+        Check your services, read live logs and restart or roll back a deployment, with no browser
+        tab open.
+      </p>
+      <div class="button-row">
+        <a class="button button-prominent" href="/download">Get Topway</a>
+        <a class="button button-secondary" href={repositoryUrl}>View the source code</a>
+      </div>
+    </div>
+    <CopyFigure
+      class="hero-figure enter-fade"
+      stageClass="hero-stage"
+      description="The Topway icon in the macOS menu bar, and the Topway window below it. The window shows the sample projects storefront, analytics and docs with their services."
+    >
+      <div class="hero-menu-bar"><MenuBarStrip health="healthy" selected /></div>
+      <div class="hero-window"><ProjectsCopy /></div>
+    </CopyFigure>
+  </section>
+
+  <section class="section" aria-labelledby="health-title">
+    <div class="container split">
+      <div class="section-text">
+        <h2 id="health-title">See the health of your services</h2>
+        <p class="lead">The Topway icon in the menu bar shows the health of all your services.</p>
+        <p>
+          Turn on alerts in Settings to get a notification when a deployment fails, a service
+          crashes or a service recovers.
+        </p>
+      </div>
+      <CopyFigure
+        class="health-figure"
+        stageClass="health-stage"
+        description="The Topway icon in the menu bar in its three states: a tram when all services are healthy, two arrows when a build or a deploy is in progress, and a triangle when a service failed or crashed."
+      >
+        <MenuBarStrip health="healthy" caption="Healthy" />
+        <MenuBarStrip health="inProgress" caption="In progress" />
+        <MenuBarStrip health="failing" caption="Failed" />
+      </CopyFigure>
+    </div>
+  </section>
+
+  <section class="section bleed" aria-labelledby="actions-title">
+    <div class="section-text">
+      <h2 id="actions-title">Work from the menu bar</h2>
+      <p class="lead">Restart and redeploy services, edit variables and read live logs.</p>
+      <p>
+        Before a risky change, Topway asks you to confirm and tells you when the deployment is
+        ready.
+      </p>
+    </div>
+    <CopyFigure
+      class="actions-figure"
+      stageClass="actions-stage"
+      description="Three Topway windows for the sample service web. The first shows its deployments, and each deployment has View logs, Restart and Manage. The second shows the live deploy log of the running deployment. The third shows its variables with hidden values, and each variable has Show, Copy and Edit."
+    >
+      <DeploymentsCopy />
+      <LogsCopy />
+      <VariablesCopy />
+    </CopyFigure>
+  </section>
+
+  <section class="section" aria-labelledby="features-title">
+    <div class="container">
+      <div class="section-text">
+        <h2 id="features-title">What you can do</h2>
+        <p class="lead">
+          Each action has a text label. No action hides until you hover over a row.
+        </p>
+      </div>
+      <dl class="features">
+        {
+          features.map((feature) => (
+            <div>
+              <dt>{feature.term}</dt>
+              <dd>{feature.text}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" aria-label="About Topway">
+    <div class="container notes">
+      <div class="note">
+        <h2 class="note-title">Free to build</h2>
+        <p>
+          Topway is open source under the MIT license. You can build it from source, fork it and
+          own it, at no cost. If you buy Topway, you support the developer. Buying it is optional.
+        </p>
+        <p><a href={buildFromSourceUrl}>Read how to build Topway</a></p>
+      </div>
+      <div class="note">
+        <h2 class="note-title">Topway collects no data</h2>
+        <p>
+          Topway keeps your sign-in in the Keychain of your Mac. The App Store build connects only
+          to Railway. The direct build also checks this website for updates and downloads them
+          from GitHub.
+        </p>
+        <p><a href="/privacy">Read the privacy policy</a></p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: var(--gutter) minmax(0, 1fr) var(--pad);
+    row-gap: 2.5rem;
+    padding-top: clamp(1.5rem, 1rem + 3vw, 4rem);
+    overflow-x: clip;
+  }
+
+  .hero-text {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 34rem;
+  }
+
+  .hero-text .button-row {
+    margin-top: 0.75rem;
+  }
+
+  .hero :global(.hero-figure) {
+    grid-column: 2 / 4;
+    margin-right: calc(-1 * var(--pad));
+  }
+
+  .hero :global(.hero-figure .figure-caption) {
+    padding-right: var(--pad);
+  }
+
+  .hero :global(.hero-stage) {
+    height: 28rem;
+  }
+
+  .hero-menu-bar {
+    position: absolute;
+    top: 1.75rem;
+    right: 0;
+    left: 1.75rem;
+  }
+
+  /* The window opens below the Topway icon. On a narrow stage, the stage cuts its trailing
+     edge, as the welcome window cuts the copy of the menu bar. */
+  .hero-window {
+    position: absolute;
+    top: calc(1.75rem + 38px);
+    left: clamp(1.75rem, calc(100% - 380px), 100%);
+  }
+
+  @media (min-width: 60rem) {
+    .hero {
+      grid-template-columns: var(--gutter) minmax(0, 30rem) clamp(2.5rem, 5vw, 5rem) minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .hero :global(.hero-figure) {
+      grid-column: 4;
+      margin-right: 0;
+    }
+
+    .hero :global(.hero-stage) {
+      height: 34rem;
+    }
+
+    .hero-menu-bar {
+      top: 2.5rem;
+      left: 2.5rem;
+    }
+
+    .hero-window {
+      top: calc(2.5rem + 38px);
+      left: clamp(2.5rem, calc(100% - 400px), 100%);
+    }
+  }
+
+  .section {
+    margin-top: var(--section);
+  }
+
+  .section-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 40rem;
+  }
+
+  .split {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  @media (min-width: 60rem) {
+    .split {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: clamp(2.5rem, 5vw, 5rem);
+    }
+
+    /* The text comes first for a reader and on a narrow screen. On a wide screen, the picture
+       is on the leading side. */
+    .split :global(.health-figure) {
+      grid-column: 1;
+      grid-row: 1;
+    }
+  }
+
+  .split :global(.health-stage) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem) 0 clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem)
+      clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  }
+
+  /* The stage goes to the trailing edge of the window, as in the hero. On a wide screen, the
+     copies are in one row, and the stage cuts the last copy there. */
+  .bleed {
+    display: grid;
+    grid-template-columns: var(--gutter) minmax(0, 1fr);
+    overflow-x: clip;
+  }
+
+  .bleed > :global(*) {
+    grid-column: 2;
+  }
+
+  .bleed :global(.actions-figure) {
+    margin-top: 2.5rem;
+  }
+
+  .bleed :global(.actions-figure .figure-caption) {
+    padding-right: var(--pad);
+  }
+
+  .bleed :global(.actions-stage) {
+    display: flex;
+    gap: 1.5rem;
+    padding: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+    padding-right: 0;
+  }
+
+  .bleed :global(.actions-stage > *) {
+    flex: none;
+  }
+
+  /* On a narrower screen, the copies go in two columns or in one column, and each copy is
+     fully visible. In a column that is narrower than the window of the app (360 points), the
+     copy is narrower too. */
+  @media (width < 60rem) {
+    .bleed :global(.actions-stage) {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+      padding-right: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+    }
+
+    .bleed :global(.actions-stage > *) {
+      width: auto;
+      max-width: 360px;
+      min-width: 0;
+    }
+  }
+
+  /* On a phone, a smaller padding keeps each line of the copies in the window. */
+  @media (max-width: 26rem) {
+    .bleed :global(.actions-stage) {
+      padding: 1rem;
+    }
+  }
+
+  .features {
+    display: grid;
+    gap: 2rem clamp(2rem, 5vw, 4.5rem);
+    margin: 3rem 0 0;
+  }
+
+  @media (min-width: 48rem) {
+    .features {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .features div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    max-width: 34rem;
+  }
+
+  .features dt {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .features dd {
+    margin: 0;
+  }
+
+  .notes {
+    display: grid;
+    gap: 2.5rem clamp(2rem, 5vw, 4.5rem);
+  }
+
+  @media (min-width: 48rem) {
+    .notes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .note {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .note-title {
+    font-size: var(--step-subtitle);
+    letter-spacing: -0.01em;
+  }
+</style>

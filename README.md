@@ -20,11 +20,11 @@ Each action has a text label. No action hides until you hover over a row. To del
 You can get Topway in two ways:
 
 - **Mac App Store**: Topway is a paid app there. The App Store installs the updates.
-- **Direct download** (not available yet): a disk image (DMG) from topway.pulgueta.com. Apple notarizes it, and Topway tells you when an update is available.
+- **Direct download** (not available yet): a disk image (DMG) that you buy through [Polar](https://polar.sh) on topway.pulgueta.com. Apple notarizes it. The updates are free, and Topway tells you when one is available.
 
 Install only one of them on a Mac. With two copies, the sign-in can stop before it finishes. To change, quit Topway, delete the old copy, then install the new one. Your sign-in and your settings stay. Topway can ask for your Mac password one time.
 
-Topway is also open source under the [MIT license](LICENSE). You can build it from source, fork it and own it, at no cost. If you buy Topway on the App Store, you support the developer. Buying it is optional.
+Topway is also open source under the [MIT license](LICENSE). You can build it from source, fork it and own it, at no cost. If you buy Topway on the App Store or through Polar, you support the developer. Buying it is optional.
 
 ## Get started
 

@@ -1,0 +1,57 @@
+---
+import { reportProblemUrl, repositoryUrl } from "../config";
+---
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <p class="footer-note">
+      Topway is open source under the <a href={`${repositoryUrl}/blob/main/LICENSE`}>MIT license</a>.
+    </p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="/download">Download</a></li>
+        <li><a href="/privacy">Privacy policy</a></li>
+        <li><a href={repositoryUrl}>Source code on GitHub</a></li>
+        <li><a href={reportProblemUrl}>Report a problem</a></li>
+        <!-- The icons of the copies of the app are Phosphor icons. Their MIT license must go
+             with them. -->
+        <li><a href="/licenses/phosphor-icons.txt">Icon license</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--section);
+    padding-block: 2rem 2.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: var(--step-small);
+  }
+
+  .footer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem 2.5rem;
+  }
+
+  .footer-note {
+    max-width: 34rem;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    display: inline-block;
+    padding-block: 0.25rem;
+  }
+</style>

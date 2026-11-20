@@ -1,0 +1,57 @@
+---
+import "../../styles/app-copy.css";
+import Icon from "../Icon.astro";
+
+// A copy of the projects list in sample mode. The projects and the services are the sample
+// data of the app (SampleDataSource+Seed.swift), so the copy shows no data of a real account.
+const projects = [
+  { name: "storefront", services: ["web", "api", "worker", "postgres", "redis"] },
+  { name: "analytics", services: ["dashboard", "ingest", "postgres"] },
+  { name: "docs", services: ["site"] },
+];
+---
+
+<div class="app-window">
+  <div class="app-banner">
+    <span class="app-banner-label"><Icon name="testTube" />Sample data</span>
+    <span class="app-bordered">Exit sample data</span>
+  </div>
+  <div class="app-bar">
+    <span class="app-title"><Icon name="train" />Topway</span>
+    <span class="app-glass"><Icon name="arrowClockwise" />Refresh</span>
+    <span class="app-glass"><Icon name="gear" />Settings</span>
+  </div>
+  <div class="app-list">
+    <div class="app-row"><Icon name="chartBar" />Usage and cost<Icon name="caretRight" class="app-chevron" /></div>
+    {
+      projects.map((project) => (
+        <>
+          <div class="app-project">
+            <div class="app-row">
+              <Icon name="caretDown" class="app-disclosure" />
+              <Icon name="folder" />
+              {project.name}
+            </div>
+            <span class="app-bordered">
+              Manage
+              <Icon name="caretDown" />
+            </span>
+          </div>
+          <div class="app-indent">
+            {project.services.map((service) => (
+              <div class="app-row">
+                <Icon name="cube" />
+                {service}
+                <Icon name="caretRight" class="app-chevron" />
+              </div>
+            ))}
+            <div class="app-row app-muted">
+              <Icon name="plus" />
+              Add service
+            </div>
+          </div>
+        </>
+      ))
+    }
+  </div>
+</div>

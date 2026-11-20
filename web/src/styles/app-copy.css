@@ -1,0 +1,287 @@
+/*
+ * Copies of the Topway window, drawn in HTML with sample data. They are pictures: they are
+ * hidden from assistive technologies, they take no clicks and no keyboard focus, and a text
+ * next to each one says what it shows. The sizes are the sizes of the app in points
+ * (DESIGN.md: the window is 360 x 480 points). The colors are the dark appearance, as in the
+ * welcome window and the App Store screenshots.
+ */
+
+.app-window {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  height: 480px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--app-window);
+  box-shadow: inset 0 0 0 1px var(--app-edge);
+  color: var(--app-label);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0;
+  user-select: none;
+  pointer-events: none;
+}
+
+.app-window .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.app-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgb(255 159 10 / 0.12);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.app-banner-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-banner-label .icon {
+  color: var(--app-orange);
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.app-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-title .icon {
+  color: var(--app-blue);
+}
+
+.app-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--app-control);
+  box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.18);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-glass .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.app-bordered {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--app-control);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-bordered .icon {
+  width: 9px;
+  height: 9px;
+  color: var(--app-secondary);
+}
+
+.app-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px;
+}
+
+.app-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.app-row > .icon:first-child {
+  width: 16px;
+  color: var(--app-secondary);
+}
+
+.app-row .app-chevron {
+  width: 10px;
+  height: 10px;
+  margin-left: auto;
+  color: var(--app-tertiary);
+}
+
+.app-indent {
+  padding-left: 18px;
+}
+
+.app-project {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-project .app-row {
+  gap: 6px;
+  font-weight: 500;
+}
+
+.app-project .app-row .icon {
+  color: var(--app-secondary);
+}
+
+.app-project .app-disclosure {
+  width: 12px;
+  height: 10px;
+  color: var(--app-tertiary);
+}
+
+.app-muted {
+  color: var(--app-secondary);
+}
+
+.app-context {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 12px 10px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.app-context-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--app-secondary);
+}
+
+.app-segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--app-control);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.app-segmented span {
+  padding: 3px 0;
+  border-radius: 5px;
+}
+
+.app-segmented .is-selected {
+  background: rgb(255 255 255 / 0.2);
+  color: #fff;
+}
+
+.app-deployment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.app-deployment-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.app-date {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--app-secondary);
+}
+
+.app-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.app-log {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.app-log-line {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 6px;
+  white-space: normal;
+}
+
+.app-log-level {
+  color: var(--app-secondary);
+}
+
+.app-log-line.is-warn .app-log-level {
+  color: var(--app-yellow);
+}
+
+.app-log-line.is-error .app-log-level {
+  color: var(--app-red);
+}
+
+.app-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 10px 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 11px;
+  color: var(--app-secondary);
+}
+
+.app-bottom .app-glass {
+  margin-left: auto;
+  color: var(--app-label);
+}
+
+.app-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

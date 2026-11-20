@@ -1,0 +1,118 @@
+---
+import { repositoryUrl } from "../config";
+
+const current = Astro.url.pathname.replace(/\.html$/, "");
+const links = [
+  { href: "/download", label: "Download" },
+  { href: "/privacy", label: "Privacy" },
+];
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="/" aria-label="Topway home">
+      <picture>
+        <source srcset="/images/topway-icon-dark.png" media="(prefers-color-scheme: dark)" />
+        <img src="/images/topway-icon.png" alt="" width="32" height="32" />
+      </picture>
+      <span aria-hidden="true">Topway</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        {
+          links.map(({ href, label }) => (
+            <li>
+              <a href={href} aria-current={current === href ? "page" : undefined}>
+                {label}
+              </a>
+            </li>
+          ))
+        }
+        <li><a href={repositoryUrl}>GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    padding-block: 0.75rem;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+  }
+
+  /* The home link keeps its size. On a narrow screen, the nav links wrap before it shrinks. */
+  .brand {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--ink);
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .brand img {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: 0.75rem;
+    border-radius: 999px;
+    color: var(--text);
+    font-size: var(--step-small);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  nav a:hover {
+    color: var(--ink);
+    background: var(--stage);
+  }
+
+  nav a[aria-current="page"] {
+    color: var(--ink);
+    background: var(--stage);
+  }
+
+  /* At 320 pixels with a scrollbar, the icon, the three links and the spaces fit in one line. */
+  @media (max-width: 26rem) {
+    .bar {
+      gap: 0.75rem;
+    }
+
+    .brand span {
+      display: none;
+    }
+
+    ul {
+      gap: 0;
+    }
+
+    nav a {
+      padding-inline: 0.5rem;
+    }
+  }
+</style>

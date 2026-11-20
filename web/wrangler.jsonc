@@ -1,0 +1,24 @@
+// Cloudflare Workers Static Assets for https://topway.pulgueta.com. There is no Worker script:
+// the static assets alone give the behavior of the current site. web/README.md tells how to
+// deploy. A deploy replaces all the files of the site, so run `npm run build` first: its
+// check stops when dist/ has no sign-in callback files.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // The Worker that serves topway.pulgueta.com (checked in the Cloudflare API on 2026-11-20).
+  // A different name makes a second Worker.
+  "name": "topway-assets",
+  "compatibility_date": "2026-11-19",
+  "assets": {
+    "directory": "./dist",
+    // Default (auto-trailing-slash), written here because the sign-in depends on it:
+    // /oauth/callback serves oauth/callback.html, and /oauth/callback/ and
+    // /oauth/callback.html redirect (307) to /oauth/callback.
+    "html_handling": "auto-trailing-slash",
+    // An unknown address gets dist/404.html with the status 404, so a person sees a page with
+    // links. The default ("none") sends 404 with an empty body. Sparkle and the sign-in only
+    // read files that exist, so this choice does not change them.
+    "not_found_handling": "404-page",
+  },
+  // The custom domain of the Worker topway-assets. Wrangler applies the routes in this file.
+  "routes": [{ "pattern": "topway.pulgueta.com", "custom_domain": true }],
+}

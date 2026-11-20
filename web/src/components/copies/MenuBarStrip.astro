@@ -1,0 +1,75 @@
+---
+import "../../styles/app-copy.css";
+import Icon, { type IconName } from "../Icon.astro";
+
+// A copy of the right part of the macOS menu bar, with the Topway icon in one of its three
+// states. The symbols are the states of MenuBarLabel in the app.
+interface Props {
+  health: "healthy" | "inProgress" | "failing";
+  caption?: string;
+  selected?: boolean;
+}
+
+const { health, caption, selected = false } = Astro.props;
+const symbols: Record<Props["health"], IconName> = {
+  healthy: "train",
+  inProgress: "arrowsClockwise",
+  failing: "warning",
+};
+---
+
+<div class="menu-bar-strip">
+  {caption && <span class="caption">{caption}</span>}
+  <span class:list={["status-item", { "is-selected": selected }]}>
+    <Icon name={symbols[health]} />
+  </span>
+  <Icon name="wifi" />
+  <Icon name="batteryFull" class="battery" />
+  <Icon name="toggle" />
+  <span>9:41</span>
+</div>
+
+<style>
+  .menu-bar-strip {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    height: 30px;
+    padding-inline: 14px 24px;
+    border-radius: 8px 0 0 8px;
+    background: var(--app-window);
+    box-shadow: inset 0 0 0 1px var(--app-edge);
+    color: var(--app-label);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .menu-bar-strip :global(.icon) {
+    width: 15px;
+    height: 15px;
+  }
+
+  .menu-bar-strip :global(.battery) {
+    width: 20px;
+  }
+
+  .caption {
+    margin-right: auto;
+    font-weight: 600;
+  }
+
+  .status-item {
+    display: inline-flex;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+
+  .status-item.is-selected {
+    background: rgb(255 255 255 / 0.24);
+  }
+</style>

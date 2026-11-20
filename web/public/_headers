@@ -1,0 +1,5 @@
+# Workers Static Assets reads this file at deploy time and does not serve it.
+# The file has no extension, so Wrangler gives it no Content-Type. Apple requires
+# application/json for the Associated Domains file of the Topway sign-in.
+/.well-known/apple-app-site-association
+  Content-Type: application/json
