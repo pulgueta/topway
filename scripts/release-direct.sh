@@ -91,6 +91,11 @@ appcast_file="${APPCAST_FILE:-$RELEASE_APPCAST}"
 appcast_output="${APPCAST_OUTPUT:-$appcast_file}"
 # The temporary copies of step 9. The cleanup deletes them after a failure.
 partial_files=()
+# Step 9 replaces the DMG first and the appcast second. Until the appcast is in its place,
+# placed_dmg is the DMG path and earlier_dmg is a hard link to the earlier DMG (empty when
+# there was no earlier DMG). After a failure, the cleanup then puts back the earlier DMG.
+placed_dmg=""
+earlier_dmg=""
 
 step() {
   echo
@@ -104,10 +109,27 @@ die() {
   exit 1
 }
 
-# Remove from Launch Services each app that the script made, then delete the folders and the
-# temporary copies.
+# When step 9 did not complete, put back the earlier DMG, so that the earlier DMG and appcast
+# stay a pair. The appcast has the EdDSA signature of its DMG.
+restore_earlier_dmg() {
+  [[ -n "$placed_dmg" ]] || return 0
+  if [[ -z "$earlier_dmg" ]]; then
+    rm -f "$placed_dmg"
+    echo "The script deleted the new DMG. There was no earlier DMG at $placed_dmg." >&2
+  elif mv -f "$earlier_dmg" "$placed_dmg"; then
+    # If the DMG rename did not occur, the two names are links to one file, and mv keeps both.
+    rm -f "$earlier_dmg"
+    echo "The script put back the earlier DMG at $placed_dmg." >&2
+  else
+    echo "Error: the script cannot put back the earlier DMG. Move $earlier_dmg to $placed_dmg." >&2
+  fi
+}
+
+# Put back the earlier DMG if necessary. Then remove from Launch Services each app that the
+# script made, and delete the folders and the temporary copies.
 cleanup() {
   local app file
+  restore_earlier_dmg
   for file in ${partial_files[@]+"${partial_files[@]}"}; do
     rm -f "$file"
   done
@@ -222,12 +244,36 @@ is_newest_appcast_build() {
   ((found == 1))
 }
 
-# Exit with 0 when the path $1 is the release appcast, also with a different spelling.
+# Print the path $1 from the root, with no symbolic link, no . and no .. in it. A folder that
+# does not exist yet stays as it is in the path, because step 9 can make it.
+full_path() {
+  local path="$1" folder="/" name next
+  local -a names
+  [[ "$path" == /* ]] || path="$PWD/$path"
+  IFS=/ read -r -a names <<<"$path"
+  for name in ${names[@]+"${names[@]}"}; do
+    case "$name" in
+      "" | .) ;;
+      ..) folder=$(dirname "$folder") ;;
+      *)
+        next="${folder%/}/$name"
+        if [[ -d "$next" ]]; then
+          folder=$(cd "$next" 2>/dev/null && pwd -P) || folder="$next"
+        else
+          folder="$next"
+        fi
+        ;;
+    esac
+  done
+  echo "$folder"
+}
+
+# Exit with 0 when the path $1 is the release appcast, also with a different spelling, and
+# also when web/public does not exist yet. The comparison ignores uppercase and lowercase,
+# because the disk of a Mac usually does.
 is_release_appcast() {
-  local folder
   [[ "$1" -ef "$RELEASE_APPCAST" ]] && return 0
-  folder=$(cd "$(dirname "$1")" 2>/dev/null && pwd -P) || return 1
-  [[ "$folder/$(basename "$1")" == "$(cd "$(dirname "$RELEASE_APPCAST")" && pwd -P)/appcast.xml" ]]
+  [[ "$(full_path "$1" | tr '[:upper:]' '[:lower:]')" == "$(full_path "$RELEASE_APPCAST" | tr '[:upper:]' '[:lower:]')" ]]
 }
 
 # A DMG that is not notarized must never go in the release appcast. With --skip-notarize, the
@@ -478,7 +524,8 @@ update_appcast() {
 
 # Step 9. Each file goes first to a temporary copy in its folder, and then a rename replaces the
 # earlier file. The script does this only after all the checks passed. Thus a failure keeps the
-# earlier DMG and appcast, and a file is never there in part.
+# earlier DMG and appcast, and a file is never there in part. The DMG and the appcast change
+# together: if the appcast rename fails, the cleanup puts back the earlier DMG.
 put_release_files() {
   local dmg="$1" new_appcast="$work_dir/updates/appcast.xml" target
   step "9. Put the DMG and the appcast in their folders."
@@ -490,11 +537,22 @@ put_release_files() {
     mkdir -p "$(dirname "$appcast_output")"
     partial_files+=("$appcast_output.partial")
     cp "$new_appcast" "$appcast_output.partial"
+    if [[ -e "$target" ]]; then
+      ln -f "$target" "$target.earlier"
+      earlier_dmg="$target.earlier"
+    fi
+    placed_dmg="$target"
   fi
   mv -f "$target.partial" "$target"
   ok "The DMG is at $target."
   if ((skip_appcast == 0)); then
-    mv -f "$appcast_output.partial" "$appcast_output"
+    mv -f "$appcast_output.partial" "$appcast_output" ||
+      die "The script cannot put the new appcast at $appcast_output."
+    placed_dmg=""
+    if [[ -n "$earlier_dmg" ]]; then
+      rm -f "$earlier_dmg"
+      earlier_dmg=""
+    fi
     ok "The appcast at $appcast_output has $version ($build)."
   fi
 }
