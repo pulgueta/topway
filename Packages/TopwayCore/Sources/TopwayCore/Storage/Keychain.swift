@@ -57,15 +57,16 @@ struct Keychain: KeychainItemStore {
 
     /// With no access group, a query finds the items of all the access groups of the app, and
     /// a new item goes in the default group: the app ID.
-    private func query(for account: String) -> [String: Any] {
-        var query: [String: Any] = [
+    ///
+    /// The query always names its keychain. On macOS, a query with no
+    /// `kSecUseDataProtectionKeychain` value goes to both keychains, so a delete of the
+    /// file-based item would also delete the item in the data protection keychain.
+    func query(for account: String) -> [String: Any] {
+        [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            kSecUseDataProtectionKeychain as String: usesDataProtectionKeychain,
         ]
-        if usesDataProtectionKeychain {
-            query[kSecUseDataProtectionKeychain as String] = true
-        }
-        return query
     }
 }
