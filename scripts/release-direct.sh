@@ -15,10 +15,14 @@
 #   5. Notarize the app and staple the ticket to it.
 #   6. Make Topway-VERSION.dmg with Topway.app and a link to /Applications.
 #   7. Sign, notarize and staple the DMG, then examine it with Gatekeeper.
-#   8. Add the DMG to the appcast with generate_appcast of Sparkle.
+#   8. Make a new appcast with the DMG (generate_appcast of Sparkle), then examine the new item.
+#   9. Put the DMG in OUTPUT_DIR and the new appcast in its place. The script changes these
+#      files only after all the checks passed, so a failure keeps the earlier DMG and appcast.
 #
 # Options:
 #   --skip-notarize  Do not notarize, staple or examine with Gatekeeper. For a test on your Mac.
+#                    The script then never changes the release appcast: add --skip-appcast,
+#                    or set APPCAST_OUTPUT to a test file.
 #   --skip-appcast   Do not change the appcast.
 #   vVERSION         The release tag, for example v0.2. The script stops if it is not
 #                    v$MARKETING_VERSION.
@@ -35,6 +39,9 @@
 #   SPARKLE_PRIVATE_KEY_FILE   The file with the private EdDSA key of Sparkle.
 #   OUTPUT_DIR                 The folder for the DMG. Default: build/release.
 #   APPCAST_FILE               The appcast to update. Default: web/public/appcast.xml.
+#   APPCAST_OUTPUT             The file for the new appcast. Default: APPCAST_FILE. With
+#                              --skip-notarize, it is necessary, and it cannot be the release
+#                              appcast web/public/appcast.xml.
 #
 # The script works in a temporary folder. At exit, also after an error, it removes each app
 # that it made from Launch Services and deletes the folder. A registered copy of
@@ -62,6 +69,10 @@ readonly REPO_ROOT
 # A fixed package folder, so the Sparkle tools are always in the same place.
 readonly PACKAGES_DIR="$REPO_ROOT/build/SourcePackages"
 readonly SPARKLE_BIN="$PACKAGES_DIR/artifacts/sparkle/Sparkle/bin"
+# The appcast that the website serves. A DMG that is not notarized must never go in it.
+readonly RELEASE_APPCAST="$REPO_ROOT/web/public/appcast.xml"
+# The build numbers that the script compares as Sparkle does: numbers with periods.
+readonly BUILD_PATTERN='^[0-9]+(\.[0-9]+)*$'
 
 work_dir=""
 skip_notarize=0
@@ -76,7 +87,10 @@ authority=""
 public_key=""
 profile_name="${DEVELOPER_ID_PROFILE_NAME:-Topway Developer ID}"
 output_dir="${OUTPUT_DIR:-$REPO_ROOT/build/release}"
-appcast_file="${APPCAST_FILE:-$REPO_ROOT/web/public/appcast.xml}"
+appcast_file="${APPCAST_FILE:-$RELEASE_APPCAST}"
+appcast_output="${APPCAST_OUTPUT:-$appcast_file}"
+# The temporary copies of step 9. The cleanup deletes them after a failure.
+partial_files=()
 
 step() {
   echo
@@ -90,9 +104,13 @@ die() {
   exit 1
 }
 
-# Remove from Launch Services each app that the script made, then delete the folders.
+# Remove from Launch Services each app that the script made, then delete the folders and the
+# temporary copies.
 cleanup() {
-  local app
+  local app file
+  for file in ${partial_files[@]+"${partial_files[@]}"}; do
+    rm -f "$file"
+  done
   if [[ -n "$work_dir" && -d "$work_dir" ]]; then
     while IFS= read -r -d '' app; do
       "$LSREGISTER" -u "$app" 2>/dev/null || true
@@ -144,20 +162,96 @@ xcodebuild_direct() {
 # Print the value of a build setting from the output of -showBuildSettings.
 build_setting() { sed -n "s/^ *$1 = //p" <<<"$settings" | tail -n 1; }
 
-# Print the highest sparkle:version in the appcast, or nothing.
+# Stop when the text $1 is not numbers with periods. The script cannot compare other build
+# numbers as Sparkle does. $2 tells where the text comes from.
+check_build_number() {
+  [[ "$1" =~ $BUILD_PATTERN ]] ||
+    die "$2 is \"$1\". Use a build number of numbers and periods, for example 2 or 1.2."
+}
+
+# Exit with 0 when the build $1 is higher than the build $2, as Sparkle compares them
+# (SUStandardVersionComparator). Each part between the periods is a number, and the shorter
+# build gets parts of 0. Thus 10 is higher than 2, 1.10 is higher than 1.2, and 1 is equal to
+# 1.0.0, so it is not higher.
+is_higher_build() {
+  local -a parts_a parts_b
+  local count i a b
+  IFS=. read -r -a parts_a <<<"$1"
+  IFS=. read -r -a parts_b <<<"$2"
+  count=${#parts_a[@]}
+  ((${#parts_b[@]} <= count)) || count=${#parts_b[@]}
+  for ((i = 0; i < count; i++)); do
+    a=$((10#${parts_a[i]:-0}))
+    b=$((10#${parts_b[i]:-0}))
+    ((a == b)) || return $((a > b ? 0 : 1))
+  done
+  return 1
+}
+
+# Print the sparkle:version of each item in the appcast, one on each line.
+appcast_builds() {
+  xmllint --xpath "//*[local-name()='item']/*[local-name()='version']/text()" "$1" 2>/dev/null || true
+}
+
+# Print the highest build in the appcast, as Sparkle compares them, or nothing.
 newest_appcast_build() {
-  xmllint --xpath "//*[local-name()='item']/*[local-name()='version']/text()" "$1" 2>/dev/null |
-    sort -V | tail -n 1 || true
+  local item newest=""
+  while IFS= read -r item; do
+    [[ -n "$item" ]] || continue
+    check_build_number "$item" "A build in the appcast"
+    if [[ -z "$newest" ]] || is_higher_build "$item" "$newest"; then
+      newest="$item"
+    fi
+  done <<<"$(appcast_builds "$1")"
+  echo "$newest"
+}
+
+# Exit with 0 when the appcast has one item with the build $2, and each other item has a lower
+# build, as Sparkle compares them. Then Sparkle offers that item as the update.
+is_newest_appcast_build() {
+  local item found=0
+  while IFS= read -r item; do
+    [[ -n "$item" ]] || continue
+    if [[ "$item" == "$2" ]]; then
+      found=$((found + 1))
+    else
+      check_build_number "$item" "A build in the appcast"
+      is_higher_build "$2" "$item" || return 1
+    fi
+  done <<<"$(appcast_builds "$1")"
+  ((found == 1))
+}
+
+# Exit with 0 when the path $1 is the release appcast, also with a different spelling.
+is_release_appcast() {
+  local folder
+  [[ "$1" -ef "$RELEASE_APPCAST" ]] && return 0
+  folder=$(cd "$(dirname "$1")" 2>/dev/null && pwd -P) || return 1
+  [[ "$folder/$(basename "$1")" == "$(cd "$(dirname "$RELEASE_APPCAST")" && pwd -P)/appcast.xml" ]]
+}
+
+# A DMG that is not notarized must never go in the release appcast. With --skip-notarize, the
+# script writes a new appcast only to APPCAST_OUTPUT, and that cannot be the release appcast.
+check_appcast_output() {
+  ((skip_notarize == 1 && skip_appcast == 0)) || return 0
+  [[ -n "${APPCAST_OUTPUT:-}" ]] ||
+    die "With --skip-notarize, the script does not change the release appcast. Add --skip-appcast, or set APPCAST_OUTPUT to a test file."
+  if is_release_appcast "$appcast_output"; then
+    die "APPCAST_OUTPUT is the release appcast. With --skip-notarize, set it to a test file."
+  fi
+  ok "With --skip-notarize, the new appcast goes only to $appcast_output."
 }
 
 # Step 1. Find each problem that would stop the release before the long build starts.
 preflight() {
   step "1. Read the build settings and the release inputs."
+  check_appcast_output
   settings=$(xcodebuild_direct -showBuildSettings) || die "xcodebuild cannot read the build settings."
   version=$(build_setting MARKETING_VERSION)
   build=$(build_setting CURRENT_PROJECT_VERSION)
   [[ -n "$version" && -n "$build" ]] || die "The build settings have no MARKETING_VERSION or CURRENT_PROJECT_VERSION."
   echo "Version: $version ($build)"
+  check_build_number "$build" "CURRENT_PROJECT_VERSION"
 
   [[ -n "$(build_setting SPARKLE_PUBLIC_ED_KEY)" ]] ||
     die "SPARKLE_PUBLIC_ED_KEY is empty. Put the public key from generate_keys in Config/Direct.xcconfig."
@@ -191,8 +285,8 @@ preflight() {
       local newest
       newest=$(newest_appcast_build "$appcast_file")
       if [[ -n "$newest" ]]; then
-        [[ "$build" != "$newest" && "$(printf '%s\n%s\n' "$newest" "$build" | sort -V | tail -n 1)" == "$build" ]] ||
-          die "CURRENT_PROJECT_VERSION ($build) must be higher than the newest build in the appcast ($newest). Sparkle compares CFBundleVersion."
+        is_higher_build "$build" "$newest" ||
+          die "CURRENT_PROJECT_VERSION ($build) must be higher than the newest build in the appcast ($newest). Sparkle compares CFBundleVersion, and for Sparkle, 1 and 1.0 are equal."
         ok "The build $build is higher than the newest build in the appcast ($newest)."
       fi
     else
@@ -357,7 +451,7 @@ SWIFT
 # (the default keeps 3). The private key comes from a file, never from the command line.
 # generate_appcast only warns when the private key does not agree with SUPublicEDKey, and it
 # can then write the item with no signature. So the script examines the signature of the new
-# item before it replaces the appcast.
+# item. The new appcast stays in the temporary folder until step 9.
 update_appcast() {
   local dmg="$1" updates="$work_dir/updates" tool="$SPARKLE_BIN/generate_appcast" signature
   step "8. Add $(basename "$dmg") to the appcast."
@@ -371,7 +465,7 @@ update_appcast() {
     --maximum-versions 0 \
     -o "$updates/appcast.xml" \
     "$updates"
-  [[ "$(newest_appcast_build "$updates/appcast.xml")" == "$build" ]] ||
+  is_newest_appcast_build "$updates/appcast.xml" "$build" ||
     die "The new appcast does not have the build $build as its newest item."
   signature=$(xmllint --xpath "string(//*[local-name()='item'][*[local-name()='version']='$build']/*[local-name()='enclosure']/@*[local-name()='edSignature'])" \
     "$updates/appcast.xml" 2>/dev/null || true)
@@ -380,9 +474,29 @@ update_appcast() {
   verify_ed_signature "$public_key" "$signature" "$dmg" ||
     die "The EdDSA signature in the new appcast item does not agree with SUPublicEDKey of the app. Sparkle would refuse this update. Make sure that SPARKLE_PRIVATE_KEY_FILE agrees with SPARKLE_PUBLIC_ED_KEY."
   ok "The EdDSA signature of the new item agrees with the DMG and with SUPublicEDKey."
-  mkdir -p "$(dirname "$appcast_file")"
-  cp "$updates/appcast.xml" "$appcast_file"
-  ok "The appcast at $appcast_file has $version ($build)."
+}
+
+# Step 9. Each file goes first to a temporary copy in its folder, and then a rename replaces the
+# earlier file. The script does this only after all the checks passed. Thus a failure keeps the
+# earlier DMG and appcast, and a file is never there in part.
+put_release_files() {
+  local dmg="$1" new_appcast="$work_dir/updates/appcast.xml" target
+  step "9. Put the DMG and the appcast in their folders."
+  mkdir -p "$output_dir"
+  target="$output_dir/$(basename "$dmg")"
+  partial_files+=("$target.partial")
+  cp "$dmg" "$target.partial"
+  if ((skip_appcast == 0)); then
+    mkdir -p "$(dirname "$appcast_output")"
+    partial_files+=("$appcast_output.partial")
+    cp "$new_appcast" "$appcast_output.partial"
+  fi
+  mv -f "$target.partial" "$target"
+  ok "The DMG is at $target."
+  if ((skip_appcast == 0)); then
+    mv -f "$appcast_output.partial" "$appcast_output"
+    ok "The appcast at $appcast_output has $version ($build)."
+  fi
 }
 
 main() {
@@ -408,25 +522,26 @@ main() {
   make_dmg "$dmg_dir" "$dmg"
   sign_dmg "$dmg"
 
-  mkdir -p "$output_dir"
-  cp "$dmg" "$output_dir/"
-  dmg="$output_dir/$(basename "$dmg")"
-
   if ((skip_appcast == 0)); then
     update_appcast "$dmg"
   else
     step "8. Skip the appcast (--skip-appcast)."
   fi
+  put_release_files "$dmg"
+  dmg="$output_dir/$(basename "$dmg")"
 
   echo
-  echo "Result: the release files are ready."
+  if ((skip_notarize == 1)); then
+    echo "Result: the test files are ready. This DMG is not notarized. Do not publish it."
+  else
+    echo "Result: the release files are ready."
+  fi
   echo "DMG: $dmg"
   if ((skip_appcast == 0)); then
-    echo "Appcast: $appcast_file"
-    echo "Next: put the DMG in the GitHub release v$version, then publish the appcast."
+    echo "Appcast: $appcast_output"
   fi
-  if ((skip_notarize == 1)); then
-    echo "This DMG is not notarized. Do not publish it."
+  if ((skip_notarize == 0 && skip_appcast == 0)); then
+    echo "Next: put the DMG in the GitHub release v$version, then publish the appcast."
   fi
 }
 
