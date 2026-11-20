@@ -28,7 +28,7 @@ Topway is also open source under the [MIT license](LICENSE). You can build it fr
 
 ## Get started
 
-1. Get Topway from the Mac App Store (coming soon) or as a DMG from topway.pulgueta.com (not available yet), or [build it from source](#build-from-source). For the DMG, open it and drag Topway to the Applications folder.
+1. Get Topway from the Mac App Store or as a DMG from topway.pulgueta.com (not available yet), or [build it from source](#build-from-source). For the DMG, open it and drag Topway to the Applications folder.
 2. Open Topway. Its icon is in the menu bar, not in the Dock. At the first launch, a welcome window shows what Topway does and where its icon is.
 3. Select **Sign in with Railway**. Sign in on the Railway page that opens, then select the workspaces that Topway can use.
 4. If you selected more than one workspace, choose one. To change it later, go to **Settings > Account > Workspace**.
