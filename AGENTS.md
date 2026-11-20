@@ -81,6 +81,13 @@ Sign in with Railway is the only way to connect. There is no API token field and
 
 `AppState.init` deletes the API token of earlier builds (the Keychain item and the `UserDefaults` key `railwayToken`). With no saved sign-in, it removes `workspaceId`, so an upgraded user sees the start screen. For this reason, the welcome window never makes an `AppState`.
 
+## Keychain
+
+- `KeychainStore` uses the data protection keychain (`kSecUseDataProtectionKeychain`, Apple TN3137). Its items belong to the access group of the app ID, `7QNFW3929Z.com.pulgueta.topway`. Thus the App Store build and the Developer ID build share the sign-in with no password prompt, and each build can delete it. The app ID entitlement gives this group, so `topway/topway.entitlements` has no `keychain-access-groups`.
+- Earlier builds used the file-based keychain. There, only the code signature that made an item can delete it. `AppState.init` moves the sign-in one time (`KeychainMigration`, tested), then sets the `UserDefaults` key `keychainMoveDone`. **Never read the file-based keychain after the move**: an item of the other channel can stay there, and a sign-out would then bring it back at the next launch.
+- `KeychainStore.delete` also tries to delete the file-based item, but its result comes only from the data protection keychain. Thus an item that stays does not stop **Sign out…**.
+- A build with no signature (`CODE_SIGNING_ALLOWED=NO`) cannot use the data protection keychain (`errSecMissingEntitlement`), so it cannot save a sign-in. For the same reason, `swift test` has no tests for the real Keychain calls.
+
 ## A rejected token must never trap the user
 
 [ARCHITECTURE.md](ARCHITECTURE.md#failed-loads-and-a-rejected-token) tells how Topway finds a rejected token.

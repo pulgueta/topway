@@ -51,6 +51,9 @@ class AppState {
     private(set) var completedSignIns = 0
 
     private static let tokensKey = "railwayOAuth"
+    /// The `UserDefaults` key that is `true` after the sign-in of earlier builds moved to the
+    /// data protection keychain. Then Topway never reads the file-based keychain again.
+    private static let keychainMoveKey = "keychainMoveDone"
     /// The Keychain item and the `UserDefaults` key of the API token of earlier builds.
     private static let legacyTokenKey = "railwayToken"
     static let notConnectedMessage = "Sign in with Railway and select a workspace first."
@@ -158,8 +161,18 @@ class AppState {
         KeychainStore.delete(Self.legacyTokenKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyTokenKey)
 
-        if oauthClientID != nil, let saved = KeychainStore.read(Self.tokensKey) {
-            tokens = OAuthTokens(keychainValue: saved)
+        if oauthClientID != nil {
+            // Earlier builds kept the sign-in in the file-based keychain. Topway moves it one
+            // time, so the App Store build and the Developer ID build share it.
+            let defaults = UserDefaults.standard
+            if KeychainStore.moveFileBasedItem(
+                Self.tokensKey, isDone: defaults.bool(forKey: Self.keychainMoveKey))
+            {
+                defaults.set(true, forKey: Self.keychainMoveKey)
+            }
+            if let saved = KeychainStore.read(Self.tokensKey) {
+                tokens = OAuthTokens(keychainValue: saved)
+            }
         }
         // With no sign-in, a saved workspace belongs to nobody. This also removes the
         // Workspace ID that an earlier build saved with its API token.

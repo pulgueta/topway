@@ -1,73 +1,49 @@
 import Foundation
-import Security
 
-/// Thin wrapper around the Keychain for storing small secret strings.
+/// Keeps small secret strings in the data protection keychain.
 ///
-/// Items are scoped to this app via `service` and use
-/// `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` so the secret never leaves
-/// the device and is only readable while the system is unlocked.
+/// The items belong to the access group of the app ID (the team ID and the bundle ID), so the
+/// App Store build and the Developer ID build share them. They use
+/// `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, so a secret never leaves this Mac, and
+/// Topway can read it only while the Mac is unlocked.
 public enum KeychainStore {
     /// Service identifier shared by all of this app's Keychain items.
     private static let service = Bundle.main.bundleIdentifier ?? "com.pulgueta.topway"
+    private static let dataProtection = Keychain(
+        service: service, usesDataProtectionKeychain: true)
+    /// Earlier builds kept their items here.
+    private static let fileBased = Keychain(service: service, usesDataProtectionKeychain: false)
 
     /// Stores (or replaces) the secret for `account`. An empty string deletes it.
-    ///
-    /// Updates an existing item in place when present, otherwise inserts a new
-    /// one — so there's never a window where the secret is missing from the
-    /// Keychain (unlike delete-then-add).
     @discardableResult
     public static func save(_ value: String, for account: String) -> Bool {
         guard !value.isEmpty else { return delete(account) }
-        guard let data = value.data(using: .utf8) else { return false }
-
-        let baseQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        ]
-
-        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
-        switch updateStatus {
-        case errSecSuccess:
-            return true
-        case errSecItemNotFound:
-            let addQuery = baseQuery.merging(attributes) { _, new in new }
-            return SecItemAdd(addQuery as CFDictionary, nil) == errSecSuccess
-        default:
-            return false
-        }
+        return dataProtection.save(value, for: account)
     }
 
     /// Returns the secret for `account`, or `nil` if absent.
     public static func read(_ account: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-            let data = result as? Data,
-            let value = String(data: data, encoding: .utf8)
-        else { return nil }
-        return value
+        dataProtection.read(account)
     }
 
     /// Deletes the secret for `account`. Succeeds even if nothing was stored.
+    ///
+    /// It also tries to delete the item of an earlier build from the file-based keychain. Only
+    /// the signature that made that item can delete it, so the result comes only from the
+    /// data protection keychain.
     @discardableResult
     public static func delete(_ account: String) -> Bool {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        let status = SecItemDelete(query as CFDictionary)
-        return status == errSecSuccess || status == errSecItemNotFound
+        _ = fileBased.delete(account)
+        return dataProtection.delete(account)
+    }
+
+    /// Moves the secret for `account` from the file-based keychain of earlier builds to the
+    /// data protection keychain. See `KeychainMigration`.
+    /// - Parameter isDone: The marker that the last call gave.
+    /// - Returns: `true` when the move is complete. Keep it and give it to the next call, so
+    ///   Topway never reads the file-based item again.
+    public static func moveFileBasedItem(_ account: String, isDone: Bool) -> Bool {
+        KeychainMigration(fileBased: fileBased, dataProtection: dataProtection)
+            .move(account, isDone: isDone)
     }
 }
