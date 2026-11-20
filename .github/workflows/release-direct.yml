@@ -72,6 +72,23 @@ jobs:
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
         run: scripts/release-direct.sh "$GITHUB_REF_NAME"
 
+      # After the release is made, a new run cannot finish: the release exists, and a new build
+      # makes a DMG with different bytes. So each attempt keeps the appcast of its DMG first.
+      # docs/direct-distribution.md tells how to finish the appcast pull request from it.
+      - name: Keep the appcast and the checksum of the DMG
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p "$RUNNER_TEMP/appcast"
+          cp web/public/appcast.xml "$RUNNER_TEMP/appcast/appcast.xml"
+          (cd build/release && shasum -a 256 "Topway-$version.dmg") > "$RUNNER_TEMP/appcast/Topway-$version.dmg.sha256"
+
+      - name: Upload the appcast and the checksum of the DMG
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: appcast-${{ github.ref_name }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/appcast
+          if-no-files-found: error
+
       - name: Make the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

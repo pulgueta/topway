@@ -71,7 +71,13 @@ uuid=$(security cms -D -i "$profile" | plutil -extract UUID raw -o - -)
 cp "$profile" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/"$uuid".provisionprofile
 ```
 
-When you renew the certificate, make a new profile, then update the secret `DEVELOPER_ID_PROFILE_BASE64`.
+When you renew the certificate, make a new profile with the new certificate. Then, before the next tag, update these secrets together. The commands are in [Add the GitHub secrets](#add-the-github-secrets).
+
+- `DEVELOPER_ID_CERT_P12_BASE64`: a new `.p12` file of the new certificate with its private key. [Export the Developer ID Application certificate](#export-the-developer-id-application-certificate) tells how to make it.
+- `DEVELOPER_ID_CERT_PASSWORD`, if the password of the `.p12` file changed.
+- `DEVELOPER_ID_PROFILE_BASE64`.
+
+If you update only the profile, the runner imports the earlier certificate, and it cannot sign with the certificate that the new profile names.
 
 ### Make an App Store Connect API key for notarization
 
@@ -195,7 +201,7 @@ Each release needs a version number and a build number that are higher than the 
 
 6. Open **Actions > Release the direct build** on GitHub, and wait until the run passes. Most of the time is for notarization. Apple says that notarization usually takes less than one hour.
 7. Make sure that the release `v0.2` has `Topway-0.2.dmg`.
-8. Open the pull request from the branch `release/v0.2`. It changes only `web/public/appcast.xml`. Merge it.
+8. Open the pull request from the branch `release/v0.2`. It changes only `web/public/appcast.xml`. Its checks do not start by themselves: in the merge box, select **Approve workflows to run**. When the checks pass, merge it.
 9. Deploy the website. The deploy replaces all the files of the site, so the site must also keep `/.well-known/apple-app-site-association` and `/oauth/callback`. Without them, the sign-in stops. [AGENTS.md](../AGENTS.md#sign-in-callback) tells why.
 10. Make sure that the site serves the new appcast:
 
@@ -203,9 +209,9 @@ Each release needs a version number and a build number that are higher than the 
     curl -s https://topway.pulgueta.com/appcast.xml | grep '<sparkle:version>'
     ```
 
-The release must exist before the appcast points to it. For this reason, the workflow makes the release first and gives you the appcast as a pull request.
+The release must exist before the appcast points to it. For this reason, the workflow makes the release first and gives you the appcast as a pull request. If a step after **Make the GitHub release** fails, do not run the workflow again. [The release is there, but the appcast pull request is not](#the-release-is-there-but-the-appcast-pull-request-is-not) tells how to finish it.
 
-A pull request that the workflow makes does not start the CI workflow. GitHub does not run workflows for changes that the `GITHUB_TOKEN` makes. The appcast change has no code, so it needs no CI run.
+The workflow opens the pull request with the `GITHUB_TOKEN`. For such a pull request, GitHub keeps the CI runs in an approval-required state until a user with write access approves them. [Triggering a workflow from a workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow) in the GitHub documentation tells more.
 
 ### Make a release from your Mac
 
@@ -276,6 +282,67 @@ xcrun notarytool log your_submission_id --keychain-profile topway-notary
 ```
 
 In GitHub Actions, use `--key`, `--key-id` and `--issuer` in place of `--keychain-profile`. The log gives each problem with the path of the file. Apple's guide [Customizing the notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow) has more information.
+
+### The release is there, but the appcast pull request is not
+
+When a step after **Make the GitHub release** fails, the DMG is in the release, but the appcast does not have it. For example, the push of the branch fails, or GitHub Actions cannot create pull requests. Do not run the workflow again. The release is there, so a new run stops at that step. Also, a new build makes a DMG with different bytes, so its appcast does not agree with the DMG in the release.
+
+Each attempt of the run keeps the appcast of its DMG and the checksum of the DMG in the artifact `appcast-v0.2-N`. `N` is the number of the attempt. Make the pull request with it:
+
+1. See if the workflow pushed the branch. If this command prints a line, the branch has the correct appcast. Then go to step 7.
+
+   ```sh
+   git ls-remote --heads origin release/v0.2
+   ```
+
+2. Find the ID of the run:
+
+   ```sh
+   gh run list --workflow release-direct.yml --limit 5
+   ```
+
+3. In a new folder, download the artifacts of the run and the DMG of the release. Replace `your_run_id` with the ID from step 2:
+
+   ```sh
+   mkdir ~/appcast-v0.2 && cd ~/appcast-v0.2
+   gh run download your_run_id --repo pulgueta/topway --pattern 'appcast-v0.2-*'
+   gh release download v0.2 --repo pulgueta/topway --pattern Topway-0.2.dmg
+   ```
+
+4. Find the artifact that agrees with the DMG of the release. The command prints its checksum file, for example `appcast-v0.2-1/Topway-0.2.dmg.sha256`:
+
+   ```sh
+   grep -l "$(shasum -a 256 Topway-0.2.dmg | cut -d ' ' -f 1)" appcast-v0.2-*/Topway-0.2.dmg.sha256
+   ```
+
+   If it prints nothing, no artifact agrees with the DMG of the release. Then make the next release with a higher version and build number.
+
+5. In the repository, put that appcast on a new branch from the newest `main`. Replace `appcast-v0.2-1` with the folder from step 4. The diff must add only the item of 0.2:
+
+   ```sh
+   git switch main
+   git pull
+   git switch --create release/v0.2
+   cp ~/appcast-v0.2/appcast-v0.2-1/appcast.xml web/public/appcast.xml
+   git diff
+   ```
+
+6. Commit the appcast and push the branch:
+
+   ```sh
+   git add web/public/appcast.xml
+   git commit --message "chore(web): add v0.2 to the appcast"
+   git push origin release/v0.2
+   ```
+
+7. Open the pull request:
+
+   ```sh
+   gh pr create --base main --head release/v0.2 --title "chore(web): add v0.2 to the appcast" \
+     --body "This pull request adds v0.2 to the Sparkle appcast. The GitHub release v0.2 has the DMG."
+   ```
+
+8. When the checks pass, merge the pull request. Then do steps 9 and 10 of [Make a release with GitHub Actions](#make-a-release-with-github-actions).
 
 ### An update does not show
 
