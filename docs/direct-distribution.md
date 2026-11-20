@@ -177,14 +177,13 @@ The DMG in each GitHub release stays public. Sparkle needs a public URL to downl
 Do these steps one time, after the first release has its DMG.
 
 1. In the Polar dashboard, go to **Products** and make a product with the name `Topway`. For the billing cycle, select **One-time purchase**. For the pricing, select **Fixed price** and type the price. You cannot change the billing cycle or the pricing type later. You can change the amount.
-2. Go to **Benefits** and select **+ Add Benefit**. For the **Type**, select **File Downloads**. Then add the benefit to the `Topway` product.
-3. Upload the DMG of the newest release to the benefit, as in [Upload the DMG of a release](#upload-the-dmg-of-a-release).
-4. Go to **Checkout Links**, select **New Link**, and select the `Topway` product. Then set these fields:
+2. Go to **Benefits** and select **+ Add Benefit**. For the **Type**, select **File Downloads**. Polar saves the benefit only when it has one file, so upload the DMG of the newest release in this form. Do steps 1 to 4 of [Upload the DMG of a release](#upload-the-dmg-of-a-release) for it. Then save the benefit, and add it to the `Topway` product.
+3. Go to **Checkout Links**, select **New Link**, and select the `Topway` product. Then set these fields:
    - Leave **Success URL** empty. Then the buyer stays on the Polar confirmation page, which shows the download.
    - For **Return URL**, type `https://topway.pulgueta.com/download`. The checkout page then shows a back button to the site.
-5. Go to **Finance > Account** and complete the checklist, then select **Submit for review**. Polar takes no payments until it approves the account. The [review checklist](https://polar.sh/docs/merchant-of-record/review-checklist) tells what Polar needs.
-6. When Polar approves the account, copy the URL of the checkout link into `polarUrl` in [`web/src/config.ts`](../web/src/config.ts). Use the URL of the link, not the URL of the checkout page that it opens, because that page expires.
-7. Build and deploy the website, as in step 9 of [Make a release with GitHub Actions](#make-a-release-with-github-actions). The download page then shows **Buy the DMG** in place of **Coming soon**.
+4. Go to **Finance > Account** and complete the checklist, then select **Submit for review**. Polar takes no payments until it approves the account. The [review checklist](https://polar.sh/docs/merchant-of-record/review-checklist) tells what Polar needs.
+5. When Polar approves the account, copy the URL of the checkout link into `polarUrl` in [`web/src/config.ts`](../web/src/config.ts). Use the URL of the link, not the URL of the checkout page that it opens, because that page expires.
+6. Build and deploy the website, as in step 9 of [Make a release with GitHub Actions](#make-a-release-with-github-actions). The download page then shows **Buy the DMG** in place of **Coming soon**.
 
 [Checkout Links](https://polar.sh/docs/features/checkout/links) in the Polar documentation tells more.
 
@@ -206,7 +205,9 @@ Do these steps one time, after the first release has its DMG.
    ```
 
 4. Make sure that the file has no **Malicious file detected** badge. Polar scans each upload, and buyers cannot download a file that it flags. [File Downloads](https://polar.sh/docs/features/benefits/file-downloads) in the Polar documentation tells what to do.
-5. Disable the DMG of the last release. Do not delete it. A disabled file stays available to the buyers who got it, but new buyers do not get it. A deleted file goes away for all buyers. Polar also gives the new file to all earlier buyers.
+5. Save the benefit. Keep the DMG of the last release enabled for one day. Polar scans files in the background, so no badge right after the upload does not mean that the scan is complete. While both files are enabled, buyers get both, and each one works.
+6. After one day, open the benefit again and make sure that the new DMG still has no badge. Then disable the DMG of the last release. Do not delete it. A disabled file stays available to the buyers who got it, but new buyers do not get it. A deleted file goes away for all buyers. Polar also gives the new file to all earlier buyers.
+7. If Polar flags the new DMG later, enable the DMG of the last release again, so that new buyers get a file that works. Then see [File Downloads](https://polar.sh/docs/features/benefits/file-downloads) in the Polar documentation.
 
 ## Make a release
 
