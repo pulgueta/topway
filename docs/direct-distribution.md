@@ -208,9 +208,9 @@ Do these steps one time, after the first release has its DMG.
 5. Save the benefit. Keep the DMG of the last release enabled for one day. Polar scans files in the background, so no badge right after the upload does not mean that the scan is complete. While both files are enabled, buyers get both, and each one works.
 6. After one day, open the benefit again and make sure that the new DMG still has no badge. Then disable the DMG of the last release. Do not delete it. A disabled file stays available to the buyers who got it, but new buyers do not get it. A deleted file goes away for all buyers. Polar also gives the new file to all earlier buyers.
 7. If Polar flags the new DMG later, stop all distribution of that DMG until you know the cause. The same file is in the GitHub release and in the Sparkle feed:
-   1. In Polar, enable the DMG of the last release again, so that new buyers get a file that works.
-   2. In `web/public/appcast.xml`, remove the `<item>` of the flagged version only. Keep the other items. Then deploy the website, so that Sparkle stops offering the update.
-   3. Make the GitHub release a draft, so that its DMG is not public: `gh release edit v0.2 --repo pulgueta/topway --draft`.
+   1. Make the GitHub release a draft first: `gh release edit v0.2 --repo pulgueta/topway --draft`. This stops each download of that DMG at once, also through the current Sparkle feed and through direct links.
+   2. In Polar, enable the DMG of the last release again, so that new buyers get a file that works.
+   3. In `web/public/appcast.xml`, remove the `<item>` of the flagged version only. Keep the other items. Then deploy the website, so that Sparkle stops offering an update that it cannot download.
    4. Find the cause. See [File Downloads](https://polar.sh/docs/features/benefits/file-downloads) in the Polar documentation. When you know that the file is safe, publish the release again (`--draft=false`), put back the item, and deploy. Otherwise, make a new release with a higher build number.
 
 ## Make a release
