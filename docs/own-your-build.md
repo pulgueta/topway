@@ -73,7 +73,7 @@ If you use a Personal Team (option B), Xcode shows a signing error about Associa
 
 ### Change the display name (optional)
 
-To give the app a different name, change `INFOPLIST_KEY_CFBundleDisplayName = Topway;` in `topway.xcodeproj/project.pbxproj`. It is in 2 places, for Debug and Release. You can also change it in Xcode, in the **General** tab of the target. The text in the app still says "Topway".
+To give the app a different name, change `INFOPLIST_KEY_CFBundleDisplayName = Topway;` in `topway.xcodeproj/project.pbxproj`. It is in 4 places, for Debug and Release of the `topway` and `topway-direct` targets. You can also change it in Xcode, in the **General** tab of the target. The text in the app still says "Topway".
 
 ### What follows the bundle ID
 

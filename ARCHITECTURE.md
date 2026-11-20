@@ -8,6 +8,7 @@ This page tells you where the Topway code goes and how data moves through the ap
 |---|---|---|
 | Core | `Packages/TopwayCore` | Sends requests to Railway, and keeps the models and the rules. It does not use SwiftUI. |
 | App | `topway` | Shows the screens, and keeps the app state in `AppState`. |
+| Direct build | `topway-direct` | The Sparkle updater and the Updates setting. Only the direct build compiles it. See [Distribution](#distribution). |
 
 The app imports the core. The core never imports the app.
 
@@ -244,6 +245,57 @@ Each action that changes data has a `HarmLevel`. [AGENTS.md](AGENTS.md#confirmat
 To ask for a confirmation, make a `ConfirmationRequest` and call `appState.confirm`. `MainView` shows `GlassConfirmationDialog` above all screens, with `destructiveConfirmation(...)`. Do not use `alert` or `confirmationDialog`, because they close the menu bar window. Return confirms only an action that is not destructive.
 
 The Settings window is a separate window, so **Sign out…** asks for its confirmation in the Settings form.
+
+## Distribution
+
+Topway has two builds of the same sources. Both use the bundle ID `com.pulgueta.topway`, the team 7QNFW3929Z and the same sign-in.
+
+| | Mac App Store | Direct |
+|---|---|---|
+| Target and scheme | `topway` | `topway-direct` |
+| Sources | `topway/` | `topway/` and `topway-direct/` |
+| Product | `topway.app` | `topway-direct.app`. The DMG has it as `Topway.app`. |
+| Signature | Apple Distribution | Developer ID Application, notarized |
+| Info.plist and entitlements | `topway/Info.plist`, `topway/topway.entitlements` | `topway-direct/Info.plist`, `topway-direct/topway-direct.entitlements` |
+| Updates | The App Store | Sparkle 2.10.1, from `https://topway.pulgueta.com/appcast.xml` |
+
+The App Store build must have no update code of its own (App Review Guideline 2.4.5). Xcode links a Swift package product to a target, not to a build configuration. Thus a second target keeps Sparkle out of the App Store product, with no custom script phase. [`scripts/check-app-store-build.sh`](scripts/check-app-store-build.sh) makes sure of this on the archive, and CI runs it.
+
+### Code of the direct build
+
+Only the direct target compiles `topway-direct/`, and only it defines `DIRECT_DISTRIBUTION`.
+
+| File | What it does |
+|---|---|
+| `AppUpdater` | Starts the Sparkle updater (`SPUStandardUpdaterController`), gives its state to SwiftUI, and puts Topway in the Dock while an update shows. |
+| `UpdatesSettingsSection` | The Updates section in Settings: **Check for updates automatically** and **Check for updates…**. |
+
+Two shared files use `#if DIRECT_DISTRIBUTION`: `TopwayApp` makes the `AppUpdater` and gives it to the Settings scene, and `SettingsView` shows `UpdatesSettingsSection`.
+
+### How the updater starts
+
+1. `TopwayApp` keeps the `AppUpdater` in a `@State`, so the updater starts at launch. Sparkle then checks on its schedule, also while the Settings window is closed.
+2. `AppUpdater.init` reads `SUPublicEDKey`, which the build fills from `SPARKLE_PUBLIC_ED_KEY`. With no valid key, Sparkle shows an error at each launch, so for an empty or not expanded value (`hasPublicKey(infoValue:)`), `AppUpdater` does not start it. `isAvailable` is then `false`, and the Updates controls are off.
+3. With a key, `SPUStandardUpdaterController` starts the updater. At the second launch, Sparkle asks the user if it can check automatically. Each check reads `SUFeedURL`.
+4. `AppUpdater` follows `canCheckForUpdates` and `automaticallyChecksForUpdates` with KVO. It sends a value to Sparkle only when it is different, so Sparkle gets only the changes of the user.
+
+### Gentle reminders
+
+Topway has no Dock icon (`LSUIElement`), so a scheduled update window can show behind other windows. `AppUpdater` supports the [gentle reminders](https://sparkle-project.org/documentation/gentle-reminders/) of Sparkle:
+
+- While an update shows, the activation policy is `.regular`, so Topway is in the Dock and in the app switcher. The user can find the update window again.
+- For a check that the user did not start, the Dock icon shows the badge "1". The badge goes away when the user looks at the update.
+- When the update session ends, the policy goes back to `.accessory`.
+- **Check for updates…** activates Topway first, so the update window shows above other apps.
+
+### Release pipeline
+
+1. A version tag such as `v0.2` starts [`.github/workflows/release-direct.yml`](.github/workflows/release-direct.yml).
+2. [`scripts/release-direct.sh`](scripts/release-direct.sh) archives `topway-direct`, exports it with Developer ID, notarizes and staples `Topway.app`, makes `Topway-VERSION.dmg`, signs and notarizes the DMG, and adds the DMG to the appcast with the private EdDSA key.
+3. The workflow puts the DMG in a GitHub release, then opens a pull request for the appcast.
+4. The owner merges the pull request and deploys the website.
+
+[docs/direct-distribution.md](docs/direct-distribution.md) tells the owner how to set up the certificates, the keys and the secrets, and how to make a release.
 
 ## Add a feature
 

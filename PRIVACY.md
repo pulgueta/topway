@@ -1,15 +1,18 @@
 # Privacy policy
 
-Last update: 2026-11-13
+Last update: 2026-11-20
 
 Topway is a macOS menu bar app for Railway. **Topway collects no data.**
+
+This policy is for the two builds of Topway: the Mac App Store build, and the direct build from the website `topway.pulgueta.com`. When a part is for one build only, the text names that build.
 
 ## What Topway does not do
 
 - Topway does not collect, sell or share your data.
-- Topway has no analytics, no advertisements, no tracking and no third-party code.
+- Topway has no analytics, no advertisements and no tracking.
+- The App Store build has no third-party code. The direct build has one third-party component: [Sparkle](https://sparkle-project.org), an open source framework that updates the app.
 - Topway sends no crash reports and no usage data.
-- The developer has no server, so the developer cannot see your sign-in, your projects or your variables.
+- The developer has no server that gets your sign-in or your Railway data, so the developer cannot see your sign-in, your projects or your variables.
 
 ## What Topway keeps on your Mac
 
@@ -19,6 +22,7 @@ Topway is a macOS menu bar app for Railway. **Topway collects no data.**
 | The ID of the selected workspace | The app settings (`UserDefaults`) | **Settings > Account > Sign out…** |
 | Your settings: auto-refresh, alerts and muted projects | The app settings (`UserDefaults`) | Delete the app and its data. |
 | A record that the welcome window showed one time | The app settings (`UserDefaults`) | Delete the app and its data. |
+| Direct build only: your update choices and the time of the last update check | The app settings (`UserDefaults`) | Delete the app and its data. |
 
 Your name, your email, the names of your workspaces, and your projects, services, variables, deployments and logs stay in memory. Topway does not write them to disk.
 
@@ -26,7 +30,7 @@ An earlier build of Topway kept a Railway API token in the Keychain. Topway remo
 
 ## Where Topway sends data
 
-Topway connects only to the Railway API (`backboard.railway.com`), through HTTPS and secure WebSockets.
+The App Store build connects only to the Railway API (`backboard.railway.com`), through HTTPS and secure WebSockets. The direct build connects to the same API, and also to the hosts in [Updates of the direct build](#updates-of-the-direct-build).
 
 ### Sign in with Railway
 
@@ -47,6 +51,18 @@ Topway connects only to the Railway API (`backboard.railway.com`), through HTTPS
 The [Railway privacy policy](https://railway.com/legal/privacy) applies to the data that Railway keeps.
 
 In sample mode, Topway does not connect to Railway, and it does not use or save a sign-in. The incident banner then shows a sample incident.
+
+### Updates of the direct build
+
+The App Store build gets its updates from the App Store and does none of this. The direct build uses Sparkle to find and install updates, also in sample mode.
+
+- At the second launch, Sparkle asks you if Topway can check for updates automatically. To change your choice, or to check now, go to **Settings > Updates**.
+- To check, Topway gets the list of versions from `https://topway.pulgueta.com/appcast.xml`. The request contains the name and the version of Topway and of Sparkle, in the `User-Agent` header, for example `Topway/0.2 Sparkle/2.10.1`. It contains no token and no data about you, your workspaces or your projects.
+- Sparkle can also send a system profile, such as the Mac model and the macOS version. Topway does not turn on this feature (`SUEnableSystemProfiling`), so Sparkle sends no profile.
+- To install an update, Topway downloads the DMG from GitHub. The download starts at `github.com`, and GitHub sends it from a download host such as `release-assets.githubusercontent.com`. These requests have the same `User-Agent` header and no data about you.
+- As with each connection on the internet, these servers can see the IP address of your Mac.
+
+Cloudflare runs `topway.pulgueta.com`. The [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/) applies to the data that Cloudflare keeps. GitHub runs the downloads. The [GitHub privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) applies to the data that GitHub keeps.
 
 ## Notifications
 
