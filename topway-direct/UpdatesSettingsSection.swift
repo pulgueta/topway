@@ -15,6 +15,13 @@ struct UpdatesSettingsSection: View {
             )
             .disabled(!appUpdater.isAvailable)
 
+            // Sparkle downloads updates in the background only while it checks automatically.
+            Toggle(
+                "Download and install updates automatically",
+                isOn: $appUpdater.automaticallyDownloadsUpdates
+            )
+            .disabled(!appUpdater.isAvailable || !appUpdater.automaticallyChecksForUpdates)
+
             // Not available in a build with no update key, or while Sparkle downloads data in
             // the background.
             Button("Check for updates…") { appUpdater.checkForUpdates() }

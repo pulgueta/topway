@@ -26,6 +26,19 @@ final class AppUpdater: NSObject, SPUStandardUserDriverDelegate {
         }
     }
 
+    /// The permission prompt of Sparkle can turn this on. It is `false` while Sparkle does not
+    /// check for updates automatically, but Sparkle keeps the choice of the user for when the
+    /// checks start again. As for `automaticallyChecksForUpdates`, Topway sends only a different
+    /// value to Sparkle.
+    var automaticallyDownloadsUpdates = false {
+        didSet {
+            guard let updater = controller?.updater,
+                automaticallyDownloadsUpdates != updater.automaticallyDownloadsUpdates
+            else { return }
+            updater.automaticallyDownloadsUpdates = automaticallyDownloadsUpdates
+        }
+    }
+
     /// `nil` in a build with no update key, and in a preview. Then Sparkle never starts.
     @ObservationIgnored private var controller: SPUStandardUpdaterController?
     @ObservationIgnored private var subscriptions: Set<AnyCancellable> = []
@@ -53,6 +66,9 @@ final class AppUpdater: NSObject, SPUStandardUserDriverDelegate {
             .store(in: &subscriptions)
         controller.updater.publisher(for: \.automaticallyChecksForUpdates)
             .sink { [weak self] in self?.automaticallyChecksForUpdates = $0 }
+            .store(in: &subscriptions)
+        controller.updater.publisher(for: \.automaticallyDownloadsUpdates)
+            .sink { [weak self] in self?.automaticallyDownloadsUpdates = $0 }
             .store(in: &subscriptions)
     }
 
