@@ -96,6 +96,9 @@ partial_files=()
 # there was no earlier DMG). After a failure, the cleanup then puts back the earlier DMG.
 placed_dmg=""
 earlier_dmg=""
+# The temporary copy of the new appcast. When it is gone, the rename put the new appcast in its
+# place, so the new DMG must stay: it is the pair of that appcast.
+staged_appcast=""
 
 step() {
   echo
@@ -113,6 +116,11 @@ die() {
 # stay a pair. The appcast has the EdDSA signature of its DMG.
 restore_earlier_dmg() {
   [[ -n "$placed_dmg" ]] || return 0
+  if [[ -n "$staged_appcast" && ! -e "$staged_appcast" ]]; then
+    # A signal came after the appcast rename. Keep the new DMG and the new appcast.
+    [[ -z "$earlier_dmg" ]] || rm -f "$earlier_dmg"
+    return 0
+  fi
   if [[ -z "$earlier_dmg" ]]; then
     rm -f "$placed_dmg"
     echo "The script deleted the new DMG. There was no earlier DMG at $placed_dmg." >&2
@@ -537,6 +545,7 @@ put_release_files() {
     mkdir -p "$(dirname "$appcast_output")"
     partial_files+=("$appcast_output.partial")
     cp "$new_appcast" "$appcast_output.partial"
+    staged_appcast="$appcast_output.partial"
     if [[ -e "$target" ]]; then
       ln -f "$target" "$target.earlier"
       earlier_dmg="$target.earlier"
