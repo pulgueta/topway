@@ -20,7 +20,7 @@ The app imports the core. The core never imports the app.
 | `Models` | `Project`, `Service`, `Deployment` and the other types that the app uses. |
 | `Sample` | `SampleDataSource` and its start data. |
 | `OAuth` | Sign in with Railway: `PKCE`, `AuthorizationRequest`, `AuthorizationCallback`, `RailwayOAuthClient`, `OAuthTokens`, `WorkspaceChoice` and `SessionGeneration`. |
-| `Storage` | `KeychainStore`, which keeps the tokens in the Keychain. |
+| `Storage` | `KeychainStore`, which keeps the tokens in the data protection keychain, and `KeychainMigration`, which moves the sign-in of earlier builds from the file-based keychain one time. |
 | `Health` | `HealthSummary`, `Health`, `AlertSnapshot`, `HealthAlert` and `AlertKind`. |
 | `Logs` | `LogLine`, `LogKind`, `LogEvent`, `LogConnection`, `LogBuffer` and the reconnect and polling rules. |
 | `Confirmation` | `HarmLevel` and `ConfirmationRules`. |
@@ -86,7 +86,7 @@ Follow [DESIGN.md](DESIGN.md) when you add or change a screen.
 Sign in with Railway is the only way to connect. Topway is a Railway OAuth app of the type Native (Public), with PKCE S256 and no client secret.
 
 1. **Sign in with Railway** calls `AppState.signIn()`. `WebSignIn` opens the Railway page in an `ASWebAuthenticationSession` window, with the HTTPS callback `https://topway.pulgueta.com/oauth/callback` (Associated Domains `webcredentials`).
-2. `AuthorizationCallback.code(in:state:)` checks the callback. `RailwayOAuthClient.exchange` sends the code, the client ID and the PKCE verifier. Topway saves `OAuthTokens` in the Keychain as one item.
+2. `AuthorizationCallback.code(in:state:)` checks the callback. `RailwayOAuthClient.exchange` sends the code, the client ID and the PKCE verifier. Topway saves `OAuthTokens` as one item in the data protection keychain. The item belongs to the access group of the app ID, so the App Store build and the Developer ID build share it. At launch, `AppState` moves the item of earlier builds from the file-based keychain one time (`KeychainMigration`).
 3. `AppState.loadAccount()` reads the name, the email and the shared workspaces. `WorkspaceChoice` selects the saved workspace or the only one. With several, the projects screen shows the workspace list.
 4. `AppState.withAccessToken` gives each request a token. It refreshes the token 5 minutes before it expires, and one time after a "Not Authorized" answer. Only one refresh runs at a time.
 5. `SessionGeneration` changes on a new sign-in, a sign-out and sample mode, but not on a refresh. A late answer from an earlier generation changes nothing, and a sign-out or sample data closes the sign-in window.

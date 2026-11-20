@@ -51,6 +51,11 @@ class AppState {
     private(set) var completedSignIns = 0
 
     private static let tokensKey = "railwayOAuth"
+    /// The `UserDefaults` key that is `true` after the sign-in of earlier builds moved to the
+    /// data protection keychain. Then Topway never reads the file-based keychain again.
+    /// A saved sign-in, a sign-out and a sign-in that Railway refuses also set it: they replace
+    /// the earlier sign-in, so a later move must not bring it back.
+    private static let keychainMoveKey = "keychainMoveDone"
     /// The Keychain item and the `UserDefaults` key of the API token of earlier builds.
     private static let legacyTokenKey = "railwayToken"
     static let notConnectedMessage = "Sign in with Railway and select a workspace first."
@@ -158,12 +163,25 @@ class AppState {
         KeychainStore.delete(Self.legacyTokenKey)
         UserDefaults.standard.removeObject(forKey: Self.legacyTokenKey)
 
-        if oauthClientID != nil, let saved = KeychainStore.read(Self.tokensKey) {
-            tokens = OAuthTokens(keychainValue: saved)
+        // `false` while the sign-in of an earlier build can move at the next launch.
+        var isMoveDone = true
+        if oauthClientID != nil {
+            // Earlier builds kept the sign-in in the file-based keychain. Topway moves it one
+            // time, so the App Store build and the Developer ID build share it.
+            let defaults = UserDefaults.standard
+            isMoveDone = KeychainStore.moveFileBasedItem(
+                Self.tokensKey, isDone: defaults.bool(forKey: Self.keychainMoveKey))
+            if isMoveDone {
+                defaults.set(true, forKey: Self.keychainMoveKey)
+            }
+            if let saved = KeychainStore.read(Self.tokensKey) {
+                tokens = OAuthTokens(keychainValue: saved)
+            }
         }
         // With no sign-in, a saved workspace belongs to nobody. This also removes the
-        // Workspace ID that an earlier build saved with its API token.
-        if tokens == nil {
+        // Workspace ID that an earlier build saved with its API token. While the move is not
+        // done, the sign-in can come back at the next launch, so its workspace stays.
+        if tokens == nil, isMoveDone {
             UserDefaults.standard.removeObject(forKey: "workspaceId")
             workspaceId = ""
         }
@@ -576,6 +594,7 @@ class AppState {
     @discardableResult
     func signOut() -> Bool {
         guard KeychainStore.delete(Self.tokensKey) else { return false }
+        UserDefaults.standard.set(true, forKey: Self.keychainMoveKey)
         endSession()
         return true
     }
@@ -602,8 +621,11 @@ class AppState {
 
     /// Writes the tokens to the Keychain as one item.
     private func save(_ newTokens: OAuthTokens) -> Bool {
-        guard let value = newTokens.keychainValue else { return false }
-        return KeychainStore.save(value, for: Self.tokensKey)
+        guard let value = newTokens.keychainValue,
+            KeychainStore.save(value, for: Self.tokensKey)
+        else { return false }
+        UserDefaults.standard.set(true, forKey: Self.keychainMoveKey)
+        return true
     }
 
     /// Runs one request with an access token that is not expired. Sample mode has no token.
@@ -734,6 +756,8 @@ class AppState {
                     sessionGeneration.permitsSessionEnd(after: error, startedIn: generation)
                 {
                     KeychainStore.delete(Self.tokensKey)
+                    // As for a sign-out: the next launch must not bring back an earlier item.
+                    UserDefaults.standard.set(true, forKey: Self.keychainMoveKey)
                     endSession(
                         notice: "Your Railway sign-in ended. Sign in again to see your projects.")
                 }
