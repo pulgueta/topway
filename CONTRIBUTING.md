@@ -18,7 +18,7 @@ xcodebuild -project topway.xcodeproj -scheme topway-direct -configuration Debug 
 
 If you change the project, a target or a package, also run `scripts/check-app-store-build.sh`. It makes sure that the App Store build has no Sparkle.
 
-To sign in from your build, follow [Build from source](README.md#build-from-source). To sign it with your own team, follow [Build and own Topway](docs/own-your-build.md).
+To sign in from your build, follow [Build from source](README.md#build-from-source). To sign the `topway` scheme with your own team, follow [Build and own Topway](docs/own-your-build.md). That guide sets up only the `topway` scheme. The `topway-direct` target is for the DMG releases of the owner: [Release the direct build](docs/direct-distribution.md).
 
 ## Test
 

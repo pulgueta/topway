@@ -19,8 +19,8 @@ Each action has a text label. No action hides until you hover over a row. To del
 
 You can get Topway in two ways:
 
-- **Mac App Store** (coming soon): Topway is a paid app there. The App Store installs the updates.
-- **Direct download**: Download the disk image (DMG) from [topway.pulgueta.com](https://topway.pulgueta.com). Apple notarizes it, and Topway tells you when an update is available.
+- **Mac App Store**: Topway is a paid app there. The App Store installs the updates.
+- **Direct download** (not available yet): a disk image (DMG) from topway.pulgueta.com. Apple notarizes it, and Topway tells you when an update is available.
 
 Install only one of them on a Mac. With two copies, the sign-in can stop before it finishes. To change, quit Topway, delete the old copy, then install the new one. Your sign-in and your settings stay. Topway can ask for your Mac password one time.
 
@@ -28,7 +28,7 @@ Topway is also open source under the [MIT license](LICENSE). You can build it fr
 
 ## Get started
 
-1. Get Topway from the Mac App Store (coming soon) or from [topway.pulgueta.com](https://topway.pulgueta.com), or [build it from source](#build-from-source). For the DMG, open it and drag Topway to the Applications folder.
+1. Get Topway from the Mac App Store (coming soon) or as a DMG from topway.pulgueta.com (not available yet), or [build it from source](#build-from-source). For the DMG, open it and drag Topway to the Applications folder.
 2. Open Topway. Its icon is in the menu bar, not in the Dock. At the first launch, a welcome window shows what Topway does and where its icon is.
 3. Select **Sign in with Railway**. Sign in on the Railway page that opens, then select the workspaces that Topway can use.
 4. If you selected more than one workspace, choose one. To change it later, go to **Settings > Account > Workspace**.
