@@ -1,0 +1,9 @@
+// The direct build: Developer ID, notarized, with Sparkle updates.
+//
+// It uses the same OAuth client ID as the App Store build.
+#include "OAuth.xcconfig"
+
+// The public EdDSA key of Sparkle (from generate_keys). It goes into the Info.plist key
+// SUPublicEDKey. A public key is not a secret, so it can be in this file. Never put the
+// private key in this repository.
+SPARKLE_PUBLIC_ED_KEY =

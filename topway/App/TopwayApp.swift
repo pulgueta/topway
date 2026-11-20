@@ -16,6 +16,11 @@ struct TopwayApp: App {
     @AppStorage(WelcomeView.shownKey) private var isWelcomeShown = false
     /// The notification center keeps a weak reference, so the app keeps this one.
     private let notificationPresenter = NotificationPresenter()
+    #if DIRECT_DISTRIBUTION
+        /// Only the direct build has updates. With an update key, the updater starts at launch,
+        /// so Sparkle checks on its schedule also while the Settings window is closed.
+        @State private var appUpdater = AppUpdater()
+    #endif
 
     init() {
         UNUserNotificationCenter.current().delegate = notificationPresenter
@@ -62,6 +67,9 @@ struct TopwayApp: App {
         Settings {
             SettingsView()
                 .environment(appState)
+                #if DIRECT_DISTRIBUTION
+                    .environment(appUpdater)
+                #endif
         }
     }
 }
