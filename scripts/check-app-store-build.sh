@@ -106,12 +106,18 @@ app_of() {
 plist_value() { /usr/libexec/PlistBuddy -c "Print :$1" "$2" 2>/dev/null || echo "(none)"; }
 
 # Check 1: the app has no Sparkle framework, XPC service, app, bundle or library.
+# The list of find goes in a file, because find in a process substitution does not
+# give its exit status: a part of the app that find cannot read would then pass.
 check_no_sparkle_bundles() {
-  local path found=()
+  local path list="$work_dir/bundles.list" found=()
+  if ! find "$1" -iname '*sparkle*' \( -name '*.framework' -o -name '*.xpc' \
+    -o -name '*.app' -o -name '*.bundle' -o -name '*.dylib' \) -print0 >"$list"; then
+    fail "find cannot read all of the app, so the script cannot look for Sparkle bundles."
+    return 0
+  fi
   while IFS= read -r -d '' path; do
     found+=("${path#"$1/"}")
-  done < <(find "$1" -iname '*sparkle*' \( -name '*.framework' -o -name '*.xpc' \
-    -o -name '*.app' -o -name '*.bundle' -o -name '*.dylib' \) -print0)
+  done <"$list"
 
   if ((${#found[@]} == 0)); then
     pass "The app has no Sparkle framework, XPC service or bundle."
@@ -122,21 +128,27 @@ check_no_sparkle_bundles() {
 }
 
 # Check 2: no Mach-O file links Sparkle or has Sparkle symbols. A stripped binary still
-# lists the symbols that it imports, so nm also finds Sparkle in a Release build.
+# lists the symbols that it imports, so nm also finds Sparkle in a Release build. For a
+# universal binary, otool and nm read only the slice of this Mac, so -arch all is
+# necessary to read each slice.
 check_no_sparkle_in_binaries() {
-  local file name libraries symbols count=0 problems=()
+  local file name libraries symbols list="$work_dir/files.list" count=0 problems=()
+  if ! find "$1" -type f -print0 >"$list"; then
+    fail "find cannot read all of the app, so the script cannot examine each Mach-O file."
+    return 0
+  fi
   while IFS= read -r -d '' file; do
     [[ "$(file -b "$file")" == Mach-O* ]] || continue
     count=$((count + 1))
     name="${file#"$1/"}"
-    if ! libraries=$(otool -L -X "$file" 2>/dev/null); then
+    if ! libraries=$(otool -L -X -arch all "$file" 2>/dev/null); then
       problems+=("otool cannot read the libraries of $name.")
       continue
     fi
     if grep -qi sparkle <<<"$libraries"; then
       problems+=("$name links Sparkle.")
     fi
-    if ! symbols=$(nm -m "$file" 2>/dev/null); then
+    if ! symbols=$(nm -m -arch all "$file" 2>/dev/null); then
       problems+=("nm cannot read the symbols of $name.")
       continue
     fi
@@ -145,7 +157,7 @@ check_no_sparkle_in_binaries() {
     if grep -qE "$SPARKLE_SYMBOLS" <<<"$symbols"; then
       problems+=("$name has Sparkle symbols.")
     fi
-  done < <(find "$1" -type f -print0)
+  done <"$list"
 
   if ((count == 0)); then
     fail "The app has no Mach-O file to examine."
