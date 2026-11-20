@@ -1,18 +1,19 @@
 # Release the direct build
 
-This guide is for the owner of Topway. It tells you how to set up and make a release of the direct build: a notarized disk image (DMG) that users download from GitHub, with updates from Sparkle. First do the one-time setup: the [Apple items](#one-time-setup-in-apple-developer), the [Sparkle keys](#make-the-sparkle-keys) and the [GitHub secrets](#add-the-github-secrets). Then each release is a version change and a tag.
+This guide is for the owner of Topway. It tells you how to set up and make a release of the direct build: a notarized disk image (DMG) that users buy through Polar, with free updates from Sparkle. First do the one-time setup: the [Apple items](#one-time-setup-in-apple-developer), the [Sparkle keys](#make-the-sparkle-keys), the [GitHub secrets](#add-the-github-secrets) and the [Polar product](#sell-the-dmg-with-polar). Then each release is a version change, a tag and an upload to Polar.
 
 ## What the direct channel is
 
 The direct channel is a second way to get Topway, next to the Mac App Store. It needs no App Review.
 
-|                    | Mac App Store      | Direct                                                     |
-| ------------------ | ------------------ | ---------------------------------------------------------- |
-| Scheme             | `topway`           | `topway-direct`                                            |
-| Signature          | Apple Distribution | Developer ID Application, notarized by Apple               |
-| Download           | The App Store      | A DMG in the GitHub releases, for example `Topway-0.2.dmg` |
-| Updates            | The App Store      | Sparkle 2 reads `https://topway.pulgueta.com/appcast.xml`  |
-| Sparkle in the app | No                 | Yes                                                        |
+|                    | Mac App Store      | Direct                                                       |
+| ------------------ | ------------------ | ------------------------------------------------------------ |
+| Scheme             | `topway`           | `topway-direct`                                              |
+| Signature          | Apple Distribution | Developer ID Application, notarized by Apple                 |
+| Purchase           | The App Store      | Polar sells the DMG. The updates are free.                   |
+| Download           | The App Store      | Polar, and the GitHub releases, for example `Topway-0.2.dmg` |
+| Updates            | The App Store      | Sparkle 2 reads `https://topway.pulgueta.com/appcast.xml`    |
+| Sparkle in the app | No                 | Yes                                                          |
 
 Both channels use the bundle ID `com.pulgueta.topway`, the team `7QNFW3929Z`, the same OAuth client ID and the same sign-in callback.
 
@@ -163,6 +164,50 @@ Then let the workflow open pull requests. In the repository on GitHub, go to **S
 
 After you set the secrets, delete `~/DeveloperID.p12`, the `.p8` file and `~/sparkle_private_key` from your Mac. Keep the copies in your password manager.
 
+## Sell the DMG with Polar
+
+[Polar](https://polar.sh) sells the DMG for you. Polar is the [Merchant of Record](https://polar.sh/docs/merchant-of-record/introduction): it processes the payment and is responsible for the international sales tax. A **File Downloads** benefit gives the DMG to the buyer. For the fees, see [Polar's pricing page](https://polar.sh/resources/pricing).
+
+After the payment, the Polar confirmation page shows the download. Polar also sends an order confirmation email with a link to its Customer Portal, where the buyer can download the DMG again.
+
+The DMG in each GitHub release stays public. Sparkle needs a public URL to download the updates, because the app has no license check and no Polar sign-in. So anyone who finds the release can download the DMG without Polar. This is the expected result, because Topway is MIT licensed and the updates are free.
+
+### Make the product and the checkout link
+
+Do these steps one time, after the first release has its DMG.
+
+1. In the Polar dashboard, go to **Products** and make a product with the name `Topway`. For the billing cycle, select **One-time purchase**. For the pricing, select **Fixed price** and type the price. You cannot change the billing cycle or the pricing type later. You can change the amount.
+2. Go to **Benefits** and select **+ Add Benefit**. For the **Type**, select **File Downloads**. Then add the benefit to the `Topway` product.
+3. Upload the DMG of the newest release to the benefit, as in [Upload the DMG of a release](#upload-the-dmg-of-a-release).
+4. Go to **Checkout Links**, select **New Link**, and select the `Topway` product. Then set these fields:
+   - Leave **Success URL** empty. Then the buyer stays on the Polar confirmation page, which shows the download.
+   - For **Return URL**, type `https://topway.pulgueta.com/download`. The checkout page then shows a back button to the site.
+5. Go to **Finance > Account** and complete the checklist, then select **Submit for review**. Polar takes no payments until it approves the account. The [review checklist](https://polar.sh/docs/merchant-of-record/review-checklist) tells what Polar needs.
+6. When Polar approves the account, copy the URL of the checkout link into `polarUrl` in [`web/src/config.ts`](../web/src/config.ts). Use the URL of the link, not the URL of the checkout page that it opens, because that page expires.
+7. Build and deploy the website, as in step 9 of [Make a release with GitHub Actions](#make-a-release-with-github-actions). The download page then shows **Buy the DMG** in place of **Coming soon**.
+
+[Checkout Links](https://polar.sh/docs/features/checkout/links) in the Polar documentation tells more.
+
+### Upload the DMG of a release
+
+**Upload the new DMG to the benefit at each release.** If you do not, new buyers install the old version first, and Sparkle then updates it.
+
+1. Download the DMG of the release. Use the DMG of the GitHub release, not a different build, so that buyers get the same file as Sparkle:
+
+   ```sh
+   gh release download v0.2 --repo pulgueta/topway --pattern Topway-0.2.dmg
+   ```
+
+2. In Polar, open the **File Downloads** benefit of Topway. Drag `Topway-0.2.dmg` to the dropzone.
+3. Make sure that the file has the same checksum. In the menu of the file, select **Copy SHA-256 Checksum**, and compare it with the output of this command:
+
+   ```sh
+   shasum -a 256 Topway-0.2.dmg
+   ```
+
+4. Make sure that the file has no **Malicious file detected** badge. Polar scans each upload, and buyers cannot download a file that it flags. [File Downloads](https://polar.sh/docs/features/benefits/file-downloads) in the Polar documentation tells what to do.
+5. Disable the DMG of the last release. Do not delete it. A disabled file stays available to the buyers who got it, but new buyers do not get it. A deleted file goes away for all buyers. Polar also gives the new file to all earlier buyers.
+
 ## Make a release
 
 Each release needs a version number and a build number that are higher than the last release. Sparkle compares the build number (`CFBundleVersion`), not the version.
@@ -209,6 +254,8 @@ Each release needs a version number and a build number that are higher than the 
     curl -s https://topway.pulgueta.com/appcast.xml | grep '<sparkle:version>'
     ```
 
+11. Upload the new DMG to Polar, as in [Upload the DMG of a release](#upload-the-dmg-of-a-release).
+
 The release must exist before the appcast points to it. For this reason, the workflow makes the release first and gives you the appcast as a pull request. If a step after **Make the GitHub release** fails, do not run the workflow again. [The release is there, but the appcast pull request is not](#the-release-is-there-but-the-appcast-pull-request-is-not) tells how to finish it.
 
 The workflow opens the pull request with the `GITHUB_TOKEN`. For such a pull request, GitHub keeps the CI runs in an approval-required state until a user with write access approves them. [Triggering a workflow from a workflow](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow) in the GitHub documentation tells more.
@@ -251,7 +298,7 @@ Use this when GitHub Actions is not available. Your Mac must have:
    gh workflow enable release-direct.yml
    ```
 
-6. Commit `web/public/appcast.xml` on a branch, merge it, and deploy the website, as in steps 8 to 10 above.
+6. Commit `web/public/appcast.xml` on a branch, merge it, deploy the website, and upload the DMG to Polar, as in steps 8 to 11 above.
 
 The script puts the DMG in `build/release/`, or in the folder that `OUTPUT_DIR` gives. Git ignores `build/`. The comments at the top of the script list all the options.
 
@@ -347,7 +394,7 @@ Each attempt of the run keeps the appcast of its DMG and the checksum of the DMG
      --body "This pull request adds v0.2 to the Sparkle appcast. The GitHub release v0.2 has the DMG."
    ```
 
-8. When the checks pass, merge the pull request. Then do steps 9 and 10 of [Make a release with GitHub Actions](#make-a-release-with-github-actions).
+8. When the checks pass, merge the pull request. Then do steps 9 to 11 of [Make a release with GitHub Actions](#make-a-release-with-github-actions).
 
 ### An update does not show
 

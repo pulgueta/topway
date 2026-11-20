@@ -11,9 +11,9 @@
 export const appStoreUrl: string | null = null;
 
 /**
- * TODO(owner): Put the Polar URL for the DMG here. First decide how Polar works (task T9):
- * a public DMG with a Polar purchase to support the developer, or a Polar file download.
- * The page text does not depend on that choice and shows no price.
+ * TODO(owner): Put the Polar checkout link of the DMG product here. The product has a File
+ * Downloads benefit with the DMG. See "Sell the DMG with Polar" in docs/direct-distribution.md.
+ * The page shows no price: set the price in Polar.
  */
 export const polarUrl: string | null = null;
 

@@ -64,6 +64,10 @@ The App Store build gets its updates from the App Store and does none of this. T
 
 Cloudflare runs `topway.pulgueta.com`. The [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/) applies to the data that Cloudflare keeps. GitHub runs the downloads. The [GitHub privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) applies to the data that GitHub keeps.
 
+## Purchase of the DMG
+
+When you buy the DMG, you pay on the Polar site, and Polar processes the payment. Topway and its website never get your payment data. The developer sees your order in Polar, with the details that you give at checkout, for example your email. The [Polar privacy policy](https://polar.sh/legal/privacy-policy) applies to the data that Polar keeps.
+
 ## Notifications
 
 If you turn on alerts, Topway makes the notifications on your Mac. They do not go through a server.
