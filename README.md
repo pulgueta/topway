@@ -15,15 +15,20 @@ Topway puts your Railway projects in the macOS menu bar. You can check your serv
 
 Each action has a text label. No action hides until you hover over a row. To delete a project, a service or an environment, you type its name.
 
-## Paid on the App Store, free to build
+## Where to get Topway
 
-Topway is a paid app on the Mac App Store. It is also open source under the [MIT license](LICENSE). You can build it from source, fork it and own it, at no cost.
+You can get Topway in two ways:
 
-If you buy Topway on the App Store, you support the developer. Buying it is optional.
+- **Mac App Store**: Topway is a paid app there. The App Store installs the updates.
+- **Direct download** (not available yet): a disk image (DMG) from topway.pulgueta.com. Apple notarizes it, and Topway tells you when an update is available.
+
+Install only one of them on a Mac. With two copies, the sign-in can stop before it finishes. To change, quit Topway, delete the old copy, then install the new one. Your sign-in and your settings stay. Topway can ask for your Mac password one time.
+
+Topway is also open source under the [MIT license](LICENSE). You can build it from source, fork it and own it, at no cost. If you buy Topway on the App Store, you support the developer. Buying it is optional.
 
 ## Get started
 
-1. Get Topway from the Mac App Store (coming soon), or [build it from source](#build-from-source).
+1. Get Topway from the Mac App Store or as a DMG from topway.pulgueta.com (not available yet), or [build it from source](#build-from-source). For the DMG, open it and drag Topway to the Applications folder.
 2. Open Topway. Its icon is in the menu bar, not in the Dock. At the first launch, a welcome window shows what Topway does and where its icon is.
 3. Select **Sign in with Railway**. Sign in on the Railway page that opens, then select the workspaces that Topway can use.
 4. If you selected more than one workspace, choose one. To change it later, go to **Settings > Account > Workspace**.
@@ -79,7 +84,7 @@ Git ignores `Config/OAuth.local.xcconfig`. Never commit it, and never put the cl
 
 The sign-in callback on `topway.pulgueta.com` works only for an app that the Topway team (7QNFW3929Z) signs. To sign your build with your own team and use your own callback, follow [Build and own Topway](docs/own-your-build.md).
 
-To change the code, read [CONTRIBUTING.md](CONTRIBUTING.md).
+To change the code, read [CONTRIBUTING.md](CONTRIBUTING.md). To make a release of the direct build, read [Release the direct build](docs/direct-distribution.md).
 
 ## Accessibility
 
@@ -97,4 +102,4 @@ Issues are public. Do not paste a Railway token, your Workspace ID or the values
 
 ## Privacy
 
-Topway collects no data. It keeps your sign-in in the Keychain and connects only to Railway. Read the [privacy policy](PRIVACY.md).
+Topway collects no data. It keeps your sign-in in the Keychain. The App Store build connects only to Railway. The direct build also checks `topway.pulgueta.com` for updates and downloads them from GitHub. Read the [privacy policy](PRIVACY.md).

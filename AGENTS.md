@@ -2,13 +2,14 @@
 
 This file is for coding agents and for people who change Topway. It lists the rules and the gotchas that keep the app working. [ARCHITECTURE.md](ARCHITECTURE.md) explains the code, [DESIGN.md](DESIGN.md) has the screen rules, and [CONTRIBUTING.md](CONTRIBUTING.md) has the code rules.
 
-Topway is a native macOS menu bar app (SwiftUI) that talks directly to the Railway public GraphQL API. The Xcode project has one local package, `Packages/TopwayCore`, and no third-party packages.
+Topway is a native macOS menu bar app (SwiftUI) that talks directly to the Railway public GraphQL API. It has two builds: the Mac App Store build (`topway`) and the direct build (`topway-direct`), a notarized DMG with Sparkle updates. The Xcode project has one local package, `Packages/TopwayCore`. The only third-party package is Sparkle, and only the direct build links it. [Direct build](#direct-build) tells why.
 
 ## Commands
 
 ```sh
-# Build (with no signing; signing needs the certificate of team 7QNFW3929Z)
+# Build the App Store app and the direct app (with no signing; signing needs the certificate of team 7QNFW3929Z)
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project topway.xcodeproj -scheme topway-direct -configuration Debug CODE_SIGNING_ALLOWED=NO build
 
 # Build into a known location, then launch
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug \
@@ -19,8 +20,11 @@ open build/Build/Products/Debug/topway.app
 swift test --package-path Packages/TopwayCore
 
 # Format and lint
-swift format --in-place --recursive topway Packages
-swift format lint --recursive --strict topway Packages
+swift format --in-place --recursive topway topway-direct Packages
+swift format lint --recursive --strict topway topway-direct Packages
+
+# Make sure that the App Store archive has no Sparkle (CI runs it)
+scripts/check-app-store-build.sh
 ```
 
 Commits use `type(scope): brief description`, with no body. The types are `feat`, `fix`, `refactor`, `chore`, `docs`, `style` and `test`. Each commit has one purpose and must build.
@@ -29,7 +33,8 @@ Commits use `type(scope): brief description`, with no body. The types are `feat`
 
 - The deployment target is macOS 26.2. The Liquid Glass APIs, such as `.buttonStyle(.glassProminent)`, need the macOS 26 SDK, so an older Xcode does not compile the app.
 - Swift 6 with strict concurrency and `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`: each type in the app target is `@MainActor` unless it says otherwise. `TopwayCore` has no default isolation and uses `Sendable` types.
-- The app is sandboxed (`topway/topway.entitlements`), with hardened runtime and only the `network.client` entitlement.
+- Two app targets compile the `topway/` folder: `topway` for the Mac App Store, and `topway-direct` for the direct build, which also compiles `topway-direct/`. **The App Store build has no update code** (App Review Guideline 2.4.5). [Direct build](#direct-build) has the rules.
+- The app is sandboxed (`topway/topway.entitlements`), with hardened runtime and only the `network.client` entitlement. The direct build adds two mach-lookup exceptions for Sparkle.
 - Pass closure literals to SwiftUI APIs, for example `Button("Save") { save() }` and `set: { setValue($0) }`. Xcode 26.6 on CI crashes when a main-actor method reference is a `Button` action or a `Binding` setter.
 
 ## OAuth client ID
@@ -45,7 +50,7 @@ Keep these items in place, or the sign-in stops:
 
 - The file `https://topway.pulgueta.com/.well-known/apple-app-site-association`. It names `7QNFW3929Z.com.pulgueta.topway` in `webcredentials`, and the server sends it as `application/json` with no redirect.
 - The redirect URI `https://topway.pulgueta.com/oauth/callback` in the Railway OAuth app.
-- The Associated Domains capability on the App ID, and `webcredentials:topway.pulgueta.com` in `topway/topway.entitlements`.
+- The Associated Domains capability on the App ID, and `webcredentials:topway.pulgueta.com` in `topway/topway.entitlements` and `topway-direct/topway-direct.entitlements`.
 
 Associated Domains give the redirect only to an app of team 7QNFW3929Z. Topway registers no URL scheme and runs no local server. This closes the custom-scheme risk (RFC 8252, section 8.6) only when the Railway OAuth app has no other redirect URI, so **remove `topway://oauth/callback` from the Railway OAuth app before the App Store release**.
 
@@ -88,6 +93,19 @@ Sign in with Railway is the only way to connect. There is no API token field and
 - A refused read (a locked keychain, or a user who denies the access) is not an absent item. Then the move is not done, and it tries again at the next launch. A successful sign-in, renewal or sign-out also sets `keychainMoveDone`, because the new session replaces the earlier item.
 - `KeychainStore.delete` also tries to delete the file-based item, but its result comes only from the data protection keychain. Thus an item that stays does not stop **Sign out…**.
 - A build with no signature (`CODE_SIGNING_ALLOWED=NO`) cannot use the data protection keychain (`errSecMissingEntitlement`), so it cannot save a sign-in. For the same reason, `swift test` has no tests for the real Keychain calls.
+
+## Direct build
+
+The direct build is a Developer ID app in a notarized DMG. Users download it from the website `topway.pulgueta.com`, the DMGs are in GitHub Releases, and Sparkle 2.10.1 gets the updates from `https://topway.pulgueta.com/appcast.xml`. It has the same bundle ID, team and sign-in as the App Store build. [ARCHITECTURE.md](ARCHITECTURE.md#distribution) explains the parts, and [docs/direct-distribution.md](docs/direct-distribution.md) is the release guide of the owner.
+
+- Sparkle (through SPM) is the one exception to the rule of no third-party packages. App Review Guideline 2.4.5 does not permit update code in the App Store build, and Xcode links a package product to a target, not to a build configuration. Thus a second target is the standard way to keep Sparkle out of the App Store product, with no custom script phase.
+- **Never import Sparkle or add update code in `topway/`.** Code for the direct build only goes in `topway-direct/`. Only the direct target defines `DIRECT_DISTRIBUTION`. Shared files use it only to make the `AppUpdater` (`TopwayApp`) and to show the Updates section (`SettingsView`).
+- After a change to the project, a target or a package, run `scripts/check-app-store-build.sh`. It archives the `topway` scheme and fails if the product has the Sparkle framework, Sparkle symbols, Sparkle Info.plist keys or the `-spks` and `-spki` exceptions.
+- The direct target has its own `topway-direct/Info.plist` (`SUFeedURL`, `SUPublicEDKey`, `SUEnableInstallerLauncherService`) and `topway-direct/topway-direct.entitlements`. The entitlements add the mach-lookup exceptions `$(PRODUCT_BUNDLE_IDENTIFIER)-spks` and `-spki`, which the Sparkle installer needs in the sandbox. **When you change `topway/Info.plist` or `topway/topway.entitlements`, make the same change in the direct files.**
+- `Config/Direct.xcconfig` is the base configuration of the direct target. It includes `Config/OAuth.xcconfig` and sets `SPARKLE_PUBLIC_ED_KEY`, the public EdDSA key of Sparkle. With an empty key, `AppUpdater` does not start Sparkle and the Updates controls are off, as an empty OAuth client ID turns off the sign-in. The release script refuses an empty key. **Never commit the private key.**
+- Both targets have the product name `topway`, so the executable and `CFBundleName` are `topway`. The direct target sets `WRAPPER_NAME = topway-direct.app` and `PRODUCT_MODULE_NAME = topway_direct`, so the products are `topway.app` and `topway-direct.app`. Do not use a custom `CONFIGURATION_BUILD_DIR` to keep the products apart: a custom folder broke the package imports. The release renames the direct app to `Topway.app`.
+- Two copies of `com.pulgueta.topway` on one Mac, such as an unsigned build and the installed app, can stop the sign-in callback. [docs/direct-distribution.md](docs/direct-distribution.md#the-sign-in-does-not-come-back-to-the-app) tells how to remove the other copy.
+- A version tag `v<MARKETING_VERSION>` makes a release: [`.github/workflows/release-direct.yml`](.github/workflows/release-direct.yml) runs [`scripts/release-direct.sh`](scripts/release-direct.sh). Sparkle compares the build number (`CFBundleVersion`), so each release needs a higher `CURRENT_PROJECT_VERSION` in both targets.
 
 ## A rejected token must never trap the user
 

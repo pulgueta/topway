@@ -9,13 +9,16 @@ Thank you for your help with Topway. Read [ARCHITECTURE.md](ARCHITECTURE.md) fir
 
 ## Build
 
-Open `topway.xcodeproj` and run the `topway` scheme, or use this command:
+Topway has two schemes. `topway` is the Mac App Store app, and `topway-direct` is the direct app with Sparkle updates. Open `topway.xcodeproj` and run a scheme, or use these commands:
 
 ```sh
 xcodebuild -project topway.xcodeproj -scheme topway -configuration Debug CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project topway.xcodeproj -scheme topway-direct -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
-To sign in from your build, follow [Build from source](README.md#build-from-source). To sign it with your own team, follow [Build and own Topway](docs/own-your-build.md).
+If you change the project, a target or a package, also run `scripts/check-app-store-build.sh`. It makes sure that the App Store build has no Sparkle.
+
+To sign in from your build, follow [Build from source](README.md#build-from-source). To sign the `topway` scheme with your own team, follow [Build and own Topway](docs/own-your-build.md). That guide sets up only the `topway` scheme. The `topway-direct` target is for the DMG releases of the owner: [Release the direct build](docs/direct-distribution.md).
 
 ## Test
 
@@ -32,14 +35,15 @@ Write a test that fails first. Then write the code that makes it pass.
 The rules are in `.swift-format`. Run these commands before you commit:
 
 ```sh
-swift format --in-place --recursive topway Packages
-swift format lint --recursive --strict topway Packages
+swift format --in-place --recursive topway topway-direct Packages
+swift format lint --recursive --strict topway topway-direct Packages
 ```
 
 ## Code rules
 
 - Put one type in each file, with the name of the type.
-- Do not add third-party packages.
+- Do not add third-party packages. The one exception is Sparkle, and only the `topway-direct` target links it. [AGENTS.md](AGENTS.md#direct-build) tells why.
+- Put code that only the direct build uses in `topway-direct/`. Never put update code in `topway/`.
 - Keep SwiftUI out of `TopwayCore`.
 - Make a type `public` only if the app uses it.
 - Send all user input through GraphQL `variables`.

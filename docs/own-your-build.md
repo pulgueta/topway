@@ -4,6 +4,8 @@ This guide is for you if you want to build Topway from source and own your copy 
 
 Topway is open source under the [MIT license](../LICENSE), so you can do this at no cost. It takes more steps than the short build in the [README](../README.md#build-from-source), because the sign-in callback must belong to you.
 
+This guide sets up only the `topway` scheme and its target, so build and run the `topway` scheme. The `topway-direct` target makes the DMG releases of the author, with Sparkle updates. [Release the direct build](direct-distribution.md) tells how it works.
+
 ## Choose how the sign-in comes back
 
 After you sign in on the Railway page, Railway sends you back to the app at a callback address. Today that address is on the author's domain, and only an app that the author's team signs can get it. Choose one of these options to replace it:
@@ -73,7 +75,7 @@ If you use a Personal Team (option B), Xcode shows a signing error about Associa
 
 ### Change the display name (optional)
 
-To give the app a different name, change `INFOPLIST_KEY_CFBundleDisplayName = Topway;` in `topway.xcodeproj/project.pbxproj`. It is in 2 places, for Debug and Release. You can also change it in Xcode, in the **General** tab of the target. The text in the app still says "Topway".
+To give the app a different name, change `INFOPLIST_KEY_CFBundleDisplayName = Topway;` in `topway.xcodeproj/project.pbxproj`. It is in 4 places, for Debug and Release of the `topway` and `topway-direct` targets. You can also change it in Xcode, in the **General** tab of the target. The text in the app still says "Topway".
 
 ### What follows the bundle ID
 
@@ -269,7 +271,7 @@ Use a scheme that is unique to you, such as your bundle ID in lowercase: `com.ex
    swift test --package-path Packages/TopwayCore
    ```
 
-2. In Xcode, select **Product > Run**.
+2. In Xcode, select the **topway** scheme, then select **Product > Run**.
 3. Click the Topway icon in the menu bar, then select **Sign in with Railway**.
 4. Sign in on the Railway page, then select the workspaces that Topway can use.
 5. Make sure that Topway shows your projects.
