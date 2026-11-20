@@ -1,0 +1,322 @@
+# Release the direct build
+
+This guide is for the owner of Topway. It tells you how to set up and make a release of the direct build: a notarized disk image (DMG) that users download from GitHub, with updates from Sparkle. First do the one-time setup: the [Apple items](#one-time-setup-in-apple-developer), the [Sparkle keys](#make-the-sparkle-keys) and the [GitHub secrets](#add-the-github-secrets). Then each release is a version change and a tag.
+
+## What the direct channel is
+
+The direct channel is a second way to get Topway, next to the Mac App Store. It needs no App Review.
+
+|                    | Mac App Store      | Direct                                                     |
+| ------------------ | ------------------ | ---------------------------------------------------------- |
+| Scheme             | `topway`           | `topway-direct`                                            |
+| Signature          | Apple Distribution | Developer ID Application, notarized by Apple               |
+| Download           | The App Store      | A DMG in the GitHub releases, for example `Topway-0.2.dmg` |
+| Updates            | The App Store      | Sparkle 2 reads `https://topway.pulgueta.com/appcast.xml`  |
+| Sparkle in the app | No                 | Yes                                                        |
+
+Both channels use the bundle ID `com.pulgueta.topway`, the team `7QNFW3929Z`, the same OAuth client ID and the same sign-in callback.
+
+The App Store build must not have update code (App Review Guideline 2.4.5). [`scripts/check-app-store-build.sh`](../scripts/check-app-store-build.sh) archives the App Store build and fails if it has Sparkle. CI runs it on each pull request.
+
+Two files make a release:
+
+- [`scripts/release-direct.sh`](../scripts/release-direct.sh) archives, signs, notarizes and packs the app, then adds it to the appcast.
+- [`.github/workflows/release-direct.yml`](../.github/workflows/release-direct.yml) runs the script when you push a version tag. Then it makes the GitHub release and a pull request for the appcast.
+
+## One-time setup in Apple Developer
+
+You need three items from Apple. Each one has a different job:
+
+- **Developer ID Application certificate**: signs the app and the DMG. By default, Gatekeeper opens only apps with this signature or an App Store signature.
+- **Developer ID provisioning profile**: gives the app its Associated Domains entitlement and its application identifier. The sign-in callback needs the first one. The Keychain access group of the sign-in needs the second one.
+- **App Store Connect API key**: lets `notarytool` send the app and the DMG to the Apple notary service with no Apple Account password.
+
+### Export the Developer ID Application certificate
+
+The certificate already exists. You made it on 2026-11-19, and it is in your login keychain. GitHub Actions needs a copy of it with its private key, in a `.p12` file.
+
+1. Open Keychain Access.
+2. Select the **login** keychain, then **My Certificates**.
+3. Find **Developer ID Application: … (7QNFW3929Z)**. Expand it to make sure that it has a private key.
+4. Right-click the certificate, then select **Export**.
+5. For the file format, select **Personal Information Exchange (.p12)**. Save the file outside the repository, for example as `~/DeveloperID.p12`.
+6. Type a strong password for the file.
+
+Keep the `.p12` file and its password in your password manager. If you lose them, you must make a new certificate.
+
+### Make the Developer ID provisioning profile
+
+Xcode made a profile for you, **Mac Team Direct Provisioning Profile: com.pulgueta.topway**. Xcode manages that profile, so the release script cannot use it. Manual signing stops with this error:
+
+```text
+Provisioning profile "Mac Team Direct Provisioning Profile: com.pulgueta.topway" is Xcode managed, but signing settings require a manually managed profile.
+```
+
+Make a manual profile instead:
+
+1. Open [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list) in your Apple Developer account.
+2. Open the identifier `com.pulgueta.topway`. Make sure that **Associated Domains** is on. The App Store build uses it too, so it is usually on.
+3. Go to **Profiles** and add a profile.
+4. Under **Distribution**, select **Developer ID**, then **Continue**.
+5. Select the App ID `com.pulgueta.topway`.
+6. Select the Developer ID Application certificate.
+7. For the name, type `Topway Developer ID`. The script uses this name. If you use a different name, set `DEVELOPER_ID_PROFILE_NAME` when you run the script on your Mac.
+8. Select **Generate**, then **Download**.
+
+To use the profile on your Mac, copy it to the profiles folder of Xcode, with its UUID as the file name:
+
+```sh
+profile=~/Downloads/Topway_Developer_ID.provisionprofile
+uuid=$(security cms -D -i "$profile" | plutil -extract UUID raw -o - -)
+cp "$profile" ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/"$uuid".provisionprofile
+```
+
+When you renew the certificate, make a new profile, then update the secret `DEVELOPER_ID_PROFILE_BASE64`.
+
+### Make an App Store Connect API key for notarization
+
+1. In [App Store Connect](https://appstoreconnect.apple.com/access/integrations/api), open **Users and Access > Integrations > App Store Connect API**.
+2. Under **Team Keys**, generate a key. Name it `Topway notarization`.
+3. For the access, select **Developer**. Notarization needs no higher role.
+4. Download the `.p8` file. App Store Connect lets you download it one time only.
+5. Write down the **Key ID** of the key and the **Issuer ID** at the top of the page.
+
+To notarize from your Mac, keep the key in a notarytool keychain profile. Replace `your_key_id` and `your_issuer_id` with your values:
+
+```sh
+xcrun notarytool store-credentials topway-notary \
+  --key ~/AuthKey_your_key_id.p8 --key-id your_key_id --issuer your_issuer_id
+```
+
+## Make the Sparkle keys
+
+Sparkle installs an update only when the EdDSA signature of the DMG agrees with the public key in the installed app (`SUPublicEDKey`). The script signs each DMG with the private key. Do these steps one time.
+
+1. Get the Sparkle tools. The release script uses the same folder:
+
+   ```sh
+   xcodebuild -resolvePackageDependencies -project topway.xcodeproj -scheme topway-direct \
+     -clonedSourcePackagesDirPath build/SourcePackages
+   ```
+
+   The tools are in `build/SourcePackages/artifacts/sparkle/Sparkle/bin`. Git ignores `build/`.
+
+2. Make the keys:
+
+   ```sh
+   build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys
+   ```
+
+   `generate_keys` saves the private key in your login keychain and prints the public key. If macOS asks for access to the keychain, allow it.
+
+3. Put the public key in [`Config/Direct.xcconfig`](../Config/Direct.xcconfig), then commit the file. A public key is safe to commit.
+
+   ```text
+   SPARKLE_PUBLIC_ED_KEY = your_public_key
+   ```
+
+4. Export the private key to a file outside the repository. You need this file for the GitHub secret and for a release from your Mac:
+
+   ```sh
+   build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys -x ~/sparkle_private_key
+   ```
+
+Keep a backup of the private key in two safe places, for example your password manager and an encrypted drive. **If you lose the private key, the users of the direct build cannot get updates.** They must download a new DMG by hand. Never commit the private key.
+
+While `SPARKLE_PUBLIC_ED_KEY` is empty, the direct build does not check for updates, and the release script stops.
+
+## Add the GitHub secrets
+
+The workflow reads these repository secrets. It writes the certificate, the profile and the keys to files in the temporary folder of the runner, and the client ID to `Config/OAuth.local.xcconfig`. At the end, also after a failure, it deletes these files and the temporary keychain.
+
+| Secret                         | What it holds                                                          |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `DEVELOPER_ID_CERT_P12_BASE64` | The `.p12` file of the Developer ID Application certificate, in base64 |
+| `DEVELOPER_ID_CERT_PASSWORD`   | The password of the `.p12` file                                        |
+| `DEVELOPER_ID_PROFILE_BASE64`  | The `Topway Developer ID` profile, in base64                           |
+| `RAILWAY_OAUTH_CLIENT_ID`      | The client ID of the Railway OAuth app                                 |
+| `NOTARY_KEY_P8_BASE64`         | The `.p8` file of the App Store Connect API key, in base64             |
+| `NOTARY_KEY_ID`                | The Key ID of the API key                                              |
+| `NOTARY_ISSUER_ID`             | The Issuer ID of the API key                                           |
+| `SPARKLE_PRIVATE_ED_KEY`       | The text of the file from `generate_keys -x`                           |
+
+To set them with the GitHub CLI, run these commands from the repository. The values go from the files to GitHub, and they do not show on the screen. For a command with no input file, `gh` asks you to paste the value.
+
+```sh
+base64 -i ~/DeveloperID.p12 | gh secret set DEVELOPER_ID_CERT_P12_BASE64
+gh secret set DEVELOPER_ID_CERT_PASSWORD
+base64 -i ~/Downloads/Topway_Developer_ID.provisionprofile | gh secret set DEVELOPER_ID_PROFILE_BASE64
+sed -n 's/^RAILWAY_OAUTH_CLIENT_ID *= *//p' Config/OAuth.local.xcconfig | gh secret set RAILWAY_OAUTH_CLIENT_ID
+base64 -i ~/AuthKey_your_key_id.p8 | gh secret set NOTARY_KEY_P8_BASE64
+gh secret set NOTARY_KEY_ID
+gh secret set NOTARY_ISSUER_ID
+gh secret set SPARKLE_PRIVATE_ED_KEY < ~/sparkle_private_key
+```
+
+Then let the workflow open pull requests. In the repository on GitHub, go to **Settings > Actions > General**. Under **Workflow permissions**, select **Allow GitHub Actions to create and approve pull requests**.
+
+After you set the secrets, delete `~/DeveloperID.p12`, the `.p8` file and `~/sparkle_private_key` from your Mac. Keep the copies in your password manager.
+
+## Make a release
+
+Each release needs a version number and a build number that are higher than the last release. Sparkle compares the build number (`CFBundleVersion`), not the version.
+
+### Make a release with GitHub Actions
+
+1. Change the version and the build number of both targets. Both channels then show the same number. This command changes 0.1 (1) to 0.2 (2) in the 4 build configurations:
+
+   ```sh
+   sed -i '' -e 's/MARKETING_VERSION = 0.1;/MARKETING_VERSION = 0.2;/' \
+     -e 's/CURRENT_PROJECT_VERSION = 1;/CURRENT_PROJECT_VERSION = 2;/' \
+     topway.xcodeproj/project.pbxproj
+   ```
+
+2. Make sure that the change is in 4 places. Each command must print `4`:
+
+   ```sh
+   grep -c 'MARKETING_VERSION = 0.2;' topway.xcodeproj/project.pbxproj
+   grep -c 'CURRENT_PROJECT_VERSION = 2;' topway.xcodeproj/project.pbxproj
+   ```
+
+3. Commit the change and merge it into `main`.
+4. Get the merged `main` on your Mac:
+
+   ```sh
+   git switch main
+   git pull
+   ```
+
+5. Add a tag with the letter `v` and the version, then push it. The script stops if the tag is not `v` and `MARKETING_VERSION`.
+
+   ```sh
+   git tag v0.2
+   git push origin v0.2
+   ```
+
+6. Open **Actions > Release the direct build** on GitHub, and wait until the run passes. Most of the time is for notarization. Apple says that notarization usually takes less than one hour.
+7. Make sure that the release `v0.2` has `Topway-0.2.dmg`.
+8. Open the pull request from the branch `release/v0.2`. It changes only `web/public/appcast.xml`. Merge it.
+9. Deploy the website. The deploy replaces all the files of the site, so the site must also keep `/.well-known/apple-app-site-association` and `/oauth/callback`. Without them, the sign-in stops. [AGENTS.md](../AGENTS.md#sign-in-callback) tells why.
+10. Make sure that the site serves the new appcast:
+
+    ```sh
+    curl -s https://topway.pulgueta.com/appcast.xml | grep '<sparkle:version>'
+    ```
+
+The release must exist before the appcast points to it. For this reason, the workflow makes the release first and gives you the appcast as a pull request.
+
+A pull request that the workflow makes does not start the CI workflow. GitHub does not run workflows for changes that the `GITHUB_TOKEN` makes. The appcast change has no code, so it needs no CI run.
+
+### Make a release from your Mac
+
+Use this when GitHub Actions is not available. Your Mac must have:
+
+- The Developer ID Application certificate in the login keychain.
+- The `Topway Developer ID` profile in the profiles folder of Xcode.
+- `Config/OAuth.local.xcconfig` with the client ID.
+- The notarytool keychain profile `topway-notary`.
+- The private Sparkle key in a file outside the repository.
+
+1. Change the version and the build number, commit, and get the merged `main`, as in steps 1 to 4 above.
+2. Run the script with the tag:
+
+   ```sh
+   NOTARY_KEYCHAIN_PROFILE=topway-notary SPARKLE_PRIVATE_KEY_FILE=~/sparkle_private_key \
+     scripts/release-direct.sh v0.2
+   ```
+
+3. Turn off the release workflow. Then the tag push does not start a second release of the same tag:
+
+   ```sh
+   gh workflow disable release-direct.yml
+   ```
+
+4. Add the tag and make the GitHub release with the DMG:
+
+   ```sh
+   git tag v0.2
+   git push origin v0.2
+   gh release create v0.2 build/release/Topway-0.2.dmg --verify-tag --title "Topway 0.2" --generate-notes
+   ```
+
+5. Turn on the release workflow again. If it stays off, the next tag makes no release.
+
+   ```sh
+   gh workflow enable release-direct.yml
+   ```
+
+6. Commit `web/public/appcast.xml` on a branch, merge it, and deploy the website, as in steps 8 to 10 above.
+
+The script puts the DMG in `build/release/`, or in the folder that `OUTPUT_DIR` gives. Git ignores `build/`. The comments at the top of the script list all the options.
+
+To test the build with no notarization and no appcast change, run `scripts/release-direct.sh --skip-notarize --skip-appcast`. Do not publish that DMG, because Gatekeeper refuses it.
+
+## Users and channels
+
+Tell users to install only one channel on a Mac. The two channels have the same bundle ID. With two copies on the Mac, macOS can give the sign-in callback to the other copy, and the sign-in does not finish.
+
+To move from one channel to the other:
+
+1. Quit Topway.
+2. Delete the old copy.
+3. Install the new copy, then open it.
+
+The sign-in and the settings stay. Since commits 8066b99 and 352aaba, both channels keep the sign-in in the data protection keychain, in the access group `7QNFW3929Z.com.pulgueta.topway`. An older build, such as the App Store version 0.1, kept the sign-in in the file-based keychain. After a move from that build, Topway can ask for the Mac password one time. Type it and allow the access. [AGENTS.md](../AGENTS.md#keychain) tells how the Keychain move works.
+
+Sparkle updates only the direct copy. The App Store updates only the App Store copy.
+
+## Troubleshooting
+
+### Notarization fails
+
+The script stops and prints the submission ID. To see the problems, get the log of the submission:
+
+```sh
+xcrun notarytool log your_submission_id --keychain-profile topway-notary
+```
+
+In GitHub Actions, use `--key`, `--key-id` and `--issuer` in place of `--keychain-profile`. The log gives each problem with the path of the file. Apple's guide [Customizing the notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow) has more information.
+
+### An update does not show
+
+Do these checks in this sequence:
+
+1. In Topway, go to **Settings > Updates**. If the footer says that the build has no update key, the build had an empty `SPARKLE_PUBLIC_ED_KEY`. Install a DMG from the release script, which refuses an empty key.
+2. Select **Check for updates…**. Sparkle checks on a schedule, so an automatic check can come later.
+3. Make sure that the site serves the new appcast. A cache can keep the old file for some time:
+
+   ```sh
+   curl -sI https://topway.pulgueta.com/appcast.xml
+   curl -s https://topway.pulgueta.com/appcast.xml | grep '<sparkle:version>'
+   ```
+
+4. Make sure that the build number in the appcast is higher than the build number of the installed app. Sparkle ignores an item with the same or a lower `CFBundleVersion`. To see the installed build number:
+
+   ```sh
+   plutil -extract CFBundleVersion raw -o - /Applications/Topway.app/Contents/Info.plist
+   ```
+
+5. If Sparkle shows a signature error, the appcast has a signature from a different private key. Make the release again with the private key that agrees with `SPARKLE_PUBLIC_ED_KEY`.
+
+### The sign-in does not come back to the app
+
+1. Make sure that macOS approved the domain for Topway. The output must show `topway.pulgueta.com` with the App ID `7QNFW3929Z.com.pulgueta.topway` and the approval `approved`:
+
+   ```sh
+   sudo swcutil show | grep -B 2 -A 8 topway.pulgueta.com
+   ```
+
+2. Find all copies of Topway that Launch Services knows. The list must have only the installed app:
+
+   ```sh
+   lsregister=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+   "$lsregister" -dump | awk '/^path:/{p=$0} /^identifier: *com\.pulgueta\.topway$/{print p}' | sort -u
+   ```
+
+3. For each other copy, remove it from Launch Services, then delete it. Replace the path with the path from step 2:
+
+   ```sh
+   "$lsregister" -u "/path/to/the/other/Topway.app"
+   ```
+
+The release script and `scripts/check-app-store-build.sh` remove their own copies at exit. A copy in an Xcode archive, an old DMG or the Downloads folder can stay.
