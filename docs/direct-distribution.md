@@ -301,21 +301,26 @@ Each attempt of the run keeps the appcast of its DMG and the checksum of the DMG
    gh run list --workflow release-direct.yml --limit 5
    ```
 
-3. In a new folder, download the artifacts of the run and the DMG of the release. Replace `your_run_id` with the ID from step 2:
+3. In a new folder, download the artifacts of the run and the DMG of the release. Replace `your_run_id` with the ID from step 2. The commands stop at the first error:
 
    ```sh
-   mkdir ~/appcast-v0.2 && cd ~/appcast-v0.2
-   gh run download your_run_id --repo pulgueta/topway --pattern 'appcast-v0.2-*'
-   gh release download v0.2 --repo pulgueta/topway --pattern Topway-0.2.dmg
+   mkdir ~/appcast-v0.2 && cd ~/appcast-v0.2 &&
+     gh run download your_run_id --repo pulgueta/topway --pattern 'appcast-v0.2-*' &&
+     gh release download v0.2 --repo pulgueta/topway --pattern Topway-0.2.dmg &&
+     echo "The downloads are complete."
    ```
 
-4. Find the artifact that agrees with the DMG of the release. The command prints its checksum file, for example `appcast-v0.2-1/Topway-0.2.dmg.sha256`:
+   If the last line is not `The downloads are complete.`, a download failed. Do not continue. Correct the problem that `gh` shows, delete the folder `~/appcast-v0.2`, then do this step again.
+
+4. Find the artifact that agrees with the DMG of the release. For each artifact, `shasum` compares `Topway-0.2.dmg` with the checksum in the artifact:
 
    ```sh
-   grep -l "$(shasum -a 256 Topway-0.2.dmg | cut -d ' ' -f 1)" appcast-v0.2-*/Topway-0.2.dmg.sha256
+   for file in appcast-v0.2-*/Topway-0.2.dmg.sha256; do
+     shasum -a 256 -c "$file" && echo "Use the folder ${file%%/*}."
+   done
    ```
 
-   If it prints nothing, no artifact agrees with the DMG of the release. Then make the next release with a higher version and build number.
+   The command shows `Use the folder` only after `Topway-0.2.dmg: OK`, for example `Use the folder appcast-v0.2-1.` Use only that folder. `FAILED` tells you that an artifact does not agree with the DMG. If no `Use the folder` line shows, no artifact agrees with the DMG of the release. Then do not make the pull request, and make the next release with a higher version and build number.
 
 5. In the repository, put that appcast on a new branch from the newest `main`. Replace `appcast-v0.2-1` with the folder from step 4. The diff must add only the item of 0.2:
 
