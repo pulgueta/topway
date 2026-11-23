@@ -1,6 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>Topway</title>
-  </channel>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Topway</title>
+        <item>
+            <title>0.1.1</title>
+            <pubDate>Sun, 22 Nov 2026 21:54:13 -0500</pubDate>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.2</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/pulgueta/topway/releases/download/v0.1.1/Topway-0.1.1.dmg" length="4878308" type="application/octet-stream" sparkle:edSignature="Kai7qqW4h+0wMgP3CvdTO7JyjpjJhSjhUmZU2C9Oci8+5kCG4ldH2p1PS5GN0GFxOVQUSsDOtZ7Pd2v4c+arAg=="/>
+        </item>
+    </channel>
 </rss>
