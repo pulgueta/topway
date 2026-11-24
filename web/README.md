@@ -8,7 +8,7 @@ The site has these pages and files:
 |---|---|---|
 | `/` | `src/pages/index.astro` | What Topway does. |
 | `/download` | `src/pages/download.astro` | The Mac App Store and the DMG. |
-| `/privacy` | `src/pages/privacy.astro` | Shows `PRIVACY.md` from the root of the repository. Change the policy there, not here. |
+| `/privacy` | `public/_redirects` | Sends the reader to `PRIVACY.md` on GitHub. Change the policy in `PRIVACY.md`. |
 | `/appcast.xml` | `public/appcast.xml` | The Sparkle feed of the direct build. The release workflow changes it. |
 | `/.well-known/apple-app-site-association` | `public/.well-known/apple-app-site-association` | The Associated Domains file of the sign-in. |
 | `/oauth/callback` | `public/oauth/callback.html` | The sign-in callback page. |

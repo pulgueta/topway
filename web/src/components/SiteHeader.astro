@@ -1,10 +1,9 @@
 ---
-import { repositoryUrl } from "../config";
+import { privacyPolicyUrl, repositoryUrl } from "../config";
 
 const current = Astro.url.pathname.replace(/\.html$/, "");
 const links = [
   { href: "/download", label: "Download" },
-  { href: "/privacy", label: "Privacy" },
 ];
 ---
 
@@ -28,6 +27,9 @@ const links = [
             </li>
           ))
         }
+        <li>
+          <a href={privacyPolicyUrl} target="_blank" rel="noopener">Privacy<span class="visually-hidden"> (opens in a new tab)</span></a>
+        </li>
         <li><a href={repositoryUrl}>GitHub</a></li>
       </ul>
     </nav>

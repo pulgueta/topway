@@ -1,5 +1,5 @@
 ---
-import { reportProblemUrl, repositoryUrl } from "../config";
+import { privacyPolicyUrl, reportProblemUrl, repositoryUrl } from "../config";
 ---
 
 <footer class="site-footer">
@@ -10,7 +10,9 @@ import { reportProblemUrl, repositoryUrl } from "../config";
     <nav aria-label="Footer">
       <ul>
         <li><a href="/download">Download</a></li>
-        <li><a href="/privacy">Privacy policy</a></li>
+        <li>
+          <a href={privacyPolicyUrl} target="_blank" rel="noopener">Privacy policy<span class="visually-hidden"> (opens in a new tab)</span></a>
+        </li>
         <li><a href={repositoryUrl}>Source code on GitHub</a></li>
         <li><a href={reportProblemUrl}>Report a problem</a></li>
         <!-- The icons of the copies of the app are Phosphor icons. Their MIT license must go

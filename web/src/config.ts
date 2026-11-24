@@ -26,5 +26,8 @@ export const buildFromSourceUrl = `${repositoryUrl}#build-from-source`;
 /** The issue form for a problem report, the same link as in the README. */
 export const reportProblemUrl = `${repositoryUrl}/issues/new/choose`;
 
-/** The source of the privacy page, so a reader can see the history of each change. */
-export const privacySourceUrl = `${repositoryUrl}/blob/main/PRIVACY.md`;
+/**
+ * The privacy policy. The site links to PRIVACY.md on GitHub, so the policy has one source and
+ * a reader can see the history of each change. public/_redirects sends /privacy to this URL.
+ */
+export const privacyPolicyUrl = `${repositoryUrl}/blob/main/PRIVACY.md`;
