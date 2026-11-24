@@ -46,7 +46,10 @@
   --step-body: 1.0625rem;
   --step-small: 0.9375rem;
 
-  --max: 72rem;
+  /* The page is 72rem wide up to a window of 1440 pixels. Then it grows with the window, up
+     to 96rem at 1920 pixels. The grids and the pictures use this width. The text keeps its
+     own max width. */
+  --max: clamp(72rem, 80vw, 96rem);
   --pad: clamp(1rem, 0.4rem + 2.6vw, 2.5rem);
   --gutter: max(var(--pad), calc((100% - var(--max)) / 2 + var(--pad)));
   --section: clamp(4rem, 2.8rem + 5vw, 7.5rem);

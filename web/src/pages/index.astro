@@ -5,7 +5,7 @@ import LogsCopy from "../components/copies/LogsCopy.astro";
 import MenuBarStrip from "../components/copies/MenuBarStrip.astro";
 import ProjectsCopy from "../components/copies/ProjectsCopy.astro";
 import VariablesCopy from "../components/copies/VariablesCopy.astro";
-import { buildFromSourceUrl, repositoryUrl } from "../config";
+import { buildFromSourceUrl, privacyPolicyUrl, repositoryUrl } from "../config";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 // The facts come from "What you can do" in the README of the repository.
@@ -151,7 +151,9 @@ const features = [
           to Railway. The direct build also checks this website for updates and downloads them
           from GitHub.
         </p>
-        <p><a href="/privacy">Read the privacy policy</a></p>
+        <p>
+          <a href={privacyPolicyUrl} target="_blank" rel="noopener">Read the privacy policy<span class="visually-hidden"> (opens in a new tab)</span></a>
+        </p>
       </div>
     </div>
   </section>
@@ -160,7 +162,7 @@ const features = [
 <style>
   .hero {
     display: grid;
-    grid-template-columns: var(--gutter) minmax(0, 1fr) var(--pad);
+    grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
     row-gap: 2.5rem;
     padding-top: clamp(1.5rem, 1rem + 3vw, 4rem);
     overflow-x: clip;
@@ -179,12 +181,7 @@ const features = [
   }
 
   .hero :global(.hero-figure) {
-    grid-column: 2 / 4;
-    margin-right: calc(-1 * var(--pad));
-  }
-
-  .hero :global(.hero-figure .figure-caption) {
-    padding-right: var(--pad);
+    grid-column: 2;
   }
 
   .hero :global(.hero-stage) {
@@ -208,13 +205,14 @@ const features = [
 
   @media (min-width: 60rem) {
     .hero {
-      grid-template-columns: var(--gutter) minmax(0, 30rem) clamp(2.5rem, 5vw, 5rem) minmax(0, 1fr);
+      grid-template-columns:
+        var(--gutter) minmax(0, 30rem) clamp(2.5rem, 5vw, 5rem) minmax(0, 1fr)
+        var(--gutter);
       align-items: center;
     }
 
     .hero :global(.hero-figure) {
       grid-column: 4;
-      margin-right: 0;
     }
 
     .hero :global(.hero-stage) {
@@ -271,11 +269,12 @@ const features = [
       clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
   }
 
-  /* The stage goes to the trailing edge of the window, as in the hero. On a wide screen, the
-     copies are in one row, and the stage cuts the last copy there. */
+  /* The stage stays in the content width, as in the hero. On a wide screen, the copies are in
+     one row. The stage is only as wide as the copies, and it cuts the last copy when the row
+     is wider than the content. */
   .bleed {
     display: grid;
-    grid-template-columns: var(--gutter) minmax(0, 1fr);
+    grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
     overflow-x: clip;
   }
 
@@ -287,15 +286,12 @@ const features = [
     margin-top: 2.5rem;
   }
 
-  .bleed :global(.actions-figure .figure-caption) {
-    padding-right: var(--pad);
-  }
-
   .bleed :global(.actions-stage) {
     display: flex;
     gap: 1.5rem;
+    width: fit-content;
+    max-width: 100%;
     padding: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
-    padding-right: 0;
   }
 
   .bleed :global(.actions-stage > *) {
@@ -308,8 +304,8 @@ const features = [
   @media (width < 60rem) {
     .bleed :global(.actions-stage) {
       display: grid;
+      width: auto;
       grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-      padding-right: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
     }
 
     .bleed :global(.actions-stage > *) {
@@ -335,6 +331,15 @@ const features = [
   @media (min-width: 48rem) {
     .features {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* On a wide window, the eight items go in two rows of four. Each column stays wide enough
+     for a line of about 45 characters. */
+  @media (min-width: 110rem) {
+    .features {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 3rem;
     }
   }
 
@@ -365,6 +370,14 @@ const features = [
     }
   }
 
+  /* The same gap as the four columns of the features, so the second note starts on the
+     line of the third column. */
+  @media (min-width: 110rem) {
+    .notes {
+      column-gap: 3rem;
+    }
+  }
+
   .note {
     display: flex;
     flex-direction: column;
@@ -376,5 +389,9 @@ const features = [
   .note-title {
     font-size: var(--step-subtitle);
     letter-spacing: -0.01em;
+  }
+
+  .note p {
+    max-width: 34rem;
   }
 </style>
