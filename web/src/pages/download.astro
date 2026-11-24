@@ -8,18 +8,16 @@ const options = [
   {
     id: "app-store",
     title: "Mac App Store",
-    text: "Topway is a paid app on the Mac App Store.",
+    text: "The App Store installs the updates.",
     button: "View on the Mac App Store",
     href: appStoreUrl,
-    note: "The App Store installs the updates.",
   },
   {
     id: "dmg",
     title: "Disk image (DMG)",
-    text: "Buy Topway as a disk image (DMG) through Polar. You pay on the Polar site. Apple notarizes the DMG.",
+    text: "Pay one time through Polar. Apple notarizes the DMG. The updates are free, and Topway installs them for you.",
     button: "Buy the DMG",
     href: polarUrl,
-    note: "After you pay, download the DMG on the Polar page. Polar also sends you a link by email. Open the DMG, then drag Topway to the Applications folder. The updates are free: Topway finds them and installs them for you.",
   },
 ];
 ---
@@ -32,7 +30,8 @@ const options = [
     <header class="page-header enter">
       <h1>Get Topway</h1>
       <p class="lead">
-        You can get Topway in two ways. Both give you the same app in the menu bar of your Mac.
+        The same app from the Mac App Store or as a disk image (DMG). Topway needs macOS 26.2 or
+        later.
       </p>
     </header>
 
@@ -50,54 +49,21 @@ const options = [
               ) : (
                 <p class="coming-soon">Coming soon</p>
               )}
-              {option.note && <p class="option-note">{option.note}</p>}
             </div>
           </section>
         ))
       }
     </div>
 
-    <p class="source-note">
-      Topway is also open source under the MIT license. You can build it from source at no cost.{" "}
-      <a href={buildFromSourceUrl}>Read how to build Topway</a>
-    </p>
-
-    <div class="details">
-      <section aria-labelledby="requirements-title">
-        <h2 id="requirements-title">Requirements</h2>
-        <ul>
-          <li>A Mac with macOS 26.2 or later.</li>
-          <li>
-            A Railway account. With no account, you can try Topway with sample data. Select{" "}
-            <strong>Try with sample data</strong> on the start screen.
-          </li>
-        </ul>
-      </section>
-
-      <section aria-labelledby="one-copy-title">
-        <h2 id="one-copy-title">Install only one copy</h2>
-        <p>
-          Install Topway from the Mac App Store or from the DMG. Do not install the two on one Mac.
-          With two copies, the sign-in can stop before it finishes.
-        </p>
-        <p>To change from one copy to the other:</p>
-        <ol>
-          <li>Quit Topway.</li>
-          <li>Delete the old copy.</li>
-          <li>Install the new copy, then open it.</li>
-        </ol>
-        <p>
-          Your sign-in and your settings stay. Topway can ask for your Mac password one time.
-        </p>
-      </section>
-
-      <section aria-labelledby="after-title">
-        <h2 id="after-title">After you install Topway</h2>
-        <p>
-          Open Topway. Its icon is in the menu bar at the top of the screen, not in the Dock. At the
-          first launch, a welcome window shows what Topway does and where its icon is.
-        </p>
-      </section>
+    <div class="fine-print">
+      <p>
+        Install only one of the two on a Mac. With two copies, the sign-in can stop before it
+        finishes.
+      </p>
+      <p>
+        Topway is open source under the MIT license.{" "}
+        <a href={buildFromSourceUrl}>Read how to build Topway</a>
+      </p>
     </div>
   </div>
 </BaseLayout>
@@ -161,47 +127,16 @@ const options = [
     font-weight: 600;
   }
 
-  .option-note {
-    max-width: 30rem;
-    font-size: var(--step-small);
+  .option p {
+    max-width: 34rem;
   }
 
-  .source-note {
+  .fine-print {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    max-width: 40rem;
     margin-top: 1.5rem;
-    max-width: 44rem;
-  }
-
-  .details {
-    display: grid;
-    gap: 3rem clamp(2rem, 5vw, 4.5rem);
-    margin-top: var(--section);
-  }
-
-  @media (min-width: 60rem) {
-    .details {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  .details section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--rule);
-  }
-
-  .details h2 {
-    font-size: var(--step-subtitle);
-    letter-spacing: -0.01em;
-  }
-
-  .details ul,
-  .details ol {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin: 0;
-    padding-left: 1.25rem;
+    font-size: var(--step-small);
   }
 </style>
