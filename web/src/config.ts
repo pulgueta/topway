@@ -11,11 +11,12 @@
 export const appStoreUrl: string | null = null;
 
 /**
- * TODO(owner): Put the Polar checkout link of the DMG product here. The product has a File
- * Downloads benefit with the DMG. See "Sell the DMG with Polar" in docs/direct-distribution.md.
- * The page shows no price: set the price in Polar.
+ * The Polar checkout link of the DMG product. The product has a File Downloads benefit with the
+ * DMG. See "Sell the DMG with Polar" in docs/direct-distribution.md. The page shows no price:
+ * set the price in Polar.
  */
-export const polarUrl: string | null = null;
+export const polarUrl: string | null =
+  "https://buy.polar.sh/polar_cl_VqIm4Hg6TFZqiXz96Z3h7Y2GZ2HbvfHb5KT0I3WYZQq";
 
 /** The GitHub repository. Topway is MIT licensed, so anyone can build it from source. */
 export const repositoryUrl = "https://github.com/pulgueta/topway";
